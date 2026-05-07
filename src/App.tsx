@@ -4,6 +4,7 @@ import axios from 'axios';
 function App() {
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
+  const [tipo, setTipo] = useState('empresa');
   const [despesas, setDespesas] = useState<any[]>([]);
 
   async function carregarDespesas() {
@@ -13,12 +14,12 @@ function App() {
 
   async function salvarDespesa() {
     await axios.post('http://localhost:3001/despesas', {
-      tipo: 'empresa',
+      tipo,
       descricao,
-      categoria: 'Internet',
+      categoria: 'Geral',
       valor: Number(valor),
       formaPagamento: 'Pix',
-      data: '2026-05-06',
+      data: new Date(),
     });
 
     setDescricao('');
@@ -31,43 +32,108 @@ function App() {
     carregarDespesas();
   }, []);
 
+  const total = despesas.reduce(
+    (acc, item) => acc + Number(item.valor),
+    0,
+  );
+
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Controle Financeiro</h1>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-4xl mx-auto">
 
-      <input
-        type="text"
-        placeholder="Descrição"
-        value={descricao}
-        onChange={(e) => setDescricao(e.target.value)}
-      />
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <h1 className="text-3xl font-bold mb-6">
+            Controle Financeiro
+          </h1>
 
-      <br />
-      <br />
+          <div className="grid md:grid-cols-3 gap-4">
 
-      <input
-        type="number"
-        placeholder="Valor"
-        value={valor}
-        onChange={(e) => setValor(e.target.value)}
-      />
+            <input
+              type="text"
+              placeholder="Descrição"
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              className="border p-3 rounded-lg"
+            />
 
-      <br />
-      <br />
+            <input
+              type="number"
+              placeholder="Valor"
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              className="border p-3 rounded-lg"
+            />
 
-      <button onClick={salvarDespesa}>
-        Salvar
-      </button>
+            <select
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
+              className="border p-3 rounded-lg"
+            >
+              <option value="empresa">
+                Empresa
+              </option>
 
-      <hr />
+              <option value="pessoal">
+                Pessoal
+              </option>
+            </select>
 
-      <h2>Despesas</h2>
+          </div>
 
-      {despesas.map((despesa) => (
-        <div key={despesa.id}>
-          <strong>{despesa.descricao}</strong> - R$ {despesa.valor}
+          <button
+            onClick={salvarDespesa}
+            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl"
+          >
+            Salvar Despesa
+          </button>
         </div>
-      ))}
+
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <h2 className="text-2xl font-bold mb-2">
+            Total
+          </h2>
+
+          <p className="text-3xl text-green-600 font-bold">
+            R$ {total.toFixed(2)}
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h2 className="text-2xl font-bold mb-4">
+            Despesas
+          </h2>
+
+          <div className="space-y-3">
+
+            {despesas.map((despesa) => (
+
+              <div
+                key={despesa.id}
+                className="border rounded-xl p-4 flex justify-between items-center"
+              >
+
+                <div>
+                  <p className="font-bold">
+                    {despesa.descricao}
+                  </p>
+
+                  <p className="text-sm text-gray-500">
+                    {despesa.tipo}
+                  </p>
+                </div>
+
+                <p className="font-bold text-red-600">
+                  R$ {Number(despesa.valor).toFixed(2)}
+                </p>
+
+              </div>
+
+            ))}
+
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
