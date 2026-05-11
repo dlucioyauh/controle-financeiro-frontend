@@ -28,6 +28,12 @@ function App() {
     carregarDespesas();
   }
 
+  async function deletarDespesa(id: number) {
+    await axios.delete(`http://localhost:3001/despesas/${id}`);
+
+    carregarDespesas();
+  }
+
   useEffect(() => {
     carregarDespesas();
   }, []);
@@ -122,9 +128,20 @@ function App() {
                   </p>
                 </div>
 
-                <p className="font-bold text-red-600">
-                  R$ {Number(despesa.valor).toFixed(2)}
-                </p>
+                <div className="flex items-center gap-4">
+
+                  <p className="font-bold text-red-600">
+                    R$ {Number(despesa.valor).toFixed(2)}
+                  </p>
+
+                  <button
+                    onClick={() => deletarDespesa(despesa.id)}
+                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg"
+                  >
+                    Excluir
+                  </button>
+
+                </div>
 
               </div>
 
