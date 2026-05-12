@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import api from './api';
+import Login from './Login';
 
 function App() {
+  const [autenticado, setAutenticado] = useState(!!localStorage.getItem('token'));
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
   const [tipo, setTipo] = useState('empresa');
@@ -15,7 +17,7 @@ function App() {
   const [filtroMes, setFiltroMes] = useState('');
 
   async function carregarDespesas() {
-    const response = await axios.get('http://localhost:3001/despesas');
+    const response = await api.get('/despesas');
     setDespesas(response.data);
   }
 
@@ -35,10 +37,10 @@ function App() {
     };
 
     if (editandoId !== null) {
-      await axios.put(`http://localhost:3001/despesas/${editandoId}`, payload);
+      await api.put(`/despesas/${editandoId}`, payload);
       setEditandoId(null);
     } else {
-      await axios.post('http://localhost:3001/despesas', payload);
+      await api.post('/despesas', payload);
     }
 
     setDescricao('');
@@ -52,7 +54,7 @@ function App() {
   }
 
   async function deletarDespesa(id: number) {
-    await axios.delete(`http://localhost:3001/despesas/${id}`);
+    await api.delete(`/despesas/${id}`);
     carregarDespesas();
   }
 
@@ -66,9 +68,19 @@ function App() {
     setEditandoId(despesa.id);
   }
 
+  function logout() {
+    localStorage.removeItem('token');
+    setAutenticado(false);
+    setDespesas([]);
+  }
+
   useEffect(() => {
-    carregarDespesas();
-  }, []);
+    if (autenticado) carregarDespesas();
+  }, [autenticado]);
+
+  if (!autenticado) {
+    return <Login onLogin={() => setAutenticado(true)} />;
+  }
 
   const total = despesas.reduce(
     (acc, item) => acc + (Number(item.valor) || 0),
@@ -90,20 +102,31 @@ function App() {
   });
 
   const dadosGrafico = Object.entries(
-  despesasFiltradas.reduce((acc: Record<string, number>, item) => {
-    acc[item.categoria] = (acc[item.categoria] || 0) + Number(item.valor);
-    return acc;
-  }, {})
-).map(([name, value]) => ({ name, value }));
+    despesasFiltradas.reduce((acc: Record<string, number>, item) => {
+      acc[item.categoria] = (acc[item.categoria] || 0) + Number(item.valor);
+      return acc;
+    }, {})
+  ).map(([name, value]) => ({ name, value }));
 
-const CORES = [
-  '#6366f1', '#22c55e', '#f59e0b', '#ef4444',
-  '#3b82f6', '#ec4899', '#14b8a6',
-];
+  const CORES = [
+    '#6366f1', '#22c55e', '#f59e0b', '#ef4444',
+    '#3b82f6', '#ec4899', '#14b8a6',
+  ];
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-4xl mx-auto">
+
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Controle Financeiro</h1>
+          <button
+            onClick={logout}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm"
+          >
+            Sair
+          </button>
+        </div>
 
         {/* RESUMO */}
         <div className="grid md:grid-cols-3 gap-4 mb-6">
@@ -129,8 +152,6 @@ const CORES = [
 
         {/* FORM */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold mb-6">Controle Financeiro</h1>
-
           <div className="grid md:grid-cols-3 gap-4">
             <input
               type="text"
@@ -196,37 +217,36 @@ const CORES = [
         </div>
 
         {/* GRÁFICO */}
-          {dadosGrafico.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-              <h2 className="text-2xl font-bold mb-4">Gastos por Categoria</h2>
-              <div className="flex justify-center">
-                <PieChart width={400} height={300}>
-                  <Pie
-                    data={dadosGrafico}
-                    cx={200}
-                    cy={140}
-                    outerRadius={110}
-                    dataKey="value"
-                    label={({ name, percent }) =>
-                      `${name} ${(percent * 100).toFixed(0)}%`
-                    }
-                  >
-                    {dadosGrafico.map((_, index) => (
-                      <Cell key={index} fill={CORES[index % CORES.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
-                  <Legend />
-                </PieChart>
-              </div>
+        {dadosGrafico.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <h2 className="text-2xl font-bold mb-4">Gastos por Categoria</h2>
+            <div className="flex justify-center">
+              <PieChart width={400} height={300}>
+                <Pie
+                  data={dadosGrafico}
+                  cx={200}
+                  cy={140}
+                  outerRadius={110}
+                  dataKey="value"
+                  label={({ name, percent }) =>
+                    `${name} ${(percent * 100).toFixed(0)}%`
+                  }
+                >
+                  {dadosGrafico.map((_, index) => (
+                    <Cell key={index} fill={CORES[index % CORES.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
+                <Legend />
+              </PieChart>
             </div>
-          )}
+          </div>
+        )}
 
         {/* LISTA */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <div className="flex flex-wrap gap-4 mb-4 items-center">
             <h2 className="text-2xl font-bold w-full">Despesas</h2>
-
             <select
               value={filtroTipo}
               onChange={(e) => setFiltroTipo(e.target.value)}
@@ -236,14 +256,12 @@ const CORES = [
               <option value="empresa">Empresa</option>
               <option value="pessoal">Pessoal</option>
             </select>
-
             <input
               type="month"
               value={filtroMes}
               onChange={(e) => setFiltroMes(e.target.value)}
               className="border p-2 rounded-lg"
             />
-
             <button
               onClick={() => { setFiltroTipo('todos'); setFiltroMes(''); }}
               className="text-sm text-gray-500 underline"
