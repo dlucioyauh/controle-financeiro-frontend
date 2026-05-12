@@ -5,6 +5,7 @@ function App() {
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
   const [tipo, setTipo] = useState('empresa');
+  const [categoria, setCategoria] = useState('Geral');
   const [despesas, setDespesas] = useState<any[]>([]);
   const [editandoId, setEditandoId] = useState<number | null>(null);
 
@@ -15,10 +16,11 @@ function App() {
 
   async function salvarDespesa() {
     if (editandoId) {
+
       await axios.put(`http://localhost:3001/despesas/${editandoId}`, {
         tipo,
         descricao,
-        categoria: 'Geral',
+        categoria,
         valor: Number(valor),
         formaPagamento: 'Pix',
         data: new Date(),
@@ -31,7 +33,7 @@ function App() {
       await axios.post('http://localhost:3001/despesas', {
         tipo,
         descricao,
-        categoria: 'Geral',
+        categoria,
         valor: Number(valor),
         formaPagamento: 'Pix',
         data: new Date(),
@@ -42,6 +44,7 @@ function App() {
     setDescricao('');
     setValor('');
     setTipo('empresa');
+    setCategoria('Geral');
 
     carregarDespesas();
   }
@@ -56,6 +59,7 @@ function App() {
     setDescricao(despesa.descricao);
     setValor(despesa.valor);
     setTipo(despesa.tipo);
+    setCategoria(despesa.categoria);
 
     setEditandoId(despesa.id);
   }
@@ -71,6 +75,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
+
       <div className="max-w-4xl mx-auto">
 
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
@@ -79,7 +84,7 @@ function App() {
             Controle Financeiro
           </h1>
 
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-4 gap-4">
 
             <input
               type="text"
@@ -109,6 +114,38 @@ function App() {
               <option value="pessoal">
                 Pessoal
               </option>
+            </select>
+
+            <select
+              value={categoria}
+              onChange={(e) => setCategoria(e.target.value)}
+              className="border p-3 rounded-lg"
+            >
+
+              <option value="Geral">
+                Geral
+              </option>
+
+              <option value="Alimentação">
+                Alimentação
+              </option>
+
+              <option value="Mercado">
+                Mercado
+              </option>
+
+              <option value="Internet">
+                Internet
+              </option>
+
+              <option value="Transporte">
+                Transporte
+              </option>
+
+              <option value="Investimento">
+                Investimento
+              </option>
+
             </select>
 
           </div>
@@ -156,7 +193,7 @@ function App() {
                   </p>
 
                   <p className="text-sm text-gray-500">
-                    {despesa.tipo}
+                    {despesa.tipo} • {despesa.categoria}
                   </p>
 
                 </div>
@@ -192,6 +229,7 @@ function App() {
         </div>
 
       </div>
+
     </div>
   );
 }
