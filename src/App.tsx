@@ -229,14 +229,14 @@ function App() {
                   outerRadius={110}
                   dataKey="value"
                   label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
+                    `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
                   }
                 >
                   {dadosGrafico.map((_, index) => (
                     <Cell key={index} fill={CORES[index % CORES.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
+                <Tooltip formatter={(value) => `R$ ${Number(value).toFixed(2)}`} />
                 <Legend />
               </PieChart>
             </div>
