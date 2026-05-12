@@ -6,6 +6,7 @@ function App() {
   const [valor, setValor] = useState('');
   const [tipo, setTipo] = useState('empresa');
   const [despesas, setDespesas] = useState<any[]>([]);
+  const [editandoId, setEditandoId] = useState<number | null>(null);
 
   async function carregarDespesas() {
     const response = await axios.get('http://localhost:3001/despesas');
@@ -13,17 +14,34 @@ function App() {
   }
 
   async function salvarDespesa() {
-    await axios.post('http://localhost:3001/despesas', {
-      tipo,
-      descricao,
-      categoria: 'Geral',
-      valor: Number(valor),
-      formaPagamento: 'Pix',
-      data: new Date(),
-    });
+    if (editandoId) {
+      await axios.put(`http://localhost:3001/despesas/${editandoId}`, {
+        tipo,
+        descricao,
+        categoria: 'Geral',
+        valor: Number(valor),
+        formaPagamento: 'Pix',
+        data: new Date(),
+      });
+
+      setEditandoId(null);
+
+    } else {
+
+      await axios.post('http://localhost:3001/despesas', {
+        tipo,
+        descricao,
+        categoria: 'Geral',
+        valor: Number(valor),
+        formaPagamento: 'Pix',
+        data: new Date(),
+      });
+
+    }
 
     setDescricao('');
     setValor('');
+    setTipo('empresa');
 
     carregarDespesas();
   }
@@ -32,6 +50,14 @@ function App() {
     await axios.delete(`http://localhost:3001/despesas/${id}`);
 
     carregarDespesas();
+  }
+
+  async function editarDespesa(despesa: any) {
+    setDescricao(despesa.descricao);
+    setValor(despesa.valor);
+    setTipo(despesa.tipo);
+
+    setEditandoId(despesa.id);
   }
 
   useEffect(() => {
@@ -48,6 +74,7 @@ function App() {
       <div className="max-w-4xl mx-auto">
 
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+
           <h1 className="text-3xl font-bold mb-6">
             Controle Financeiro
           </h1>
@@ -90,11 +117,13 @@ function App() {
             onClick={salvarDespesa}
             className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl"
           >
-            Salvar Despesa
+            {editandoId ? 'Atualizar Despesa' : 'Salvar Despesa'}
           </button>
+
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+
           <h2 className="text-2xl font-bold mb-2">
             Total
           </h2>
@@ -102,9 +131,11 @@ function App() {
           <p className="text-3xl text-green-600 font-bold">
             R$ {total.toFixed(2)}
           </p>
+
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-6">
+
           <h2 className="text-2xl font-bold mb-4">
             Despesas
           </h2>
@@ -119,6 +150,7 @@ function App() {
               >
 
                 <div>
+
                   <p className="font-bold">
                     {despesa.descricao}
                   </p>
@@ -126,6 +158,7 @@ function App() {
                   <p className="text-sm text-gray-500">
                     {despesa.tipo}
                   </p>
+
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -133,6 +166,13 @@ function App() {
                   <p className="font-bold text-red-600">
                     R$ {Number(despesa.valor).toFixed(2)}
                   </p>
+
+                  <button
+                    onClick={() => editarDespesa(despesa)}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg"
+                  >
+                    Editar
+                  </button>
 
                   <button
                     onClick={() => deletarDespesa(despesa.id)}
@@ -148,6 +188,7 @@ function App() {
             ))}
 
           </div>
+
         </div>
 
       </div>
