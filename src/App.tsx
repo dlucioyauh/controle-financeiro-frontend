@@ -10,6 +10,8 @@ function App() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [data, setData] = useState('');
   const [formaPagamento, setFormaPagamento] = useState('Pix');
+  const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [filtroMes, setFiltroMes] = useState('');
 
   async function carregarDespesas() {
     const response = await axios.get('http://localhost:3001/despesas');
@@ -79,6 +81,12 @@ function App() {
   const totalPessoal = despesas
     .filter((item) => item.tipo === 'pessoal')
     .reduce((acc, item) => acc + (Number(item.valor) || 0), 0);
+
+  const despesasFiltradas = despesas.filter((item) => {
+    const tipoOk = filtroTipo === 'todos' || item.tipo === filtroTipo;
+    const mesOk = !filtroMes || item.data?.slice(0, 7) === filtroMes;
+    return tipoOk && mesOk;
+  });
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -176,9 +184,36 @@ function App() {
 
         {/* LISTA */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold mb-4">Despesas</h2>
+          <div className="flex flex-wrap gap-4 mb-4 items-center">
+            <h2 className="text-2xl font-bold w-full">Despesas</h2>
+
+            <select
+              value={filtroTipo}
+              onChange={(e) => setFiltroTipo(e.target.value)}
+              className="border p-2 rounded-lg"
+            >
+              <option value="todos">Todos</option>
+              <option value="empresa">Empresa</option>
+              <option value="pessoal">Pessoal</option>
+            </select>
+
+            <input
+              type="month"
+              value={filtroMes}
+              onChange={(e) => setFiltroMes(e.target.value)}
+              className="border p-2 rounded-lg"
+            />
+
+            <button
+              onClick={() => { setFiltroTipo('todos'); setFiltroMes(''); }}
+              className="text-sm text-gray-500 underline"
+            >
+              Limpar filtros
+            </button>
+          </div>
+
           <div className="space-y-3">
-            {despesas.map((despesa) => (
+            {despesasFiltradas.map((despesa) => (
               <div
                 key={despesa.id}
                 className="border rounded-xl p-4 flex justify-between items-center"
@@ -208,6 +243,12 @@ function App() {
                 </div>
               </div>
             ))}
+
+            {despesasFiltradas.length === 0 && (
+              <p className="text-center text-gray-400 py-6">
+                Nenhuma despesa encontrada.
+              </p>
+            )}
           </div>
         </div>
 
