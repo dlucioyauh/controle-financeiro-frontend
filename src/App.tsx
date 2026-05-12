@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 
 function App() {
   const [descricao, setDescricao] = useState('');
@@ -87,6 +88,18 @@ function App() {
     const mesOk = !filtroMes || item.data?.slice(0, 7) === filtroMes;
     return tipoOk && mesOk;
   });
+
+  const dadosGrafico = Object.entries(
+  despesasFiltradas.reduce((acc: Record<string, number>, item) => {
+    acc[item.categoria] = (acc[item.categoria] || 0) + Number(item.valor);
+    return acc;
+  }, {})
+).map(([name, value]) => ({ name, value }));
+
+const CORES = [
+  '#6366f1', '#22c55e', '#f59e0b', '#ef4444',
+  '#3b82f6', '#ec4899', '#14b8a6',
+];
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -181,6 +194,33 @@ function App() {
             {editandoId !== null ? 'Atualizar Despesa' : 'Salvar Despesa'}
           </button>
         </div>
+
+        {/* GRÁFICO */}
+          {dadosGrafico.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+              <h2 className="text-2xl font-bold mb-4">Gastos por Categoria</h2>
+              <div className="flex justify-center">
+                <PieChart width={400} height={300}>
+                  <Pie
+                    data={dadosGrafico}
+                    cx={200}
+                    cy={140}
+                    outerRadius={110}
+                    dataKey="value"
+                    label={({ name, percent }) =>
+                      `${name} ${(percent * 100).toFixed(0)}%`
+                    }
+                  >
+                    {dadosGrafico.map((_, index) => (
+                      <Cell key={index} fill={CORES[index % CORES.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
+                  <Legend />
+                </PieChart>
+              </div>
+            </div>
+          )}
 
         {/* LISTA */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
