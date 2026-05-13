@@ -49,7 +49,6 @@ function App() {
     setCategoria('Geral');
     setData('');
     setFormaPagamento('Pix');
-
     carregarDespesas();
   }
 
@@ -221,16 +220,13 @@ function App() {
           <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6 mb-6">
             <h2 className="text-xl md:text-2xl font-bold mb-4">Gastos por Categoria</h2>
             <div className="flex justify-center overflow-x-auto">
-              <PieChart width={300} height={250}>
+              <PieChart width={300} height={280}>
                 <Pie
                   data={dadosGrafico}
                   cx={150}
                   cy={110}
                   outerRadius={90}
                   dataKey="value"
-                  label={({ name, percent }) =>
-                    `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-                  }
                 >
                   {dadosGrafico.map((_, index) => (
                     <Cell key={index} fill={CORES[index % CORES.length]} />
