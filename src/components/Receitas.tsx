@@ -142,7 +142,7 @@ export default function Receitas() {
 
       {/* Formulário */}
       {showForm && (
-        <div className="bg-[#0f172a] rounded-2xl p-6 border border-gray-800 space-y-6">
+        <div className="bg-[#0f172a] rounded-2xl p-6 border border-white/10 space-y-6">
           <h3 className="text-lg font-semibold text-white">
             {editandoId ? '✏️ Editar Receita' : '➕ Nova Receita'}
           </h3>
@@ -313,7 +313,7 @@ export default function Receitas() {
       )}
 
       {/* Lista de receitas */}
-      <div className="bg-[#0f172a] rounded-2xl p-6 border border-gray-800">
+      <div className="bg-[#0f172a] rounded-2xl p-6 border border-white/10">
         <h3 className="text-lg font-semibold text-white mb-4">
           Receitas Cadastradas ({receitas.length})
         </h3>

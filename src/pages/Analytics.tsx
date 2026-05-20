@@ -1,138 +1,197 @@
 import { useState, useEffect } from 'react';
-import api from '../api';
+import api from '../api'; // Ajuste o caminho se necessário para o seu arquivo api.ts
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  LineChart, Line, PieChart, Pie, Cell 
+} from 'recharts';
+import { Calendar, DollarSign, ShoppingBag, TrendingUp, RefreshCw } from 'lucide-react';
 
-interface Venda {
-  id: string;
-  produto: string;
-  quantidade: number;
-  precoUnitario: number;
-  valorTotal: number;
-  canalVenda: string;
-  contextoData: string;
-  dataVenda: string;
+interface AnalyticsData {
+  totalReceita: number;
+  totalVendas: number;
+  ticketMedio: number;
+  produtosMaisVendidos: Array<{ nome: string; quantidade: number; receita: number }>;
+  canaisMap: Record<string, number>;
+  vendasPorDia: Record<string, number>;
 }
 
 export default function Analytics() {
-  const [vendas, setVendas] = useState<Venda[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Define o intervalo padrão: últimos 30 dias
+  const hoje = new Date().toISOString().split('T')[0];
+  const trintaDiasAtras = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  const [dataInicio, setDataInicio] = useState(trintaDiasAtras);
+  const [dataFim, setDataFim] = useState(hoje);
+  const [loading, setLoading] = useState(false);
+  const [dados, setDados] = useState<AnalyticsData | null>(null);
+
+  const carregarDados = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get(`/vendas/estatisticas`, {
+        params: { dataInicio, dataFim }
+      });
+      setDados(response.data);
+    } catch (error) {
+      console.error("Erro ao carregar dados do analytics:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    api.get('/vendas')
-      .then((response) => {
-        setVendas(response.data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Erro ao buscar dados de vendas:", error);
-        setLoading(false);
-      });
+    carregarDados();
   }, []);
 
-  const faturamentoTotal = vendas.reduce((acc, v) => acc + Number(v.valorTotal), 0);
-  const totalProdutosVendidos = vendas.reduce((acc, v) => acc + v.quantidade, 0);
-  const ticketMedio = vendas.length > 0 ? faturamentoTotal / vendas.length : 0;
+  // Formata o mapa de canais para o formato que o PieChart aceita
+  const dadosPizza = dados?.canaisMap 
+    ? Object.entries(dados.canaisMap).map(([name, value]) => ({ name, value }))
+    : [];
 
-  const vendasPorContexto = vendas.reduce((acc: Record<string, number>, v) => {
-    const contexto = v.contextoData || 'Dias Comuns';
-    acc[contexto] = (acc[contexto] || 0) + Number(v.valorTotal);
-    return acc;
-  }, {});
+  // Formata o mapa de vendas diárias para o LineChart
+  const dadosLinha = dados?.vendasPorDia
+    ? Object.entries(dados.vendasPorDia).map(([data, valor]) => ({ data, valor }))
+    : [];
 
-  const produtosMaisVendidos = vendas.reduce((acc: Record<string, { qtd: number; total: number }>, v) => {
-    if (!acc[v.produto]) {
-      acc[v.produto] = { qtd: 0, total: 0 };
-    }
-    acc[v.produto].qtd += v.quantidade;
-    acc[v.produto].total += Number(v.valorTotal);
-    return acc;
-  }, {});
-
-  if (loading) {
-    return (
-      <div className="text-center text-gray-500 py-10 text-xs animate-pulse">
-        Carregando dados estatísticos...
-      </div>
-    );
-  }
+  const CORES_PIZZA = ['#06b6d4', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-white">Análise Estatística</h2>
-        <p className="text-gray-400 text-sm mt-1">Dados de faturamento, faturamento por datas festivas e produtos.</p>
-      </div>
-
-      {/* Cards de Métricas Principais */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-gray-900 p-5 rounded-2xl border border-gray-800">
-          <p className="text-gray-400 text-[10px] font-semibold uppercase tracking-wider">Entrada em Caixa</p>
-          <p className="text-xl md:text-2xl font-bold text-emerald-400 mt-1">
-            R$ {faturamentoTotal.toFixed(2)}
-          </p>
+    <div className="space-y-6 text-slate-200">
+      {/* Topo / Filtro de Data */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-white">Analytics</h1>
+          <p className="text-xs text-slate-400">Desempenho comercial e financeiro do seu negócio.</p>
         </div>
         
-        <div className="bg-gray-900 p-5 rounded-2xl border border-gray-800">
-          <p className="text-gray-400 text-[10px] font-semibold uppercase tracking-wider">Itens Vendidos</p>
-          <p className="text-xl md:text-2xl font-bold text-sky-400 mt-1">
-            {totalProdutosVendidos} <span className="text-xs font-normal text-gray-500">unid.</span>
-          </p>
-        </div>
-
-        <div className="bg-gray-900 p-5 rounded-2xl border border-gray-800">
-          <p className="text-gray-400 text-[10px] font-semibold uppercase tracking-wider">Ticket Médio</p>
-          <p className="text-xl md:text-2xl font-bold text-amber-400 mt-1">
-            R$ {ticketMedio.toFixed(2)}
-          </p>
+        <div className="flex items-center gap-2 flex-wrap text-xs">
+          <div className="flex items-center gap-1 bg-[#020617] border border-slate-700 rounded px-2 py-1">
+            <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">De:</span>
+            <input 
+              type="date" 
+              value={dataInicio} 
+              onChange={(e) => setDataInicio(e.target.value)}
+              className="bg-transparent text-slate-200 focus:outline-none"
+            />
+          </div>
+          <div className="flex items-center gap-1 bg-[#020617] border border-slate-700 rounded px-2 py-1">
+            <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Até:</span>
+            <input 
+              type="date" 
+              value={dataFim} 
+              onChange={(e) => setDataFim(e.target.value)}
+              className="bg-transparent text-slate-200 focus:outline-none"
+            />
+          </div>
+          <button 
+            onClick={carregarDados}
+            disabled={loading}
+            className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded font-medium transition"
+          >
+            <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Filtrando...' : 'Filtrar'}
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Sazonalidade */}
-        <div className="bg-gray-900 p-5 rounded-2xl border border-gray-800">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-gray-300 mb-0.5">📊 Faturamento por Sazonalidade</h3>
-          <p className="text-gray-500 text-[11px] mb-4">Performance em datas comemorativas vs períodos normais.</p>
-          
-          <div className="space-y-2">
-            {Object.keys(vendasPorContexto).length === 0 ? (
-              <p className="text-gray-500 text-xs py-2 text-center">Nenhuma venda registrada.</p>
+      {/* Cards de Resumo */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Faturamento Total</p>
+            <h3 className="text-xl font-bold text-white mt-1">R$ {(dados?.totalReceita || 0).toFixed(2)}</h3>
+          </div>
+          <div className="p-2 bg-blue-600/10 rounded-lg text-blue-500">
+            <DollarSign className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Volume de Pedidos</p>
+            <h3 className="text-xl font-bold text-white mt-1">{dados?.totalVendas || 0}</h3>
+          </div>
+          <div className="p-2 bg-cyan-600/10 rounded-lg text-cyan-400">
+            <ShoppingBag className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Ticket Médio</p>
+            <h3 className="text-xl font-bold text-white mt-1">R$ {(dados?.ticketMedio || 0).toFixed(2)}</h3>
+          </div>
+          <div className="p-2 bg-emerald-600/10 rounded-lg text-emerald-500">
+            <TrendingUp className="h-5 w-5" />
+          </div>
+        </div>
+      </div>
+
+      {/* Zona dos Gráficos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Gráfico de Linha - Faturamento por Dia */}
+        <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Evolução de Faturamento (Diário)</h4>
+          <div className="h-64 text-xs">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={dadosLinha}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis dataKey="data" stroke="#64748b" fontSize={10} />
+                <YAxis stroke="#64748b" fontSize={10} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }} />
+                <Line type="monotone" dataKey="valor" stroke="#3b82f6" name="Faturamento R$" strokeWidth={2} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Gráfico de Rosca/Pizza - Vendas por Canal */}
+        <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Participação por Canal de Venda</h4>
+          <div className="h-64 text-xs flex items-center justify-center">
+            {dadosPizza.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={dadosPizza}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {dadosPizza.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={CORES_PIZZA[index % CORES_PIZZA.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `R$ ${Number(value).toFixed(2)}`} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }} />
+                  <Legend wrapperStyle={{ fontSize: '10px' }} />
+                </PieChart>
+              </ResponsiveContainer>
             ) : (
-              Object.entries(vendasPorContexto).map(([evento, valor]) => (
-                <div key={evento} className="flex justify-between items-center p-3 bg-gray-800 rounded-xl border border-gray-700">
-                  <span className="text-xs text-white">{evento}</span>
-                  <span className="text-emerald-400 font-bold text-xs">
-                    R$ {valor.toFixed(2)}
-                  </span>
-                </div>
-              ))
+              <p className="text-xs text-slate-500">Nenhuma venda registrada no período.</p>
             )}
           </div>
         </div>
 
-        {/* Ranking de Produtos */}
-        <div className="bg-gray-900 p-5 rounded-2xl border border-gray-800">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-gray-300 mb-0.5">🏆 Líderes de Venda</h3>
-          <p className="text-gray-500 text-[11px] mb-4">Itens que mais giram e trazem retorno financeiro.</p>
-          
-          <div className="space-y-2">
-            {Object.keys(produtosMaisVendidos).length === 0 ? (
-              <p className="text-gray-500 text-xs py-2 text-center">Nenhum produto vendido.</p>
-            ) : (
-              Object.entries(produtosMaisVendidos)
-                .sort((a, b) => b[1].qtd - a[1].qtd)
-                .map(([nome, dados]) => (
-                  <div key={nome} className="flex justify-between items-center p-3 bg-gray-800 rounded-xl border border-gray-700">
-                    <div>
-                      <p className="text-xs font-medium text-white">{nome}</p>
-                      <p className="text-[10px] text-gray-500">{dados.qtd} saídas</p>
-                    </div>
-                    <span className="text-gray-300 font-semibold text-xs">
-                      R$ {dados.total.toFixed(2)}
-                    </span>
-                  </div>
-                ))
-            )}
+        {/* Gráfico de Barras - Produtos Mais Vendidos */}
+        <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 lg:col-span-2">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Top 10 Produtos Mais Vendidos (Quantidade)</h4>
+          <div className="h-72 text-xs">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dados?.produtosMaisVendidos || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis dataKey="nome" stroke="#64748b" fontSize={10} tickLine={false} />
+                <YAxis stroke="#64748b" fontSize={10} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }} />
+                <Bar dataKey="quantidade" fill="#06b6d4" name="Unidades Vendidas" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
+
       </div>
     </div>
   );
