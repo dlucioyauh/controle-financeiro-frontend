@@ -1,100 +1,111 @@
-export function Dashboard() {
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+} from 'recharts';
+
+const data = [
+  { mes: 'Jan', valor: 1200 },
+  { mes: 'Fev', valor: 2100 },
+  { mes: 'Mar', valor: 1800 },
+  { mes: 'Abr', valor: 3200 },
+  { mes: 'Mai', valor: 4100 },
+];
+
+export default function Dashboard() {
   return (
-    <div>
+    <div className="space-y-8">
 
-      <div className="flex items-center justify-between mb-10">
+      <div>
 
-        <div>
-          <h1 className="text-5xl font-black">
-            Dashboard
-          </h1>
+        <h1 className="text-5xl font-black">
+          Dashboard
+        </h1>
 
-          <p className="text-zinc-400 mt-2">
-            Controle financeiro inteligente
-          </p>
-        </div>
-
-        <button className="bg-cyan-500 hover:bg-cyan-400 transition-all px-6 py-4 rounded-2xl font-bold shadow-lg shadow-cyan-500/20">
-          Nova Venda
-        </button>
+        <p className="text-zinc-400 mt-3">
+          Sistema SaaS Financeiro
+        </p>
 
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid md:grid-cols-3 gap-6">
 
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
-          <p className="text-zinc-400 mb-2">
-            Receita Total
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+
+          <p className="text-zinc-400">
+            Receita Mensal
           </p>
 
-          <h2 className="text-4xl font-black text-green-400">
-            R$ 12.480
+          <h2 className="text-4xl font-black text-cyan-400 mt-4">
+            R$ 4.100
           </h2>
+
         </div>
 
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
-          <p className="text-zinc-400 mb-2">
-            Despesas
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+
+          <p className="text-zinc-400">
+            Vendas
           </p>
 
-          <h2 className="text-4xl font-black text-red-400">
-            R$ 3.240
+          <h2 className="text-4xl font-black text-green-400 mt-4">
+            128
           </h2>
+
         </div>
 
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
-          <p className="text-zinc-400 mb-2">
-            Lucro
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+
+          <p className="text-zinc-400">
+            Ticket Médio
           </p>
 
-          <h2 className="text-4xl font-black text-cyan-400">
-            R$ 9.240
+          <h2 className="text-4xl font-black text-purple-400 mt-4">
+            R$ 42
           </h2>
+
         </div>
 
       </div>
 
-      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
+      <div className="bg-white/5 border border-white/10 rounded-3xl p-6 h-[420px]">
 
         <h2 className="text-2xl font-bold mb-6">
-          Últimas movimentações
+          Receita Mensal
         </h2>
 
-        <div className="space-y-4">
+        <ResponsiveContainer width="100%" height="100%">
 
-          <div className="bg-black/20 rounded-2xl p-5 flex justify-between">
-            <div>
-              <p className="font-bold">
-                Venda Brownie Gourmet
-              </p>
+          <LineChart data={data}>
 
-              <p className="text-zinc-400 text-sm">
-                iFood
-              </p>
-            </div>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#27272a"
+            />
 
-            <p className="text-green-400 font-bold">
-              + R$ 120
-            </p>
-          </div>
+            <XAxis
+              dataKey="mes"
+              stroke="#a1a1aa"
+            />
 
-          <div className="bg-black/20 rounded-2xl p-5 flex justify-between">
-            <div>
-              <p className="font-bold">
-                Compra Ingredientes
-              </p>
+            <YAxis stroke="#a1a1aa" />
 
-              <p className="text-zinc-400 text-sm">
-                Mercado
-              </p>
-            </div>
+            <Tooltip />
 
-            <p className="text-red-400 font-bold">
-              - R$ 80
-            </p>
-          </div>
+            <Line
+              type="monotone"
+              dataKey="valor"
+              stroke="#06b6d4"
+              strokeWidth={4}
+            />
 
-        </div>
+          </LineChart>
+
+        </ResponsiveContainer>
 
       </div>
 

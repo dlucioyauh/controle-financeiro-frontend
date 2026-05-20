@@ -1,92 +1,85 @@
 import { Outlet } from 'react-router-dom';
 
 import {
-  LayoutDashboard,
+  Home,
   Wallet,
   ShoppingCart,
   BarChart3,
-  Package,
   Settings,
 } from 'lucide-react';
 
 export function MainLayout() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#111827] text-white flex">
+    <div className="min-h-screen bg-[#020617] text-white flex">
 
-      <aside className="w-72 bg-white/5 backdrop-blur-2xl border-r border-white/10 p-8 flex flex-col justify-between">
+      <aside className="hidden md:flex w-72 bg-[#0f172a] border-r border-white/10 flex-col p-8">
 
-        <div>
+        <h1 className="text-4xl font-black text-cyan-400 mb-12">
+          IonFinance
+        </h1>
 
-          <div className="mb-14">
+        <nav className="space-y-3">
 
-            <h1 className="text-4xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-              IonFinance
-            </h1>
+          <button className="w-full flex items-center gap-3 bg-cyan-500/10 hover:bg-cyan-500/20 transition-all text-cyan-400 px-4 py-4 rounded-2xl">
 
-            <p className="text-zinc-400 mt-2">
-              SaaS Financeiro Inteligente
-            </p>
+            <Home size={22} />
 
-          </div>
+            Dashboard
 
-          <nav className="space-y-3">
+          </button>
 
-            <button className="w-full flex items-center gap-4 bg-cyan-500/20 hover:bg-cyan-500/30 transition-all border border-cyan-400/20 rounded-2xl p-4 text-left">
+          <button className="w-full flex items-center gap-3 hover:bg-white/5 transition-all px-4 py-4 rounded-2xl">
 
-              <LayoutDashboard size={22} />
+            <Wallet size={22} />
 
-              Dashboard
+            Financeiro
 
-            </button>
+          </button>
 
-            <button className="w-full flex items-center gap-4 bg-white/5 hover:bg-white/10 transition-all rounded-2xl p-4 text-left">
+          <button className="w-full flex items-center gap-3 hover:bg-white/5 transition-all px-4 py-4 rounded-2xl">
 
-              <Wallet size={22} />
+            <ShoppingCart size={22} />
 
-              Financeiro
+            Vendas
 
-            </button>
+          </button>
 
-            <button className="w-full flex items-center gap-4 bg-white/5 hover:bg-white/10 transition-all rounded-2xl p-4 text-left">
+          <button className="w-full flex items-center gap-3 hover:bg-white/5 transition-all px-4 py-4 rounded-2xl">
 
-              <ShoppingCart size={22} />
+            <BarChart3 size={22} />
 
-              Vendas
+            Analytics
 
-            </button>
+          </button>
 
-            <button className="w-full flex items-center gap-4 bg-white/5 hover:bg-white/10 transition-all rounded-2xl p-4 text-left">
+        </nav>
 
-              <Package size={22} />
+        <div className="mt-auto">
 
-              Produtos
+          <button className="w-full flex items-center gap-3 hover:bg-white/5 transition-all px-4 py-4 rounded-2xl text-zinc-400">
 
-            </button>
+            <Settings size={22} />
 
-            <button className="w-full flex items-center gap-4 bg-white/5 hover:bg-white/10 transition-all rounded-2xl p-4 text-left">
+            Configurações
 
-              <BarChart3 size={22} />
-
-              Analytics
-
-            </button>
-
-          </nav>
+          </button>
 
         </div>
 
-        <button className="w-full flex items-center gap-4 bg-white/5 hover:bg-white/10 transition-all rounded-2xl p-4 text-left">
-
-          <Settings size={22} />
-
-          Configurações
-
-        </button>
-
       </aside>
 
-      <main className="flex-1 p-10 overflow-auto">
+      <main className="flex-1 p-4 md:p-10">
+
+        <div className="md:hidden mb-6">
+
+          <h1 className="text-3xl font-black text-cyan-400">
+            IonFinance
+          </h1>
+
+        </div>
+
         <Outlet />
+
       </main>
 
     </div>
