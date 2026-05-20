@@ -1,88 +1,102 @@
-import { useEffect, useState } from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
-import api from '../api';
-
-const CORES = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899', '#14b8a6'];
-
-export default function Dashboard() {
-  const [despesas, setDespesas] = useState<any[]>([]);
-
-  useEffect(() => {
-    api.get('/despesas').then((r) => setDespesas(r.data));
-  }, []);
-
-  const total = despesas.reduce((acc, item) => acc + Number(item.valor), 0);
-  const totalEmpresa = despesas.filter((i) => i.tipo === 'empresa').reduce((acc, i) => acc + Number(i.valor), 0);
-  const totalPessoal = despesas.filter((i) => i.tipo === 'pessoal').reduce((acc, i) => acc + Number(i.valor), 0);
-
-  const dadosGrafico = Object.entries(
-    despesas.reduce((acc: Record<string, number>, item) => {
-      acc[item.categoria] = (acc[item.categoria] || 0) + Number(item.valor);
-      return acc;
-    }, {})
-  ).map(([name, value]) => ({ name, value }));
-
-  const cards = [
-    { label: 'Total Geral', value: total, icon: DollarSign, color: 'from-blue-600 to-blue-400', shadow: 'shadow-blue-500/20' },
-    { label: 'Empresa', value: totalEmpresa, icon: TrendingUp, color: 'from-purple-600 to-purple-400', shadow: 'shadow-purple-500/20' },
-    { label: 'Pessoal', value: totalPessoal, icon: TrendingDown, color: 'from-pink-600 to-pink-400', shadow: 'shadow-pink-500/20' },
-  ];
-
+export function Dashboard() {
   return (
-    <div className="space-y-8">
+    <div>
 
-      <div>
-        <h2 className="text-2xl font-bold text-white">Dashboard</h2>
-        <p className="text-gray-400 text-sm mt-1">Visão geral das suas finanças</p>
-      </div>
+      <div className="flex items-center justify-between mb-10">
 
-      {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {cards.map(({ label, value, icon: Icon, color, shadow }) => (
-          <div key={label} className={`bg-gradient-to-br ${color} rounded-2xl p-6 shadow-lg ${shadow}`}>
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-white/70 text-sm font-medium">{label}</p>
-                <p className="text-white text-2xl font-bold mt-1">
-                  R$ {value.toFixed(2)}
-                </p>
-              </div>
-              <div className="bg-white/20 rounded-xl p-2">
-                <Icon size={20} className="text-white" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+        <div>
+          <h1 className="text-5xl font-black">
+            Dashboard
+          </h1>
 
-      {/* Gráfico */}
-      {dadosGrafico.length > 0 && (
-        <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
-          <h3 className="text-lg font-semibold text-white mb-6">Gastos por Categoria</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={dadosGrafico}
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                dataKey="value"
-              >
-                {dadosGrafico.map((_, index) => (
-                  <Cell key={index} fill={CORES[index % CORES.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value) => `R$ ${Number(value).toFixed(2)}`}
-                contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px' }}
-                labelStyle={{ color: '#fff' }}
-              />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+          <p className="text-zinc-400 mt-2">
+            Controle financeiro inteligente
+          </p>
         </div>
-      )}
+
+        <button className="bg-cyan-500 hover:bg-cyan-400 transition-all px-6 py-4 rounded-2xl font-bold shadow-lg shadow-cyan-500/20">
+          Nova Venda
+        </button>
+
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
+          <p className="text-zinc-400 mb-2">
+            Receita Total
+          </p>
+
+          <h2 className="text-4xl font-black text-green-400">
+            R$ 12.480
+          </h2>
+        </div>
+
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
+          <p className="text-zinc-400 mb-2">
+            Despesas
+          </p>
+
+          <h2 className="text-4xl font-black text-red-400">
+            R$ 3.240
+          </h2>
+        </div>
+
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
+          <p className="text-zinc-400 mb-2">
+            Lucro
+          </p>
+
+          <h2 className="text-4xl font-black text-cyan-400">
+            R$ 9.240
+          </h2>
+        </div>
+
+      </div>
+
+      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
+
+        <h2 className="text-2xl font-bold mb-6">
+          Últimas movimentações
+        </h2>
+
+        <div className="space-y-4">
+
+          <div className="bg-black/20 rounded-2xl p-5 flex justify-between">
+            <div>
+              <p className="font-bold">
+                Venda Brownie Gourmet
+              </p>
+
+              <p className="text-zinc-400 text-sm">
+                iFood
+              </p>
+            </div>
+
+            <p className="text-green-400 font-bold">
+              + R$ 120
+            </p>
+          </div>
+
+          <div className="bg-black/20 rounded-2xl p-5 flex justify-between">
+            <div>
+              <p className="font-bold">
+                Compra Ingredientes
+              </p>
+
+              <p className="text-zinc-400 text-sm">
+                Mercado
+              </p>
+            </div>
+
+            <p className="text-red-400 font-bold">
+              - R$ 80
+            </p>
+          </div>
+
+        </div>
+
+      </div>
 
     </div>
   );
