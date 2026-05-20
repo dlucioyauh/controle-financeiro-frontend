@@ -1,10 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState } from 'react';
+import { MainLayout } from './layouts/MainLayout';
 import Login from './Login';
-import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
-import Despesas from './pages/Despesas';
+import Financeiro from './pages/Financeiro';
+import Vendas from './pages/Vendas';
 import Precificacao from './pages/Precificacao';
+import Analytics from './pages/Analytics';
+import Configuracoes from './pages/Configuracoes';
 
 function App() {
   const [autenticado, setAutenticado] = useState(!!localStorage.getItem('token'));
@@ -21,10 +24,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<MainLayout onLogout={logout} />}>
+        <Route element={<MainLayout onLogout={logout} />}>
           <Route index element={<Dashboard />} />
-          <Route path="despesas" element={<Despesas />} />
-          <Route path="precificacao" element={<Precificacao />} />
+          <Route path="/financeiro" element={<Financeiro />} />
+          <Route path="/vendas" element={<Vendas />} />
+          <Route path="/precificacao" element={<Precificacao />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Route>
       </Routes>
