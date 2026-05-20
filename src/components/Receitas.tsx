@@ -259,7 +259,7 @@ export default function Receitas() {
                             />
                             <span>g</span>
                           </div>
-                          <span>R$ {custFatiaPersonalizada.toFixed(2)}</span>
+                          <span>R$ {custoFatiaPersonalizada.toFixed(2)}</span>
                         </div>
                       </>
                     ) : (
