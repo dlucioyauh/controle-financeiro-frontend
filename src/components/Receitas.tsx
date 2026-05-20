@@ -142,7 +142,7 @@ export default function Receitas() {
 
       {/* Formulário */}
       {showForm && (
-        <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800 space-y-6">
+        <div className="bg-[#0f172a] rounded-2xl p-6 border border-gray-800 space-y-6">
           <h3 className="text-lg font-semibold text-white">
             {editandoId ? '✏️ Editar Receita' : '➕ Nova Receita'}
           </h3>
@@ -248,7 +248,7 @@ export default function Receitas() {
                           <span>Custo a cada 100g de Bolo</span>
                           <span>R$ {((custoTotal / Number(rendimento)) * 100).toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between items-center gap-4 text-blue-400 font-bold bg-gray-900/40 p-2 rounded-lg mt-1">
+                        <div className="flex justify-between items-center gap-4 text-blue-400 font-bold bg-[#0f172a]/40 p-2 rounded-lg mt-1">
                           <div className="flex items-center gap-1">
                             <span>Custo por fatia de</span>
                             <input 
@@ -313,7 +313,7 @@ export default function Receitas() {
       )}
 
       {/* Lista de receitas */}
-      <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
+      <div className="bg-[#0f172a] rounded-2xl p-6 border border-gray-800">
         <h3 className="text-lg font-semibold text-white mb-4">
           Receitas Cadastradas ({receitas.length})
         </h3>
@@ -337,7 +337,7 @@ export default function Receitas() {
                     </p>
                     
                     {/* Exibição Analítica de Custos no Card */}
-                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 bg-gray-900/50 p-2.5 rounded-lg border border-gray-700/40 w-fit">
+                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 bg-[#0f172a]/50 p-2.5 rounded-lg border border-gray-700/40 w-fit">
                       <p className="text-[11px] text-gray-400">
                         Custo Receita: <span className="text-amber-400 font-bold">R$ {cTotal.toFixed(2)}</span>
                       </p>
