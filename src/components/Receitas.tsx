@@ -23,6 +23,9 @@ export default function Receitas() {
   const [ingSelecionado, setIngSelecionado] = useState('');
   const [ingQuantidade, setIngQuantidade] = useState('');
 
+  // Estado auxiliar para simular fatias de bolo no resumo de custos
+  const [pesoFatiaSimulada, setPesoFatiaSimulada] = useState('150');
+
   async function carregar() {
     const [r, i] = await Promise.all([
       api.get('/receitas'),
@@ -57,10 +60,18 @@ export default function Receitas() {
     setIngredientesReceita((prev) => prev.filter((_, i) => i !== index));
   }
 
+  // Lógica de Precificação Inteligente
   const custoIngredientes = ingredientesReceita.reduce((acc, i) => acc + i.custoTotal, 0);
   const custoFixos = custoIngredientes * (Number(custosFixosPorcentagem) / 100);
   const custoTotal = custoIngredientes + custoFixos + Number(maoDeObra || 0);
+  
+  // Calcula o custo base por unidade ou por grama
   const custoPorUnidade = rendimento ? custoTotal / Number(rendimento) : 0;
+
+  // Se for bolo por peso em gramas, calcula custo de fatias comuns (100g e 150g)
+  const isPesoGramas = unidadeRendimento === 'gramas';
+  const custoFatiaPersonalizada = isPesoGramas ? (custoTotal / Number(rendimento || 1)) * Number(pesoFatiaSimulada) : 0;
+
   const margemFinal = precoVendaFinal ? ((Number(precoVendaFinal) - custoPorUnidade) / Number(precoVendaFinal)) * 100 : 0;
   const margemParceiro = precoVendaParceiro ? ((Number(precoVendaParceiro) - custoPorUnidade) / Number(precoVendaParceiro)) * 100 : 0;
 
@@ -138,17 +149,28 @@ export default function Receitas() {
 
           {/* Dados básicos */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input type="text" placeholder="Nome da receita" value={nome}
+            <input type="text" placeholder="Nome da receita (ex: Brownie Tradicional, Bolo de Cenoura)" value={nome}
               onChange={(e) => setNome(e.target.value)} className={inputClass} />
             <input type="text" placeholder="Descrição (opcional)" value={descricao}
               onChange={(e) => setDescricao(e.target.value)} className={inputClass} />
-            <input type="number" placeholder="Rendimento (qtd de unidades)" value={rendimento}
-              onChange={(e) => setRendimento(e.target.value)} className={inputClass} />
+            
+            <input 
+              type="number" 
+              placeholder={unidadeRendimento === 'gramas' ? "Peso total da receita pronta (em gramas)" : "Quantidade total de rendimento"} 
+              value={rendimento}
+              onChange={(e) => setRendimento(e.target.value)} 
+              className={inputClass} 
+            />
+            
             <select value={unidadeRendimento} onChange={(e) => setUnidadeRendimento(e.target.value)} className={inputClass}>
-              <option value="unidades">Unidades</option>
-              <option value="fatias">Fatias</option>
-              <option value="porções">Porções</option>
+              <option value="unidades">Unidades Individuais (Ex: Brownies, Brigadeiros)</option>
+              <option value="gramas">Peso em Gramas (Ex: Bolos Inteiros, Tortas por Peso)</option>
+              <option value="Bolo P">Bolo Tamanho P</option>
+              <option value="Bolo M">Bolo Tamanho M</option>
+              <option value="Bolo G">Bolo Tamanho G</option>
+              <option value="fatias">Fatias Prontas</option>
             </select>
+
             <input type="number" placeholder="Mão de obra R$ (por receita)" value={maoDeObra}
               onChange={(e) => setMaoDeObra(e.target.value)} className={inputClass} />
             <div className="relative">
@@ -193,33 +215,59 @@ export default function Receitas() {
             ))}
           </div>
 
-          {/* Resumo de custos */}
+          {/* Resumo de custos Inteligente */}
           {custoIngredientes > 0 && (
             <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 space-y-2">
               <h4 className="text-white font-medium flex items-center gap-2">
-                <Calculator size={16} /> Resumo de Custos
+                <Calculator size={16} /> Resumo Analítico de Custos
               </h4>
               <div className="text-sm space-y-1">
                 <div className="flex justify-between text-gray-400">
-                  <span>Ingredientes</span>
+                  <span>Custo Bruto dos Ingredientes</span>
                   <span>R$ {custoIngredientes.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-400">
-                  <span>Custos fixos ({custosFixosPorcentagem}%)</span>
+                  <span>Custos fixos adicionais ({custosFixosPorcentagem}%)</span>
                   <span>R$ {custoFixos.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-400">
-                  <span>Mão de obra</span>
+                  <span>Mão de Obra aplicada</span>
                   <span>R$ {Number(maoDeObra || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-white font-bold border-t border-gray-700 pt-2 mt-2">
-                  <span>Custo total</span>
-                  <span>R$ {custoTotal.toFixed(2)}</span>
+                  <span>Custo Total da Receita Completa</span>
+                  <span className="text-lg text-amber-400">R$ {custoTotal.toFixed(2)}</span>
                 </div>
+
+                {/* Condicional para cálculo de Unidades vs Peso de Bolos */}
                 {rendimento && (
-                  <div className="flex justify-between text-blue-400 font-bold">
-                    <span>Custo por unidade</span>
-                    <span>R$ {custoPorUnidade.toFixed(2)}</span>
+                  <div className="border-t border-gray-700/50 pt-2 mt-2 space-y-1">
+                    {isPesoGramas ? (
+                      <>
+                        <div className="flex justify-between text-sky-400 font-medium">
+                          <span>Custo a cada 100g de Bolo</span>
+                          <span>R$ {((custoTotal / Number(rendimento)) * 100).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center gap-4 text-blue-400 font-bold bg-gray-900/40 p-2 rounded-lg mt-1">
+                          <div className="flex items-center gap-1">
+                            <span>Custo por fatia de</span>
+                            <input 
+                              type="number" 
+                              value={pesoFatiaSimulada} 
+                              onChange={(e) => setPesoFatiaSimulada(e.target.value)} 
+                              className="w-12 bg-gray-800 border border-gray-700 rounded text-center text-white text-xs p-0.5 focus:outline-none"
+                            />
+                            <span>g</span>
+                          </div>
+                          <span>R$ {custFatiaPersonalizada.toFixed(2)}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex justify-between text-blue-400 font-bold">
+                        <span>Custo Real por Unidade / Item ({unidadeRendimento})</span>
+                        <span>R$ {custoPorUnidade.toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -229,22 +277,22 @@ export default function Receitas() {
           {/* Preços de venda */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="text-gray-400 text-sm mb-1 block">Preço Cliente Final (R$)</label>
+              <label className="text-gray-400 text-sm mb-1 block">Preço Comercial Cliente Final (R$)</label>
               <input type="number" value={precoVendaFinal}
                 onChange={(e) => setPrecoVendaFinal(e.target.value)} className={inputClass} />
               {precoVendaFinal && (
                 <p className={`text-xs mt-1 ${margemFinal > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  Margem: {margemFinal.toFixed(1)}%
+                  Margem sobre Custo Base: {margemFinal.toFixed(1)}%
                 </p>
               )}
             </div>
             <div>
-              <label className="text-gray-400 text-sm mb-1 block">Preço Parceiro/Café (R$)</label>
+              <label className="text-gray-400 text-sm mb-1 block">Preço Comercial Parceiro/Café (R$)</label>
               <input type="number" value={precoVendaParceiro}
                 onChange={(e) => setPrecoVendaParceiro(e.target.value)} className={inputClass} />
               {precoVendaParceiro && (
                 <p className={`text-xs mt-1 ${margemParceiro > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  Margem: {margemParceiro.toFixed(1)}%
+                  Margem sobre Custo Base: {margemParceiro.toFixed(1)}%
                 </p>
               )}
             </div>
@@ -270,32 +318,65 @@ export default function Receitas() {
           Receitas Cadastradas ({receitas.length})
         </h3>
         <div className="space-y-3">
-          {receitas.map((r) => (
-            <div key={r.id}
-              className="bg-gray-800 rounded-xl p-4 border border-gray-700 hover:border-gray-600 transition-colors">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="font-semibold text-white">{r.nome}</p>
-                  {r.descricao && <p className="text-gray-400 text-sm mt-1">{r.descricao}</p>}
-                  <p className="text-gray-500 text-xs mt-1">Rende: {r.rendimento} {r.unidadeRendimento}</p>
+          {receitas.map((r) => {
+            // Cálculo dinâmico para exibição nos cards da lista
+            const cIng = (r.ingredientes || []).reduce((acc: number, i: any) => acc + (i.custoTotal || 0), 0);
+            const cFix = cIng * ((r.custosFixosPorcentagem || 10) / 100);
+            const cTotal = cIng + cFix + Number(r.maoDeObra || 0);
+            const cUnid = r.rendimento ? cTotal / r.rendimento : 0;
+
+            return (
+              <div key={r.id}
+                className="bg-gray-800 rounded-xl p-4 border border-gray-700 hover:border-gray-600 transition-colors">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-3">
+                  <div>
+                    <p className="font-semibold text-white text-base">{r.nome}</p>
+                    {r.descricao && <p className="text-gray-400 text-sm mt-0.5">{r.descricao}</p>}
+                    <p className="text-gray-500 text-xs mt-1">
+                      Rendimento: <span className="text-gray-300 font-medium">{r.rendimento} {r.unidadeRendimento}</span>
+                    </p>
+                    
+                    {/* Exibição Analítica de Custos no Card */}
+                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 bg-gray-900/50 p-2.5 rounded-lg border border-gray-700/40 w-fit">
+                      <p className="text-[11px] text-gray-400">
+                        Custo Receita: <span className="text-amber-400 font-bold">R$ {cTotal.toFixed(2)}</span>
+                      </p>
+                      {r.unidadeRendimento === 'gramas' ? (
+                        <p className="text-[11px] text-gray-400">
+                          Custo p/ Fatia (150g): <span className="text-blue-400 font-bold">R$ {(cUnid * 150).toFixed(2)}</span>
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-gray-400">
+                          Custo Unitário: <span className="text-blue-400 font-bold">R$ {cUnid.toFixed(2)}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-left sm:text-right whitespace-nowrap">
+                    <p className="text-emerald-400 font-bold text-lg">R$ {Number(r.precoVendaFinal || 0).toFixed(2)}</p>
+                    <p className="text-gray-500 text-xs">Venda Cliente Final</p>
+                    {r.precoVendaParceiro > 0 && (
+                      <p className="text-gray-400 text-xs mt-1">
+                        Parceiro: <span className="text-zinc-300 font-medium">R$ {Number(r.precoVendaParceiro).toFixed(2)}</span>
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-blue-400 font-bold">R$ {Number(r.precoVendaFinal || 0).toFixed(2)}</p>
-                  <p className="text-gray-500 text-xs">Cliente final</p>
+                
+                <div className="flex gap-2 mt-4">
+                  <button onClick={() => editar(r)}
+                    className="flex-1 flex items-center justify-center gap-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 py-2 rounded-lg text-sm transition-colors">
+                    <Pencil size={14} /> Editar
+                  </button>
+                  <button onClick={() => deletar(r.id)}
+                    className="flex-1 flex items-center justify-center gap-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 py-2 rounded-lg text-sm transition-colors">
+                    <Trash2 size={14} /> Excluir
+                  </button>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => editar(r)}
-                  className="flex-1 flex items-center justify-center gap-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 py-2 rounded-lg text-sm transition-colors">
-                  <Pencil size={14} /> Editar
-                </button>
-                <button onClick={() => deletar(r.id)}
-                  className="flex-1 flex items-center justify-center gap-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 py-2 rounded-lg text-sm transition-colors">
-                  <Trash2 size={14} /> Excluir
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {receitas.length === 0 && (
             <p className="text-center text-gray-500 py-10">Nenhuma receita cadastrada.</p>
           )}
