@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import api from '../api'; // Ajuste o caminho se necessário para o seu arquivo api.ts
+import api from '../api'; 
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell 
 } from 'recharts';
-import { Calendar, DollarSign, ShoppingBag, TrendingUp, RefreshCw } from 'lucide-react';
+import { DollarSign, ShoppingBag, TrendingUp, RefreshCw } from 'lucide-react'; // REMOVIDO: Calendar
 
 interface AnalyticsData {
   totalReceita: number;
@@ -16,7 +16,6 @@ interface AnalyticsData {
 }
 
 export default function Analytics() {
-  // Define o intervalo padrão: últimos 30 dias
   const hoje = new Date().toISOString().split('T')[0];
   const trintaDiasAtras = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -43,12 +42,10 @@ export default function Analytics() {
     carregarDados();
   }, []);
 
-  // Formata o mapa de canais para o formato que o PieChart aceita
   const dadosPizza = dados?.canaisMap 
     ? Object.entries(dados.canaisMap).map(([name, value]) => ({ name, value }))
     : [];
 
-  // Formata o mapa de vendas diárias para o LineChart
   const dadosLinha = dados?.vendasPorDia
     ? Object.entries(dados.vendasPorDia).map(([data, valor]) => ({ data, valor }))
     : [];
@@ -162,7 +159,8 @@ export default function Analytics() {
                     paddingAngle={4}
                     dataKey="value"
                   >
-                    {dadosPizza.map((entry, index) => (
+                    {/* MODIFICADO: Substituído 'entry' por '_' para silenciar o erro TS6133 */}
+                    {dadosPizza.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={CORES_PIZZA[index % CORES_PIZZA.length]} />
                     ))}
                   </Pie>
