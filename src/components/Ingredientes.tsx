@@ -48,7 +48,7 @@ export default function Ingredientes() {
 
     try {
       if (editandoId !== null) {
-        await api.put(`/ingredientes/${editandoId}`, payload);
+        await api.patch(`/ingredientes/${editandoId}`, payload);
         setEditandoId(null);
       } else {
         await api.post('/ingredientes', payload);
