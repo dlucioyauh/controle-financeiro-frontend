@@ -27,31 +27,59 @@ export default function Receitas() {
   const [pesoFatiaSimulada, setPesoFatiaSimulada] = useState('150');
 
   async function carregar() {
-    const [r, i] = await Promise.all([
-      api.get('/receitas'),
-      api.get('/ingredientes'),
-    ]);
-    setReceitas(r.data);
-    setIngredientes(i.data);
+    try {
+      const [r, i] = await Promise.all([
+        api.get('/receitas'),
+        api.get('/ingredientes'),
+      ]);
+      setReceitas(r.data);
+      setIngredientes(i.data);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+    }
   }
 
   function adicionarIngrediente() {
-    const ing = ingredientes.find((i) => i.id === Number(ingSelecionado));
+    // Tratando o ID como string ou número para garantir compatibilidade com o backend
+    const ing = ingredientes.find((i) => String(i.id) === String(ingSelecionado));
     if (!ing || !ingQuantidade) return;
 
-    const custoTotal = (Number(ingQuantidade) / (ing.unidade === 'g' || ing.unidade === 'ml' ? 1000 : 1)) * Number(ing.preco);
+    const precoBase = Number(ing.precoCompra ?? 0);
+    const qtdEmbalagem = Number(ing.quantidadeCompra ?? 1);
+    const uniMedida = ing.unidadeMedida ?? 'kg';
+    const qtdUsada = Number(ingQuantidade);
+
+    let custoTotal = 0;
+
+    // Lógica Inteligente de Conversão de Medidas
+    // Caso 1: Comprou em kg e usou em gramas (g)
+    if (uniMedida === 'kg' && uniMedida !== 'g') {
+      const precoPorGrama = precoBase / (qtdEmbalagem * 1000);
+      custoTotal = qtdUsada * precoPorGrama;
+    } 
+    // Caso 2: Comprou em litro e usou em mililitros (ml)
+    else if (uniMedida === 'litro' && uniMedida !== 'ml') {
+      const precoPorMl = precoBase / (qtdEmbalagem * 1000);
+      custoTotal = qtdUsada * precoPorMl;
+    } 
+    // Caso 3: Unidades diretas (g para g, ml para ml, un para un)
+    else {
+      const precoPorUnidadeMedida = precoBase / qtdEmbalagem;
+      custoTotal = qtdUsada * precoPorUnidadeMedida;
+    }
 
     setIngredientesReceita((prev) => [
       ...prev,
       {
         ingredienteId: ing.id,
         nome: ing.nome,
-        quantidade: Number(ingQuantidade),
-        unidade: ing.unidade,
-        custoUnitario: Number(ing.preco),
-        custoTotal,
+        quantidade: qtdUsada,
+        unidade: uniMedida,
+        custoUnitario: precoBase,
+        custoTotal: custoTotal,
       },
     ]);
+    
     setIngSelecionado('');
     setIngQuantidade('');
   }
@@ -61,7 +89,7 @@ export default function Receitas() {
   }
 
   // Lógica de Precificação Inteligente
-  const custoIngredientes = ingredientesReceita.reduce((acc, i) => acc + i.custoTotal, 0);
+  const custoIngredientes = ingredientesReceita.reduce((acc, i) => acc + (i.custoTotal || 0), 0);
   const custoFixos = custoIngredientes * (Number(custosFixosPorcentagem) / 100);
   const custoTotal = custoIngredientes + custoFixos + Number(maoDeObra || 0);
   
@@ -89,14 +117,19 @@ export default function Receitas() {
       precoVendaParceiro: Number(precoVendaParceiro || 0),
       ingredientes: ingredientesReceita,
     };
-    if (editandoId !== null) {
-      await api.put(`/receitas/${editandoId}`, payload);
-      setEditandoId(null);
-    } else {
-      await api.post('/receitas', payload);
+    try {
+      if (editandoId !== null) {
+        await api.put(`/receitas/${editandoId}`, payload);
+        setEditandoId(null);
+      } else {
+        await api.post('/receitas', payload);
+      }
+      resetForm();
+      carregar();
+    } catch (error) {
+      console.error("Erro ao salvar receita:", error);
+      alert("Erro ao salvar a receita. Verifique os dados.");
     }
-    resetForm();
-    carregar();
   }
 
   function resetForm() {
@@ -115,18 +148,27 @@ export default function Receitas() {
     setCustosFixosPorcentagem(String(r.custosFixosPorcentagem || 10));
     setPrecoVendaFinal(String(r.precoVendaFinal || ''));
     setPrecoVendaParceiro(String(r.precoVendaParceiro || ''));
-    setIngredientesReceita(r.ingredientes || []);
+    
+    // Mapeamento para garantir retrocompatibilidade caso edite dados parciais do banco
+    const ingsMapeados = (r.ingredientes || []).map((i: any) => ({
+      ...i,
+      custoTotal: i.custoTotal ?? (i.custoUnitario * i.quantidade)
+    }));
+    setIngredientesReceita(ingsMapeados);
+    
     setEditandoId(r.id); setShowForm(true);
   }
 
   async function deletar(id: number) {
-    await api.delete(`/receitas/${id}`);
-    carregar();
+    if (confirm('Deseja realmente excluir esta receita?')) {
+      await api.delete(`/receitas/${id}`);
+      carregar();
+    }
   }
 
   useEffect(() => { carregar(); }, []);
 
-  const inputClass = "bg-gray-800 border border-gray-700 text-white placeholder-gray-500 p-3 rounded-xl w-full focus:outline-none focus:border-blue-500 transition-colors";
+  const inputClass = "bg-gray-800 border border-gray-700 text-white placeholder-gray-500 p-3 rounded-xl w-full focus:outline-none focus:border-blue-500 transition-colors text-sm";
 
   return (
     <div className="space-y-6">
@@ -185,17 +227,22 @@ export default function Receitas() {
             <h4 className="text-white font-medium mb-3">Ingredientes da Receita</h4>
             <div className="flex gap-2 mb-3">
               <select value={ingSelecionado} onChange={(e) => setIngSelecionado(e.target.value)}
-                className="flex-1 bg-gray-800 border border-gray-700 text-white p-3 rounded-xl focus:outline-none focus:border-blue-500">
+                className="flex-1 bg-gray-800 border border-gray-700 text-white p-3 rounded-xl focus:outline-none focus:border-blue-500 text-sm">
                 <option value="">Selecione o ingrediente</option>
-                {ingredientes.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.nome} (R$ {Number(i.preco).toFixed(2)}/{i.unidade})
-                  </option>
-                ))}
+                {ingredientes.map((i) => {
+                  const preco = Number(i.precoCompra ?? 0);
+                  const qtd = Number(i.quantidadeCompra ?? 1);
+                  const uni = i.unidadeMedida ?? 'kg';
+                  return (
+                    <option key={i.id} value={i.id}>
+                      {i.nome} (R$ {preco.toFixed(2)} / {qtd}{uni})
+                    </option>
+                  );
+                })}
               </select>
               <input type="number" placeholder="Qtd" value={ingQuantidade}
                 onChange={(e) => setIngQuantidade(e.target.value)}
-                className="w-28 bg-gray-800 border border-gray-700 text-white p-3 rounded-xl focus:outline-none focus:border-blue-500" />
+                className="w-28 bg-gray-800 border border-gray-700 text-white p-3 rounded-xl focus:outline-none focus:border-blue-500 text-sm" />
               <button onClick={adicionarIngrediente}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 rounded-xl transition-colors">
                 <Plus size={18} />
@@ -206,7 +253,9 @@ export default function Receitas() {
               <div key={index} className="flex justify-between items-center bg-gray-800 rounded-xl p-3 mb-2 border border-gray-700">
                 <div>
                   <p className="text-white text-sm font-medium">{i.nome}</p>
-                  <p className="text-gray-400 text-xs">{i.quantidade} {i.unidade} → R$ {i.custoTotal.toFixed(2)}</p>
+                  <p className="text-gray-400 text-xs">
+                    {i.quantidade} {i.unidade === 'kg' ? 'g/kg' : i.unidade} → R$ {Number(i.custoTotal ?? 0).toFixed(2)}
+                  </p>
                 </div>
                 <button onClick={() => removerIngrediente(index)} className="text-red-400 hover:text-red-300">
                   <Trash2 size={16} />
@@ -319,7 +368,6 @@ export default function Receitas() {
         </h3>
         <div className="space-y-3">
           {receitas.map((r) => {
-            // Cálculo dinâmico para exibição nos cards da lista
             const cIng = (r.ingredientes || []).reduce((acc: number, i: any) => acc + (i.custoTotal || 0), 0);
             const cFix = cIng * ((r.custosFixosPorcentagem || 10) / 100);
             const cTotal = cIng + cFix + Number(r.maoDeObra || 0);
@@ -336,7 +384,6 @@ export default function Receitas() {
                       Rendimento: <span className="text-gray-300 font-medium">{r.rendimento} {r.unidadeRendimento}</span>
                     </p>
                     
-                    {/* Exibição Analítica de Custos no Card */}
                     <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 bg-[#0f172a]/50 p-2.5 rounded-lg border border-gray-700/40 w-fit">
                       <p className="text-[11px] text-gray-400">
                         Custo Receita: <span className="text-amber-400 font-bold">R$ {cTotal.toFixed(2)}</span>
