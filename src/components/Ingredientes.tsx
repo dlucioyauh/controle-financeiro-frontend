@@ -7,40 +7,66 @@ const unidades = ['kg', 'g', 'litro', 'ml', 'un'];
 export default function Ingredientes() {
   const [ingredientes, setIngredientes] = useState<any[]>([]);
   const [nome, setNome] = useState('');
-  const [preco, setPreco] = useState('');
-  const [unidade, setUnidade] = useState('kg');
+  const [precoCompra, setPrecoCompra] = useState('');
+  const [quantidadeCompra, setQuantidadeCompra] = useState('1'); // Padrão 1
+  const [unidadeMedida, setUnidadeMedida] = useState('kg');
   const [editandoId, setEditandoId] = useState<number | null>(null);
 
   async function carregar() {
-    const r = await api.get('/ingredientes');
-    setIngredientes(r.data);
+    try {
+      const r = await api.get('/ingredientes');
+      setIngredientes(r.data);
+    } catch (error) {
+      console.error("Erro ao carregar ingredientes:", error);
+    }
   }
 
   async function salvar() {
-    if (!nome || !preco) {
-      alert('Preencha nome e preço!');
+    if (!nome || !precoCompra || !quantidadeCompra) {
+      alert('Preencha todos os campos!');
       return;
     }
-    const payload = { nome, preco: Number(preco), unidade };
-    if (editandoId !== null) {
-      await api.put(`/ingredientes/${editandoId}`, payload);
-      setEditandoId(null);
-    } else {
-      await api.post('/ingredientes', payload);
+
+    // Payload ajustado com os nomes exatos que o NestJS/PostgreSQL esperam
+    const payload = { 
+      nome, 
+      precoCompra: Number(precoCompra), 
+      quantidadeCompra: Number(quantidadeCompra),
+      unidadeMedida 
+    };
+
+    try {
+      if (editandoId !== null) {
+        await api.put(`/ingredientes/${editandoId}`, payload);
+        setEditandoId(null);
+      } else {
+        await api.post('/ingredientes', payload);
+      }
+      
+      // Limpa o formulário
+      setNome(''); 
+      setPrecoCompra(''); 
+      setQuantidadeCompra('1'); 
+      setUnidadeMedida('kg');
+      carregar();
+    } catch (error) {
+      console.error("Erro ao salvar ingrediente:", error);
+      alert("Erro ao salvar ingrediente. Verifique o terminal do backend.");
     }
-    setNome(''); setPreco(''); setUnidade('kg');
-    carregar();
   }
 
   async function deletar(id: number) {
-    await api.delete(`/ingredientes/${id}`);
-    carregar();
+    if (confirm('Deseja realmente excluir este ingrediente?')) {
+      await api.delete(`/ingredientes/${id}`);
+      carregar();
+    }
   }
 
   function editar(i: any) {
     setNome(i.nome);
-    setPreco(String(i.preco));
-    setUnidade(i.unidade);
+    setPrecoCompra(String(i.precoCompra ?? i.preco ?? ''));
+    setQuantidadeCompra(String(i.quantidadeCompra ?? '1'));
+    setUnidadeMedida(i.unidadeMedida ?? i.unidade ?? 'kg');
     setEditandoId(i.id);
   }
 
@@ -56,7 +82,7 @@ export default function Ingredientes() {
         <h3 className="text-lg font-semibold text-white mb-4">
           {editandoId ? '✏️ Editar Ingrediente' : '➕ Novo Ingrediente'}
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
             <label className="block text-[11px] font-medium text-gray-400 uppercase mb-1 tracking-wide">Nome</label>
             <input type="text" placeholder="Ex: Chocolate, Farinha"
@@ -64,14 +90,20 @@ export default function Ingredientes() {
               className={inputClass} />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-gray-400 uppercase mb-1 tracking-wide">Preço (R$)</label>
-            <input type="number" placeholder="0,00"
-              value={preco} onChange={(e) => setPreco(e.target.value)}
+            <label className="block text-[11px] font-medium text-gray-400 uppercase mb-1 tracking-wide">Preço de Compra (R$)</label>
+            <input type="number" placeholder="0,00" step="0.01"
+              value={precoCompra} onChange={(e) => setPrecoCompra(e.target.value)}
               className={inputClass} />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-gray-400 uppercase mb-1 tracking-wide">Unidade</label>
-            <select value={unidade} onChange={(e) => setUnidade(e.target.value)}
+            <label className="block text-[11px] font-medium text-gray-400 uppercase mb-1 tracking-wide">Qtd. Embalagem</label>
+            <input type="number" placeholder="Ex: 1, 500" step="any"
+              value={quantidadeCompra} onChange={(e) => setQuantidadeCompra(e.target.value)}
+              className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium text-gray-400 uppercase mb-1 tracking-wide">Unidade Medida</label>
+            <select value={unidadeMedida} onChange={(e) => setUnidadeMedida(e.target.value)}
               className={inputClass}>
               {unidades.map((u) => (
                 <option key={u} value={u}>{u}</option>
@@ -79,7 +111,7 @@ export default function Ingredientes() {
             </select>
           </div>
         </div>
-        <button onClick={salvar} disabled={!nome || !preco}
+        <button onClick={salvar} disabled={!nome || !precoCompra || !quantidadeCompra}
           className="mt-4 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-medium text-sm transition-colors">
           <Plus size={16} />
           {editandoId ? 'Atualizar' : 'Salvar Ingrediente'}
@@ -96,7 +128,8 @@ export default function Ingredientes() {
             <thead className="text-[10px] text-gray-400 uppercase border-b border-gray-800 bg-gray-950/40">
               <tr>
                 <th className="py-2.5 px-3">Nome</th>
-                <th className="py-2.5 px-3">Preço</th>
+                <th className="py-2.5 px-3">Preço Compra</th>
+                <th className="py-2.5 px-3">Qtd. Embalagem</th>
                 <th className="py-2.5 px-3">Unidade</th>
                 <th className="py-2.5 px-3 text-right">Ações</th>
               </tr>
@@ -106,11 +139,12 @@ export default function Ingredientes() {
                 <tr key={i.id} className="hover:bg-gray-800/40 transition-colors">
                   <td className="py-2.5 px-3 font-medium text-white">{i.nome}</td>
                   <td className="py-2.5 px-3 text-emerald-400 font-bold">
-                    R$ {Number(i.preco).toFixed(2)}
+                    R$ {Number(i.precoCompra ?? 0).toFixed(2)}
                   </td>
+                  <td className="py-2.5 px-3">{i.quantidadeCompra ?? 1}</td>
                   <td className="py-2.5 px-3">
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">
-                      {i.unidade}
+                      {i.unidadeMedida}
                     </span>
                   </td>
                   <td className="py-2.5 px-3 text-right">
