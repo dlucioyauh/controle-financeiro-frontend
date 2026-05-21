@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import api from '../api';
 
-const unidades = ['kg', 'g', 'litro', 'ml', 'un'];
+// Adicionado 'unidades' para manter compatibilidade perfeita com a tela de receitas
+const unidades = ['kg', 'g', 'litro', 'ml', 'un', 'unidades'];
 
 export default function Ingredientes() {
   const [ingredientes, setIngredientes] = useState<any[]>([]);
@@ -21,18 +22,28 @@ export default function Ingredientes() {
     }
   }
 
+  // Função essencial que estava faltando para limpar os campos após salvar/editar
+  function resetForm() {
+    setNome('');
+    setPrecoCompra('');
+    setQuantidadeCompra('1');
+    setUnidadeMedida('kg');
+    setEditandoId(null);
+  }
+
   async function salvar() {
     if (!nome || !precoCompra || !quantidadeCompra) {
-      alert('Preencha todos os campos!');
+      alert('Preencha os campos obrigatórios (Nome, Preço e Quantidade)!');
       return;
     }
 
-    // Payload ajustado com os nomes exatos que o NestJS/PostgreSQL esperam
-    const payload = { 
-      nome, 
-      precoCompra: Number(precoCompra), 
-      quantidadeCompra: Number(quantidadeCompra),
-      unidadeMedida 
+    // Monta o payload garantindo que os números sejam convertidos corretamente
+    // e remove espaços em branco acidentais
+    const payload = {
+      nome: nome.trim(),
+      precoCompra: Number(String(precoCompra).replace(',', '.')),
+      quantidadeCompra: Number(String(quantidadeCompra).replace(',', '.')),
+      unidadeMedida: (unidadeMedida || 'kg').toLowerCase().trim(),
     };
 
     try {
@@ -43,15 +54,12 @@ export default function Ingredientes() {
         await api.post('/ingredientes', payload);
       }
       
-      // Limpa o formulário
-      setNome(''); 
-      setPrecoCompra(''); 
-      setQuantidadeCompra('1'); 
-      setUnidadeMedida('kg');
-      carregar();
-    } catch (error) {
-      console.error("Erro ao salvar ingrediente:", error);
-      alert("Erro ao salvar ingrediente. Verifique o terminal do backend.");
+      resetForm(); // Agora vai funcionar perfeitamente!
+      carregar();  // Recarrega a lista de ingredientes
+      alert('Ingrediente salvo com sucesso!');
+    } catch (error: any) {
+      console.error("Erro detalhado ao salvar ingrediente:", error.response?.data || error);
+      alert(`Erro ao salvar ingrediente: ${error.response?.data?.message || 'Verifique os dados informados.'}`);
     }
   }
 
@@ -91,13 +99,13 @@ export default function Ingredientes() {
           </div>
           <div>
             <label className="block text-[11px] font-medium text-gray-400 uppercase mb-1 tracking-wide">Preço de Compra (R$)</label>
-            <input type="number" placeholder="0,00" step="0.01"
+            <input type="text" placeholder="0.00"
               value={precoCompra} onChange={(e) => setPrecoCompra(e.target.value)}
               className={inputClass} />
           </div>
           <div>
             <label className="block text-[11px] font-medium text-gray-400 uppercase mb-1 tracking-wide">Qtd. Embalagem</label>
-            <input type="number" placeholder="Ex: 1, 500" step="any"
+            <input type="text" placeholder="Ex: 1, 500"
               value={quantidadeCompra} onChange={(e) => setQuantidadeCompra(e.target.value)}
               className={inputClass} />
           </div>
@@ -111,11 +119,19 @@ export default function Ingredientes() {
             </select>
           </div>
         </div>
-        <button onClick={salvar} disabled={!nome || !precoCompra || !quantidadeCompra}
-          className="mt-4 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-medium text-sm transition-colors">
-          <Plus size={16} />
-          {editandoId ? 'Atualizar' : 'Salvar Ingrediente'}
-        </button>
+        <div className="flex gap-2">
+          <button onClick={salvar} disabled={!nome || !precoCompra || !quantidadeCompra}
+            className="mt-4 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-medium text-sm transition-colors">
+            <Plus size={16} />
+            {editandoId ? 'Atualizar' : 'Salvar Ingrediente'}
+          </button>
+          {editandoId && (
+            <button onClick={resetForm}
+              className="mt-4 px-6 py-3 rounded-xl font-medium text-sm text-gray-400 hover:text-white border border-gray-700 hover:border-gray-600 transition-colors">
+              Cancelar Edição
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Lista */}
