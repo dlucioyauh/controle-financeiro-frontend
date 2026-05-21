@@ -45,14 +45,24 @@ export default function Receitas() {
 
     const precoBase = Number(ing.precoCompra ?? 0);
     const qtdEmbalagem = Number(ing.quantidadeCompra ?? 1);
-    const uniMedida = ing.unidadeMedida ?? 'kg';
+    const uniMedida = (ing.unidadeMedida ?? 'kg').toLowerCase().trim();
     
     // Suporta digitação com vírgula transformando em ponto (ex: 0,37 vira 0.37)
     const qtdUsada = Number(String(ingQuantidade).replace(',', '.'));
 
-    // Cálculo Direto Decimal: Descobre o preço de 1 unidade inteira da embalagem (ex: 1kg ou 1un) e multiplica pela fração usada
-    const precoPorUnidadeMedida = precoBase / qtdEmbalagem;
-    const custoTotal = qtdUsada * precoPorUnidadeMedida;
+    let custoTotal = 0;
+
+    // Lógica Inteligente: Identifica se é unidade inteira/contagem (ovos, embalagens, caixas)
+    if (uniMedida === 'un' || uniMedida === 'unid' || uniMedida === 'unidade' || uniMedida === 'unidades') {
+      // Descobre o preço unitário de 1 item da embalagem (ex: Preço da cartela de ovos / 30 ovos)
+      const precoUnitarioItem = precoBase / qtdEmbalagem;
+      // Multiplica direto pela quantidade inteira digitada (ex: 4 ovos * preço de cada ovo)
+      custoTotal = qtdUsada * precoUnitarioItem;
+    } else {
+      // Lógica Decimal Pura para kg e litro (ex: 0.37 kg * preço por kg)
+      const precoPorUnidadeMedida = precoBase / qtdEmbalagem;
+      custoTotal = qtdUsada * precoPorUnidadeMedida;
+    }
 
     setIngredientesReceita((prev) => [
       ...prev,
@@ -60,9 +70,9 @@ export default function Receitas() {
         ingredienteId: Number(ing.id),
         nome: ing.nome,
         quantidade: qtdUsada,
-        unidade: uniMedida, 
+        unidade: ing.unidadeMedida ?? 'kg', 
         custoUnitario: precoBase,
-        custoTotal: Number(custoTotal.toFixed(4)), // Precisão total de casas decimais para as contas fecharem
+        custoTotal: Number(custoTotal.toFixed(4)), // Precisão cirúrgica de casas decimais
       },
     ]);
     
@@ -95,7 +105,6 @@ export default function Receitas() {
       return;
     }
 
-    // Formata o payload vinculando os ingredientes na estrutura correta que o TypeORM espera receber
     const payload = {
       nome,
       descricao,
@@ -222,7 +231,7 @@ export default function Receitas() {
             </div>
           </div>
 
-          {/* Ingredientes */}
+          {/* Ingredients */}
           <div>
             <h4 className="text-white font-medium mb-3">Ingredientes da Receita</h4>
             <div className="flex gap-2 mb-3">
@@ -240,7 +249,7 @@ export default function Receitas() {
                   );
                 })}
               </select>
-              <input type="text" placeholder="Ex: 0.37 ou 0.03" value={ingQuantidade}
+              <input type="text" placeholder="Ex: 0.37 ou 4" value={ingQuantidade}
                 onChange={(e) => setIngQuantidade(e.target.value)}
                 className="w-28 bg-gray-800 border border-gray-700 text-white p-3 rounded-xl focus:outline-none focus:border-blue-500 text-sm" />
               <button onClick={adicionarIngrediente}
@@ -272,7 +281,7 @@ export default function Receitas() {
               </h4>
               <div className="text-sm space-y-1">
                 <div className="flex justify-between text-gray-400">
-                  <span>Custo Bruto dos Ingredientes</span>
+                  <span>Custo Bruto dos Insumos</span>
                   <span>R$ {custoIngredientes.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-400">
