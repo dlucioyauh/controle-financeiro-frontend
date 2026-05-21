@@ -90,17 +90,19 @@ export default function Vendas() {
 
   return (
     <div className="space-y-6 text-slate-200">
+      {/* Topo / Cabeçalho */}
       <div className="flex items-center justify-between bg-[#0f172a] p-4 rounded-lg border border-slate-800">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white">Registro de Vendas</h1>
           <p className="text-xs text-slate-400">Insira os fluxos de entrada e gerencie o faturamento comercial.</p>
         </div>
-        <button onClick={carregarDados} className="p-2 text-slate-400 hover:text-white rounded bg-[#020617] border border-slate-700">
+        <button onClick={carregarDados} className="p-2 text-slate-400 hover:text-white rounded bg-[#1e293b] border border-slate-700 transition-colors">
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Formulário de Venda Idêntico ao de Receitas */}
         <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 h-fit space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
             <ShoppingBag className="h-4 w-4 text-cyan-400" />
@@ -108,94 +110,110 @@ export default function Vendas() {
           </div>
 
           <form onSubmit={handleCriarVenda} className="space-y-4 text-xs">
-            <div className="space-y-1">
-              <label className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Produto / Item</label>
+            <div>
+              <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">
+                Produto / Item
+              </label>
               <select
                 value={produto}
                 onChange={(e) => setProduto(e.target.value)}
-                className="w-full bg-[#020617] border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500 h-9"
+                className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10 transition-colors pr-8 appearance-none"
+                style={{ backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%2364748b\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', backgroundPosition: 'right 0.75rem center', backgroundSize: '1.2em', backgroundRepeat: 'no-repeat' }}
                 required
               >
-                <option value="">-- Selecione o Produto --</option>
+                <option value="" className="bg-[#0f172a]">-- Selecione o Produto --</option>
                 {receitas.map((rec) => (
-                  <option key={rec.id} value={rec.nome}>
+                  <option key={rec.id} value={rec.nome} className="bg-[#0f172a]">
                     {rec.nome}
                   </option>
                 ))}
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Quantidade</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">
+                  Quantidade
+                </label>
                 <input
                   type="number"
                   min="1"
                   value={quantidade}
                   onChange={(e) => setQuantidade(parseInt(e.target.value) || 1)}
-                  className="w-full bg-[#020617] border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10 transition-colors"
                   required
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Preço Unitário (R$)</label>
+              <div>
+                <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">
+                  Preço Unitário (R$)
+                </label>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
                   value={precoUnitario}
                   onChange={(e) => setPrecoUnitario(e.target.value)}
-                  className="w-full bg-[#020617] border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10 transition-colors"
                   required
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Canal de Venda</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">
+                  Canal de Venda
+                </label>
                 <select
                   value={canalVenda}
                   onChange={(e) => setCanalVenda(e.target.value)}
-                  className="w-full bg-[#020617] border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500 h-9"
+                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10 transition-colors pr-8 appearance-none"
+                  style={{ backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%2364748b\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', backgroundPosition: 'right 0.75rem center', backgroundSize: '1.2em', backgroundRepeat: 'no-repeat' }}
                 >
-                  <option value="Balcão">Balcão</option>
-                  <option value="Encomenda">Encomenda</option>
-                  <option value="Instagram">Instagram</option>
-                  <option value="WhatsApp">WhatsApp</option>
-                  <option value="iFood">iFood</option>
+                  <option value="Balcão" className="bg-[#0f172a]">Balcão</option>
+                  <option value="Encomenda" className="bg-[#0f172a]">Encomenda</option>
+                  <option value="Instagram" className="bg-[#0f172a]">Instagram</option>
+                  <option value="WhatsApp" className="bg-[#0f172a]">WhatsApp</option>
+                  <option value="iFood" className="bg-[#0f172a]">iFood</option>
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Data da Venda</label>
+              <div>
+                <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">
+                  Data da Venda
+                </label>
                 <input
                   type="date"
                   value={dataVenda}
                   onChange={(e) => setDataVenda(e.target.value)}
-                  className="w-full bg-[#020617] border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500 h-9"
+                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10 transition-colors"
                   required
                 />
               </div>
             </div>
 
-            <div className="bg-[#020617] p-2.5 rounded border border-slate-800 flex justify-between items-center text-[11px]">
-              <span className="text-slate-400 uppercase font-medium tracking-wide">Valor Total Estimado:</span>
-              <span className="text-emerald-400 font-bold text-sm">
+            {/* Totalizador */}
+            <div className="bg-[#020617]/50 p-3 rounded-lg border border-slate-850 flex justify-between items-center mt-2">
+              <span className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">
+                Valor Total Estimado:
+              </span>
+              <span className="text-emerald-400 font-bold text-base">
                 R$ {((parseFloat(precoUnitario) || 0) * quantidade).toFixed(2)}
               </span>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded flex items-center justify-center gap-1 transition"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors mt-2"
             >
-              <Plus className="h-4 w-4" /> Registrar Venda
+              <Plus className="h-3.5 w-3.5" /> Registrar Venda
             </button>
           </form>
         </div>
 
+        {/* Histórico de Vendas */}
         <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 lg:col-span-2 space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
             <DollarSign className="h-4 w-4 text-emerald-400" />
