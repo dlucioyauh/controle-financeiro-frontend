@@ -40,43 +40,29 @@ export default function Receitas() {
   }
 
   function adicionarIngrediente() {
-    // Tratando o ID como string ou número para garantir compatibilidade com o backend
     const ing = ingredientes.find((i) => String(i.id) === String(ingSelecionado));
     if (!ing || !ingQuantidade) return;
 
     const precoBase = Number(ing.precoCompra ?? 0);
     const qtdEmbalagem = Number(ing.quantidadeCompra ?? 1);
     const uniMedida = ing.unidadeMedida ?? 'kg';
-    const qtdUsada = Number(ingQuantidade);
+    
+    // Suporta digitação com vírgula transformando em ponto (ex: 0,37 vira 0.37)
+    const qtdUsada = Number(String(ingQuantidade).replace(',', '.'));
 
-    let custoTotal = 0;
-
-    // Lógica Inteligente de Conversão de Medidas
-    // Caso 1: Comprou em kg e usou em gramas (g)
-    if (uniMedida === 'kg' && uniMedida !== 'g') {
-      const precoPorGrama = precoBase / (qtdEmbalagem * 1000);
-      custoTotal = qtdUsada * precoPorGrama;
-    } 
-    // Caso 2: Comprou em litro e usou em mililitros (ml)
-    else if (uniMedida === 'litro' && uniMedida !== 'ml') {
-      const precoPorMl = precoBase / (qtdEmbalagem * 1000);
-      custoTotal = qtdUsada * precoPorMl;
-    } 
-    // Caso 3: Unidades diretas (g para g, ml para ml, un para un)
-    else {
-      const precoPorUnidadeMedida = precoBase / qtdEmbalagem;
-      custoTotal = qtdUsada * precoPorUnidadeMedida;
-    }
+    // Cálculo Direto Decimal: Descobre o preço de 1 unidade inteira da embalagem (ex: 1kg ou 1un) e multiplica pela fração usada
+    const precoPorUnidadeMedida = precoBase / qtdEmbalagem;
+    const custoTotal = qtdUsada * precoPorUnidadeMedida;
 
     setIngredientesReceita((prev) => [
       ...prev,
       {
-        ingredienteId: ing.id,
+        ingredienteId: Number(ing.id),
         nome: ing.nome,
         quantidade: qtdUsada,
-        unidade: uniMedida,
+        unidade: uniMedida, 
         custoUnitario: precoBase,
-        custoTotal: custoTotal,
+        custoTotal: Number(custoTotal.toFixed(4)), // Precisão total de casas decimais para as contas fecharem
       },
     ]);
     
@@ -108,15 +94,26 @@ export default function Receitas() {
       alert('Preencha nome e rendimento!');
       return;
     }
+
+    // Formata o payload vinculando os ingredientes na estrutura correta que o TypeORM espera receber
     const payload = {
-      nome, descricao, rendimento: Number(rendimento),
-      unidadeRendimento, maoDeObra: Number(maoDeObra || 0),
+      nome,
+      descricao,
+      rendimento: Number(rendimento),
+      unidadeRendimento,
+      maoDeObra: Number(maoDeObra || 0),
       custosFixosPorcentagem: Number(custosFixosPorcentagem),
-      custoIngredientes,
+      custoIngredientes: Number(custoIngredientes.toFixed(2)),
       precoVendaFinal: Number(precoVendaFinal || 0),
       precoVendaParceiro: Number(precoVendaParceiro || 0),
-      ingredientes: ingredientesReceita,
+      ingredientes: ingredientesReceita.map(i => ({
+        ingredienteId: i.ingredienteId,
+        quantidade: i.quantidade,
+        unidade: i.unidade,
+        custoTotal: i.custoTotal
+      }))
     };
+
     try {
       if (editandoId !== null) {
         await api.put(`/receitas/${editandoId}`, payload);
@@ -126,9 +123,10 @@ export default function Receitas() {
       }
       resetForm();
       carregar();
-    } catch (error) {
-      console.error("Erro ao salvar receita:", error);
-      alert("Erro ao salvar a receita. Verifique os dados.");
+      alert('Receita salva com sucesso!');
+    } catch (error: any) {
+      console.error("Erro ao salvar receita:", error.response?.data || error);
+      alert(`Erro ao salvar a receita: ${error.response?.data?.message || 'Verifique o terminal do backend.'}`);
     }
   }
 
@@ -149,9 +147,11 @@ export default function Receitas() {
     setPrecoVendaFinal(String(r.precoVendaFinal || ''));
     setPrecoVendaParceiro(String(r.precoVendaParceiro || ''));
     
-    // Mapeamento para garantir retrocompatibilidade caso edite dados parciais do banco
     const ingsMapeados = (r.ingredientes || []).map((i: any) => ({
-      ...i,
+      ingredienteId: i.ingredienteId,
+      nome: i.ingrediente?.nome || 'Ingrediente',
+      quantidade: i.quantidade,
+      unidade: i.unidade,
       custoTotal: i.custoTotal ?? (i.custoUnitario * i.quantidade)
     }));
     setIngredientesReceita(ingsMapeados);
@@ -240,7 +240,7 @@ export default function Receitas() {
                   );
                 })}
               </select>
-              <input type="number" placeholder="Qtd" value={ingQuantidade}
+              <input type="text" placeholder="Ex: 0.37 ou 0.03" value={ingQuantidade}
                 onChange={(e) => setIngQuantidade(e.target.value)}
                 className="w-28 bg-gray-800 border border-gray-700 text-white p-3 rounded-xl focus:outline-none focus:border-blue-500 text-sm" />
               <button onClick={adicionarIngrediente}
@@ -254,7 +254,7 @@ export default function Receitas() {
                 <div>
                   <p className="text-white text-sm font-medium">{i.nome}</p>
                   <p className="text-gray-400 text-xs">
-                    {i.quantidade} {i.unidade === 'kg' ? 'g/kg' : i.unidade} → R$ {Number(i.custoTotal ?? 0).toFixed(2)}
+                    {i.quantidade} {i.unidade} → R$ {Number(i.custoTotal ?? 0).toFixed(2)}
                   </p>
                 </div>
                 <button onClick={() => removerIngrediente(index)} className="text-red-400 hover:text-red-300">
