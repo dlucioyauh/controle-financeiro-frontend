@@ -8,12 +8,13 @@ import Vendas from './pages/Vendas';
 import Precificacao from './pages/Precificacao';
 import Analytics from './pages/Analytics';
 import Configuracoes from './pages/Configuracoes';
+import api from './api';
 
 function App() {
-  const [autenticado, setAutenticado] = useState(!!localStorage.getItem('token'));
+  const [autenticado, setAutenticado] = useState(false);
 
-  function logout() {
-    localStorage.removeItem('token');
+  async function logout() {
+    await api.post('/auth/logout');
     setAutenticado(false);
   }
 

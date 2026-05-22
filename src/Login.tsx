@@ -12,13 +12,12 @@ function Login({ onLogin }: Props) {
 
   async function handleLogin() {
     try {
-      const response = await api.post('/auth/login', { username, password });
-      localStorage.setItem('token', response.data.access_token);
+      await api.post('/auth/login', { username, password });
       onLogin();
     } catch {
       setErro('Usuário ou senha incorretos');
     }
-  }
+}
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
