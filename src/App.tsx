@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from './layouts/MainLayout';
 import Login from './Login';
 import Dashboard from './pages/Dashboard';
@@ -11,12 +11,20 @@ import Configuracoes from './pages/Configuracoes';
 import api from './api';
 
 function App() {
-  const [autenticado, setAutenticado] = useState(false);
+  const [autenticado, setAutenticado] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    api.get('/auth/me')
+      .then(() => setAutenticado(true))
+      .catch(() => setAutenticado(false));
+  }, []);
 
   async function logout() {
     await api.post('/auth/logout');
     setAutenticado(false);
   }
+
+  if (autenticado === null) return null; // carregando
 
   if (!autenticado) {
     return <Login onLogin={() => setAutenticado(true)} />;
