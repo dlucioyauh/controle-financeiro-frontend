@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { MainLayout } from './layouts/MainLayout';
 import Login from './Login';
 import Dashboard from './pages/Dashboard';
@@ -8,23 +8,14 @@ import Vendas from './pages/Vendas';
 import Precificacao from './pages/Precificacao';
 import Analytics from './pages/Analytics';
 import Configuracoes from './pages/Configuracoes';
-import api from './api';
 
 function App() {
-  const [autenticado, setAutenticado] = useState<boolean | null>(null);
+  const [autenticado, setAutenticado] = useState(!!localStorage.getItem('token'));
 
-  useEffect(() => {
-    api.get('/auth/me')
-      .then(() => setAutenticado(true))
-      .catch(() => setAutenticado(false));
-  }, []);
-
-  async function logout() {
-    await api.post('/auth/logout');
+  function logout() {
+    localStorage.removeItem('token');
     setAutenticado(false);
   }
-
-  if (autenticado === null) return null; // carregando
 
   if (!autenticado) {
     return <Login onLogin={() => setAutenticado(true)} />;
