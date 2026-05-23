@@ -8,6 +8,7 @@ import Vendas from './pages/Vendas';
 import Precificacao from './pages/Precificacao';
 import Analytics from './pages/Analytics';
 import Configuracoes from './pages/Configuracoes';
+import Clientes from './pages/Clientes';
 
 function App() {
   const [autenticado, setAutenticado] = useState(!!localStorage.getItem('token'));
@@ -28,6 +29,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="/financeiro" element={<Financeiro />} />
           <Route path="/vendas" element={<Vendas />} />
+          <Route path="/clientes" element={<Clientes />} />
           <Route path="/precificacao" element={<Precificacao />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
