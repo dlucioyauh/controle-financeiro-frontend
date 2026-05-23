@@ -1,15 +1,10 @@
 import { useEffect, useState } from 'react';
-import {
-  Wallet,
-  TrendingUp,
-  TrendingDown,
-  ShoppingCart,
-} from 'lucide-react';
-
+import { Wallet, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import api from '../api';
 
 export default function Dashboard() {
   const [despesas, setDespesas] = useState<any[]>([]);
+  const [vendas, setVendas] = useState<any[]>([]);
 
   useEffect(() => {
     carregarDados();
@@ -17,9 +12,12 @@ export default function Dashboard() {
 
   async function carregarDados() {
     try {
-      const response = await api.get('/despesas');
-
-      setDespesas(response.data);
+      const [despesasRes, vendasRes] = await Promise.all([
+        api.get('/despesas'),
+        api.get('/vendas'),
+      ]);
+      setDespesas(despesasRes.data);
+      setVendas(vendasRes.data);
     } catch (error) {
       console.error(error);
     }
@@ -29,139 +27,112 @@ export default function Dashboard() {
     .filter((item) => item.tipo === 'empresa')
     .reduce((acc, item) => acc + Number(item.valor), 0);
 
-  const totalPessoal = despesas
-    .filter((item) => item.tipo === 'pessoal')
-    .reduce((acc, item) => acc + Number(item.valor), 0);
+  const totalEntradas = vendas.reduce(
+    (acc, v) => acc + Number(v.valorTotal || 0), 0
+  );
 
-  const totalGeral = totalEmpresa + totalPessoal;
+  const saldo = totalEntradas - totalEmpresa;
 
   const cards = [
     {
-      titulo: 'Total Geral',
-      valor: totalGeral,
-      icon: Wallet,
-      cor: 'text-cyan-400',
-      bg: 'bg-cyan-500/10',
+      titulo: 'Entradas',
+      valor: totalEntradas,
+      icon: TrendingUp,
+      cor: 'text-emerald-400',
+      bg: 'bg-emerald-500/10',
+      formato: 'moeda',
     },
     {
-      titulo: 'Empresa',
+      titulo: 'Gastos Empresa',
       valor: totalEmpresa,
-      icon: TrendingUp,
+      icon: TrendingDown,
+      cor: 'text-red-400',
+      bg: 'bg-red-500/10',
+      formato: 'moeda',
+    },
+    {
+      titulo: 'Saldo',
+      valor: saldo,
+      icon: Wallet,
+      cor: saldo >= 0 ? 'text-cyan-400' : 'text-pink-400',
+      bg: saldo >= 0 ? 'bg-cyan-500/10' : 'bg-pink-500/10',
+      formato: 'moeda',
+    },
+    {
+      titulo: 'Total de Vendas',
+      valor: vendas.length,
+      icon: DollarSign,
       cor: 'text-blue-400',
       bg: 'bg-blue-500/10',
-    },
-    {
-      titulo: 'Pessoal',
-      valor: totalPessoal,
-      icon: TrendingDown,
-      cor: 'text-pink-400',
-      bg: 'bg-pink-500/10',
-    },
-    {
-      titulo: 'Lançamentos',
-      valor: despesas.length,
-      icon: ShoppingCart,
-      cor: 'text-orange-400',
-      bg: 'bg-orange-500/10',
+      formato: 'numero',
     },
   ];
 
   return (
-    <div className="space-y-8">
-
-      <div>
-
-        <h1 className="text-4xl font-black text-white">
-          Dashboard
-        </h1>
-
-        <p className="text-zinc-400 mt-2">
-          Visão geral do seu sistema financeiro
-        </p>
-
+    <div className="space-y-6 text-slate-200">
+      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
+        <h1 className="text-xl font-bold tracking-tight text-white">Dashboard</h1>
+        <p className="text-xs text-slate-400">Visão geral do desempenho financeiro do seu negócio.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {cards.map((card) => {
           const Icon = card.icon;
-
           return (
             <div
               key={card.titulo}
-              className="bg-[#0f172a] border border-white/10 rounded-3xl p-6"
+              className="bg-[#0f172a] border border-slate-800 rounded-lg p-5 flex items-center justify-between"
             >
-
-              <div className="flex items-center justify-between">
-
-                <div>
-
-                  <p className="text-zinc-400 text-sm">
-                    {card.titulo}
-                  </p>
-
-                  <h2 className="text-3xl font-black text-white mt-2">
-                    {typeof card.valor === 'number'
-                      ? `R$ ${card.valor.toFixed(2)}`
-                      : card.valor}
-                  </h2>
-
-                </div>
-
-                <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center ${card.bg}`}
-                >
-                  <Icon
-                    className={card.cor}
-                    size={28}
-                  />
-                </div>
-
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">
+                  {card.titulo}
+                </p>
+                <h2 className="text-xl font-bold text-white mt-1">
+                  {card.formato === 'moeda'
+                    ? `R$ ${Number(card.valor).toFixed(2)}`
+                    : card.valor}
+                </h2>
               </div>
-
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${card.bg}`}>
+                <Icon className={card.cor} size={24} />
+              </div>
             </div>
           );
         })}
-
       </div>
 
-      <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-6">
-
-        <h2 className="text-2xl font-bold text-white mb-6">
-          Últimos lançamentos
-        </h2>
-
-        <div className="space-y-3">
-
-          {despesas.slice(0, 5).map((item) => (
+      {/* Últimas vendas */}
+      <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-5">
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
+          <DollarSign className="h-4 w-4 text-emerald-400" />
+          <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+            Últimas Vendas
+          </h2>
+        </div>
+        <div className="space-y-2">
+          {vendas.slice(0, 5).map((item) => (
             <div
               key={item.id}
-              className="flex items-center justify-between bg-white/5 rounded-2xl p-4"
+              className="flex items-center justify-between bg-white/5 rounded-lg p-3"
             >
-
               <div>
-
-                <p className="font-semibold text-white">
-                  {item.descricao}
+                <p className="font-semibold text-white text-sm">{item.produto}</p>
+                <p className="text-xs text-slate-400">
+                  {new Date(item.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} · {item.canalVenda}
                 </p>
-
-                <p className="text-sm text-zinc-400">
-                  {item.categoria}
-                </p>
-
               </div>
-
-              <p className="font-bold text-red-400">
-                R$ {Number(item.valor).toFixed(2)}
+              <p className="font-bold text-emerald-400 text-sm">
+                R$ {Number(item.valorTotal).toFixed(2)}
               </p>
-
             </div>
           ))}
-
+          {vendas.length === 0 && (
+            <p className="text-xs text-slate-500 italic text-center py-4">
+              Nenhuma venda registrada ainda.
+            </p>
+          )}
         </div>
-
       </div>
-
     </div>
   );
 }
