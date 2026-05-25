@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   Users,
+  FileText,
 } from 'lucide-react';
 
 const menu = [
@@ -20,6 +21,7 @@ const menu = [
   { nome: 'Clientes', rota: '/clientes', icon: Users },
   { nome: 'Precificação', rota: '/precificacao', icon: Calculator },
   { nome: 'Analytics', rota: '/analytics', icon: BarChart3 },
+  { nome: 'Relatórios', rota: '/relatorios', icon: FileText },
   { nome: 'Configurações', rota: '/configuracoes', icon: Settings },
 ];
 
@@ -30,13 +32,11 @@ interface Props {
 export function MainLayout({ onLogout }: Props) {
   const location = useLocation();
   const [menuAberto, setMenuAberto] = useState(false);
-
   const alternarMenu = () => setMenuAberto(!menuAberto);
   const fecharMenu = () => setMenuAberto(false);
 
   return (
     <div className="min-h-screen bg-[#020617] text-white flex relative overflow-x-hidden">
-
       {/* SIDEBAR DESKTOP */}
       <aside className="hidden md:flex w-72 bg-[#0f172a] border-r border-white/10 flex-col p-8 shrink-0">
         <h1 className="text-4xl font-black text-cyan-400 mb-12">IonFinance</h1>
