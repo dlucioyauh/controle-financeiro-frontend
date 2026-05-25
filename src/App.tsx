@@ -1,3 +1,5 @@
+import Landing from './pages/Landing';
+import Register from './pages/Register';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import { MainLayout } from './layouts/MainLayout';
@@ -14,19 +16,51 @@ import Relatorios from './pages/Relatorios';
 function App() {
   const [autenticado, setAutenticado] = useState(!!localStorage.getItem('token'));
 
+  function handleLogin() {
+    setAutenticado(true);
+  }
+
   function logout() {
     localStorage.removeItem('token');
     setAutenticado(false);
   }
 
-  if (!autenticado) {
-    return <Login onLogin={() => setAutenticado(true)} />;
-  }
-
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<MainLayout onLogout={logout} />}>
+        {/* Públicas */}
+        <Route path="/landing" element={<Landing />} />
+        <Route
+          path="/register"
+          element={
+            autenticado ? (
+              <Navigate to="/" replace />
+            ) : (
+              <Register onRegister={handleLogin} />
+            )
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            autenticado ? (
+              <Navigate to="/" replace />
+            ) : (
+              <Login onLogin={handleLogin} />
+            )
+          }
+        />
+
+        {/* Protegidas */}
+        <Route
+          element={
+            autenticado ? (
+              <MainLayout onLogout={logout} />
+            ) : (
+              <Navigate to="/landing" replace />
+            )
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="/financeiro" element={<Financeiro />} />
           <Route path="/vendas" element={<Vendas />} />
@@ -35,8 +69,15 @@ function App() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
-          <Route path="*" element={<Navigate to="/" />} />
         </Route>
+
+        {/* Fallback */}
+        <Route
+          path="*"
+          element={
+            autenticado ? <Navigate to="/" replace /> : <Navigate to="/landing" replace />
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

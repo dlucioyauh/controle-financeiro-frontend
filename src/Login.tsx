@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from './api';
 
 interface Props {
@@ -21,35 +22,51 @@ function Login({ onLogin }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
-        <h1 className="text-3xl font-bold mb-6 text-center">Login</h1>
+    <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4">
+      <div className="bg-[#0f172a] border border-slate-800 rounded-xl p-8 w-full max-w-sm">
+        <h1 className="text-2xl font-bold text-white text-center mb-6">Entrar</h1>
+
         {erro && (
-          <p className="text-red-500 text-sm mb-4 text-center">{erro}</p>
+          <p className="text-red-400 text-xs mb-4 text-center bg-red-500/10 border border-red-500/20 rounded-lg py-2">
+            {erro}
+          </p>
         )}
+
         <div className="flex flex-col gap-4">
-          <input
-            type="text"
-            placeholder="Usuário"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="border p-3 rounded-lg"
-          />
-          <input
-            type="password"
-            placeholder="Senha"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="border p-3 rounded-lg"
-          />
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Usuário</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full bg-[#020617] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Senha</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-[#020617] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+            />
+          </div>
           <button
             onClick={handleLogin}
             disabled={!username || !password}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-5 py-3 rounded-xl font-bold"
+            className="bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-sm transition-colors"
           >
             Entrar
           </button>
         </div>
+
+        <p className="text-xs text-slate-500 text-center mt-4">
+          Não tem conta?{' '}
+          <Link to="/register" className="text-cyan-400 hover:underline">
+            Criar conta grátis
+          </Link>
+        </p>
       </div>
     </div>
   );
