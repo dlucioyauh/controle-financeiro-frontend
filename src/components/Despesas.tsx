@@ -3,19 +3,17 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import api from '../api';
 
 interface DespesasProps {
-  onChange?: () => void; // callback para notificar o componente pai
+  onChange?: () => void;
 }
 
 export default function Despesas({ onChange }: DespesasProps) {
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
-  const [tipo, setTipo] = useState('empresa');
-  const [categoria, setCategoria] = useState('Geral');
+  const [categoria, setCategoria] = useState('Fornecedor');
   const [data, setData] = useState('');
   const [formaPagamento, setFormaPagamento] = useState('Pix');
   const [despesas, setDespesas] = useState<any[]>([]);
-  const [editandoId, setEditandoId] = useState<string | null>(null); // UUID → string
-  const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   const [filtroMes, setFiltroMes] = useState('');
 
   async function carregarDespesas() {
@@ -28,7 +26,7 @@ export default function Despesas({ onChange }: DespesasProps) {
       alert('Preencha descrição, valor e data!');
       return;
     }
-    const payload = { tipo, descricao, categoria, valor: Number(valor), formaPagamento, data };
+    const payload = { descricao, categoria, valor: Number(valor), formaPagamento, data };
     try {
       if (editandoId !== null) {
         await api.patch(`/despesas/${editandoId}`, payload);
@@ -36,10 +34,9 @@ export default function Despesas({ onChange }: DespesasProps) {
       } else {
         await api.post('/despesas', payload);
       }
-      setDescricao(''); setValor(''); setTipo('empresa');
-      setCategoria('Geral'); setData(''); setFormaPagamento('Pix');
+      setDescricao(''); setValor(''); setCategoria('Fornecedor'); setData(''); setFormaPagamento('Pix');
       await carregarDespesas();
-      if (onChange) onChange(); // notifica o pai
+      if (onChange) onChange();
     } catch (error) {
       alert('Erro ao salvar despesa. Verifique os dados.');
       console.error(error);
@@ -55,56 +52,51 @@ export default function Despesas({ onChange }: DespesasProps) {
   function editarDespesa(despesa: any) {
     setDescricao(despesa.descricao);
     setValor(String(despesa.valor));
-    setTipo(despesa.tipo);
-    setCategoria(despesa.categoria);
+    setCategoria(despesa.categoria || 'Fornecedor');
     setData(despesa.data?.slice(0, 10) ?? '');
     setFormaPagamento(despesa.formaPagamento ?? 'Pix');
-    setEditandoId(despesa.id); // id é string (UUID)
+    setEditandoId(despesa.id);
   }
 
   useEffect(() => { carregarDespesas(); }, []);
 
   const despesasFiltradas = despesas.filter((item) => {
-    const tipoOk = filtroTipo === 'todos' || item.tipo === filtroTipo;
     const mesOk = !filtroMes || item.data?.slice(0, 7) === filtroMes;
-    return tipoOk && mesOk;
+    return mesOk;
   });
 
-  const inputClass = "bg-gray-800 border border-gray-700 text-white placeholder-gray-500 p-3 rounded-xl w-full focus:outline-none focus:border-blue-500 transition-colors";
+  const inputCompacto = "bg-gray-800 border border-gray-700 text-white placeholder-gray-500 px-2 py-2 rounded-lg text-xs focus:outline-none focus:border-blue-500 transition-colors";
 
   return (
-    <div className="space-y-6">
-
-      <div>
-        <h2 className="text-2xl font-bold text-white">Despesas</h2>
-        <p className="text-gray-400 text-sm mt-1">Gerencie suas despesas pessoais e empresariais</p>
-      </div>
-
-      {/* Formulário */}
-      <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
-        <h3 className="text-lg font-semibold text-white mb-4">
+    <div className="space-y-3">
+      {/* Formulário compacto inline */}
+      <div className="bg-gray-900 rounded-xl p-3 border border-gray-800">
+        <h3 className="text-sm font-semibold text-white mb-2">
           {editandoId ? '✏ Editar Despesa' : '➕ Nova Despesa'}
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="flex flex-wrap items-end gap-2">
           <input type="text" placeholder="Descrição" value={descricao}
-            onChange={(e) => setDescricao(e.target.value)} className={inputClass} />
+            onChange={(e) => setDescricao(e.target.value)}
+            className={`${inputCompacto} flex-[2] min-w-[130px]`} />
           <input type="number" placeholder="Valor" value={valor}
-            onChange={(e) => setValor(e.target.value)} className={inputClass} />
+            onChange={(e) => setValor(e.target.value)}
+            className={`${inputCompacto} flex-1 min-w-[90px]`} />
           <input type="date" value={data}
-            onChange={(e) => setData(e.target.value)} className={inputClass} />
-          <select value={tipo} onChange={(e) => setTipo(e.target.value)} className={inputClass}>
-            <option value="empresa">Empresa</option>
-            <option value="pessoal">Pessoal</option>
+            onChange={(e) => setData(e.target.value)}
+            className={`${inputCompacto} flex-1 min-w-[110px]`} />
+          <select value={categoria} onChange={(e) => setCategoria(e.target.value)}
+            className={`${inputCompacto} flex-1 min-w-[100px]`}>
+            <option value="Fornecedor">Fornecedor</option>
+            <option value="Contas (Água/Luz/Internet)">Contas (Água/Luz/Internet)</option>
+            <option value="Entregas/Fretes">Entregas/Fretes</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Equipamentos">Equipamentos</option>
+            <option value="Impostos/Taxas">Impostos/Taxas</option>
+            <option value="Mão de Obra">Mão de Obra</option>
+            <option value="Outros">Outros</option>
           </select>
-          <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className={inputClass}>
-            <option value="Geral">Geral</option>
-            <option value="Alimentação">Alimentação</option>
-            <option value="Mercado">Mercado</option>
-            <option value="Internet">Internet</option>
-            <option value="Transporte">Transporte</option>
-            <option value="Investimento">Investimento</option>
-          </select>
-          <select value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value)} className={inputClass}>
+          <select value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value)}
+            className={`${inputCompacto} flex-1 min-w-[100px]`}>
             <option value="Pix">Pix</option>
             <option value="Cartão de Crédito">Cartão de Crédito</option>
             <option value="Cartão de Débito">Cartão de Débito</option>
@@ -112,68 +104,51 @@ export default function Despesas({ onChange }: DespesasProps) {
             <option value="Boleto">Boleto</option>
             <option value="Transferência">Transferência</option>
           </select>
-        </div>
-        <button
-          onClick={salvarDespesa}
-          disabled={!descricao || !valor || !data}
-          className="mt-4 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-medium transition-colors"
-        >
-          <Plus size={18} />
-          {editandoId ? 'Atualizar Despesa' : 'Salvar Despesa'}
-        </button>
-      </div>
-
-      {/* Filtros + Lista */}
-      <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
-        <div className="flex flex-wrap gap-3 mb-6 items-center">
-          <h3 className="text-lg font-semibold text-white w-full">Lançamentos</h3>
-          <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}
-            className="bg-gray-800 border border-gray-700 text-white p-2 rounded-xl text-sm focus:outline-none focus:border-blue-500">
-            <option value="todos">Todos</option>
-            <option value="empresa">Empresa</option>
-            <option value="pessoal">Pessoal</option>
-          </select>
-          <input type="month" value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}
-            className="bg-gray-800 border border-gray-700 text-white p-2 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
-          <button onClick={() => { setFiltroTipo('todos'); setFiltroMes(''); }}
-            className="text-sm text-gray-400 hover:text-white underline transition-colors">
-            Limpar filtros
+          <button onClick={salvarDespesa} disabled={!descricao || !valor || !data}
+            className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+            <Plus size={14} />
+            {editandoId ? 'Atualizar' : 'Salvar'}
           </button>
         </div>
+      </div>
 
-        <div className="space-y-3">
+      {/* Filtro por mês + Lista */}
+      <div className="bg-gray-900 rounded-xl p-3 border border-gray-800">
+        <div className="flex items-center gap-3 mb-2">
+          <h3 className="text-sm font-semibold text-white">Lançamentos</h3>
+          <input type="month" value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}
+            className="bg-gray-800 border border-gray-700 text-white p-1 rounded-lg text-xs focus:outline-none focus:border-blue-500" />
+          {filtroMes && <button onClick={() => setFiltroMes('')}
+            className="text-xs text-gray-400 hover:text-white underline transition-colors">Limpar</button>}
+        </div>
+
+        <div className="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
           {despesasFiltradas.map((despesa) => (
             <div key={despesa.id}
-              className="bg-gray-800 rounded-xl p-4 flex flex-col gap-3 border border-gray-700 hover:border-gray-600 transition-colors">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-semibold text-white">{despesa.descricao}</p>
-                  <p className="text-sm text-gray-400 mt-1">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs mr-2 ${despesa.tipo === 'empresa' ? 'bg-blue-500/20 text-blue-400' : 'bg-pink-500/20 text-pink-400'}`}>
-                      {despesa.tipo}
-                    </span>
-                    {despesa.categoria} • {despesa.formaPagamento} • {despesa.data?.slice(0, 10)}
-                  </p>
-                </div>
-                <p className="font-bold text-red-400 whitespace-nowrap ml-2 text-lg">
-                  R$ {Number(despesa.valor).toFixed(2)}
+              className="bg-gray-800 rounded-lg p-2.5 flex items-center justify-between gap-2 border border-gray-700 hover:border-gray-600 transition-colors">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-white truncate">{despesa.descricao}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">
+                  {despesa.categoria} • {despesa.formaPagamento} • {despesa.data?.slice(0, 10)}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-bold text-red-400 whitespace-nowrap">
+                  R$ {Number(despesa.valor).toFixed(2)}
+                </p>
                 <button onClick={() => editarDespesa(despesa)}
-                  className="flex-1 flex items-center justify-center gap-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 py-2 rounded-lg text-sm transition-colors">
-                  <Pencil size={14} /> Editar
+                  className="p-1 rounded bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 transition-colors">
+                  <Pencil size={12} />
                 </button>
                 <button onClick={() => deletarDespesa(despesa.id)}
-                  className="flex-1 flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 py-2 rounded-lg text-sm transition-colors">
-                  <Trash2 size={14} /> Excluir
+                  className="p-1 rounded bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors">
+                  <Trash2 size={12} />
                 </button>
               </div>
             </div>
           ))}
-
           {despesasFiltradas.length === 0 && (
-            <p className="text-center text-gray-500 py-10">Nenhuma despesa encontrada.</p>
+            <p className="text-center text-gray-500 py-4 text-xs">Nenhuma despesa encontrada.</p>
           )}
         </div>
       </div>

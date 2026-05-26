@@ -43,9 +43,7 @@ export default function Dashboard() {
     ? ((totalEntradas - totalEntradasAnterior) / totalEntradasAnterior) * 100
     : null;
 
-  const totalEmpresa = despesas
-    .filter(item => item.tipo === 'empresa')
-    .reduce((acc, item) => acc + Number(item.valor), 0);
+  const totalEmpresa = despesas.reduce((acc, item) => acc + Number(item.valor), 0);
 
   const saldo = totalEntradas - totalEmpresa;
   const ticketMedio = vendasMesAtual.length > 0 ? totalEntradas / vendasMesAtual.length : 0;
