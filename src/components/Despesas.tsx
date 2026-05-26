@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import api from '../api';
 
-export default function Despesas() {
+interface DespesasProps {
+  onChange?: () => void; // callback para notificar o componente pai
+}
+
+export default function Despesas({ onChange }: DespesasProps) {
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
   const [tipo, setTipo] = useState('empresa');
@@ -10,7 +14,7 @@ export default function Despesas() {
   const [data, setData] = useState('');
   const [formaPagamento, setFormaPagamento] = useState('Pix');
   const [despesas, setDespesas] = useState<any[]>([]);
-  const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [editandoId, setEditandoId] = useState<string | null>(null); // UUID → string
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [filtroMes, setFiltroMes] = useState('');
 
@@ -25,20 +29,27 @@ export default function Despesas() {
       return;
     }
     const payload = { tipo, descricao, categoria, valor: Number(valor), formaPagamento, data };
-    if (editandoId !== null) {
-      await api.put(`/despesas/${editandoId}`, payload);
-      setEditandoId(null);
-    } else {
-      await api.post('/despesas', payload);
+    try {
+      if (editandoId !== null) {
+        await api.patch(`/despesas/${editandoId}`, payload);
+        setEditandoId(null);
+      } else {
+        await api.post('/despesas', payload);
+      }
+      setDescricao(''); setValor(''); setTipo('empresa');
+      setCategoria('Geral'); setData(''); setFormaPagamento('Pix');
+      await carregarDespesas();
+      if (onChange) onChange(); // notifica o pai
+    } catch (error) {
+      alert('Erro ao salvar despesa. Verifique os dados.');
+      console.error(error);
     }
-    setDescricao(''); setValor(''); setTipo('empresa');
-    setCategoria('Geral'); setData(''); setFormaPagamento('Pix');
-    carregarDespesas();
   }
 
-  async function deletarDespesa(id: number) {
+  async function deletarDespesa(id: string) {
     await api.delete(`/despesas/${id}`);
-    carregarDespesas();
+    await carregarDespesas();
+    if (onChange) onChange();
   }
 
   function editarDespesa(despesa: any) {
@@ -48,7 +59,7 @@ export default function Despesas() {
     setCategoria(despesa.categoria);
     setData(despesa.data?.slice(0, 10) ?? '');
     setFormaPagamento(despesa.formaPagamento ?? 'Pix');
-    setEditandoId(despesa.id);
+    setEditandoId(despesa.id); // id é string (UUID)
   }
 
   useEffect(() => { carregarDespesas(); }, []);
@@ -72,7 +83,7 @@ export default function Despesas() {
       {/* Formulário */}
       <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
         <h3 className="text-lg font-semibold text-white mb-4">
-          {editandoId ? '✏️ Editar Despesa' : '➕ Nova Despesa'}
+          {editandoId ? '✏ Editar Despesa' : '➕ Nova Despesa'}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input type="text" placeholder="Descrição" value={descricao}
