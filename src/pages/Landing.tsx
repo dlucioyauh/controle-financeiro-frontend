@@ -7,7 +7,6 @@ import {
   PieChart,
   Users,
   FileText,
-  ShieldCheck,
   ChefHat,
   DollarSign,
   ShoppingCart,
