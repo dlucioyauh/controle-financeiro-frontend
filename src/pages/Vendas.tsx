@@ -59,10 +59,19 @@ export default function Vendas() {
 
   const handleCriarVenda = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!produto) return alert('Selecione um produto.');
+    console.log('Tentando cadastrar venda...'); // ← LOG DE DEPURAÇÃO
+
+    if (!produto) {
+      alert('Selecione um produto.');
+      return;
+    }
+
     const pUnitario = parseFloat(precoUnitario) || 0;
     const vTotal = pUnitario * quantidade;
+
     try {
+      console.log('Enviando payload:', { produto, quantidade, precoUnitario: pUnitario, valorTotal: vTotal, canalVenda, dataVenda: new Date(dataVenda).toISOString(), clienteId: clienteId || null, clienteNome: clienteNome || null }); // ← LOG
+
       await api.post('/vendas', {
         produto,
         quantidade,
@@ -73,6 +82,9 @@ export default function Vendas() {
         clienteId: clienteId || null,
         clienteNome: clienteNome || null,
       });
+
+      console.log('Venda cadastrada com sucesso.'); // ← LOG
+
       setProduto('');
       setQuantidade(1);
       setPrecoUnitario('');
@@ -81,8 +93,9 @@ export default function Vendas() {
       setClienteId('');
       setClienteNome('');
       carregarDados();
-    } catch (error) {
-      console.error('Erro ao salvar venda:', error);
+    } catch (error: any) {
+      console.error('Erro ao salvar venda:', error); // ← LOG DETALHADO
+      alert(`Erro ao salvar venda: ${error?.response?.data?.message || error.message}`);
     }
   };
 
