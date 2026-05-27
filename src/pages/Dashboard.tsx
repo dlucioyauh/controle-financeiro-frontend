@@ -31,19 +31,22 @@ export default function Dashboard() {
   const inicioMesAnterior = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
   const fimMesAnterior = new Date(agora.getFullYear(), agora.getMonth(), 0);
 
-  // Filtro do mês atual (já corrigido)
+  // --- FILTROS DE MÊS (CORRIGIDOS) ---
   const vendasMesAtual = vendas.filter(v => {
     const [ano, mes, dia] = v.dataVenda.split('T')[0].split('-').map(Number);
     const dataLocal = new Date(ano, mes - 1, dia);
     return dataLocal >= inicioMesAtual;
   });
 
-  // Filtro do mês anterior (CORRIGIDO)
   const vendasMesAnterior = vendas.filter(v => {
     const [ano, mes, dia] = v.dataVenda.split('T')[0].split('-').map(Number);
     const dataLocal = new Date(ano, mes - 1, dia);
     return dataLocal >= inicioMesAnterior && dataLocal <= fimMesAnterior;
   });
+
+  // Filtra despesas do mês atual (campo "data" é string 'YYYY-MM-DD')
+  const inicioMesAtualStr = inicioMesAtual.toISOString().split('T')[0];
+  const despesasMesAtual = despesas.filter(d => d.data >= inicioMesAtualStr);
 
   const totalEntradas = vendasMesAtual.reduce((acc, v) => acc + Number(v.valorTotal || 0), 0);
   const totalEntradasAnterior = vendasMesAnterior.reduce((acc, v) => acc + Number(v.valorTotal || 0), 0);
@@ -51,7 +54,7 @@ export default function Dashboard() {
     ? ((totalEntradas - totalEntradasAnterior) / totalEntradasAnterior) * 100
     : null;
 
-  const totalEmpresa = despesas.reduce((acc, item) => acc + Number(item.valor), 0);
+  const totalEmpresa = despesasMesAtual.reduce((acc, item) => acc + Number(item.valor), 0);
 
   const saldo = totalEntradas - totalEmpresa;
   const ticketMedio = vendasMesAtual.length > 0 ? totalEntradas / vendasMesAtual.length : 0;
@@ -66,7 +69,7 @@ export default function Dashboard() {
   });
   const top3 = Object.values(produtosMap).sort((a, b) => b.quantidade - a.quantidade).slice(0, 3);
 
-  // Últimos 7 dias (CORRIGIDO para comparar apenas a data)
+  // Últimos 7 dias
   const ultimos7Dias = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
@@ -74,7 +77,7 @@ export default function Dashboard() {
   });
 
   const dadosGrafico = ultimos7Dias.map(dia => ({
-    data: dia.slice(5), // MM-DD
+    data: dia.slice(5),
     valor: vendas
       .filter(v => v.dataVenda?.split('T')[0] === dia)
       .reduce((acc, v) => acc + Number(v.valorTotal || 0), 0),
