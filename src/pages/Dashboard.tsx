@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Wallet, TrendingUp, TrendingDown, DollarSign, BarChart2 } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, DollarSign, BarChart2, Calendar } from 'lucide-react';
 import api from '../api';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -8,6 +8,11 @@ import {
 export default function Dashboard() {
   const [despesas, setDespesas] = useState<any[]>([]);
   const [vendas, setVendas] = useState<any[]>([]);
+
+  // Mês selecionado (formato 'YYYY-MM')
+  const hoje = new Date();
+  const mesAtualStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+  const [mesSelecionado, setMesSelecionado] = useState(mesAtualStr);
 
   useEffect(() => {
     carregarDados();
@@ -26,25 +31,35 @@ export default function Dashboard() {
     }
   }
 
-  const agora = new Date();
-  const inicioMesAtual = new Date(agora.getFullYear(), agora.getMonth(), 1);
-  const inicioMesAnterior = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
-  const fimMesAnterior = new Date(agora.getFullYear(), agora.getMonth(), 0);
+  // Datas calculadas a partir do mês selecionado
+  const [ano, mes] = mesSelecionado.split('-').map(Number);
+  const inicioMesAtual = new Date(ano, mes - 1, 1);
+  const fimMesAtual = new Date(ano, mes, 0); // último dia do mês
+  const inicioMesAnterior = new Date(ano, mes - 2, 1);
+  const fimMesAnterior = new Date(ano, mes - 1, 0);
 
+  // Filtro de vendas do mês selecionado
   const vendasMesAtual = vendas.filter(v => {
-    const [ano, mes, dia] = v.dataVenda.split('T')[0].split('-').map(Number);
-    const dataLocal = new Date(ano, mes - 1, dia);
-    return dataLocal >= inicioMesAtual;
+    const [anoV, mesV, diaV] = v.dataVenda.split('T')[0].split('-').map(Number);
+    const dataLocal = new Date(anoV, mesV - 1, diaV);
+    return dataLocal >= inicioMesAtual && dataLocal <= fimMesAtual;
   });
 
+  // Filtro de vendas do mês anterior
   const vendasMesAnterior = vendas.filter(v => {
-    const [ano, mes, dia] = v.dataVenda.split('T')[0].split('-').map(Number);
-    const dataLocal = new Date(ano, mes - 1, dia);
+    const [anoV, mesV, diaV] = v.dataVenda.split('T')[0].split('-').map(Number);
+    const dataLocal = new Date(anoV, mesV - 1, diaV);
     return dataLocal >= inicioMesAnterior && dataLocal <= fimMesAnterior;
   });
 
+  // Filtro de despesas do mês selecionado (campo "data" é string 'YYYY-MM-DD')
   const inicioMesAtualStr = inicioMesAtual.toISOString().split('T')[0];
-  const despesasMesAtual = despesas.filter(d => d.data >= inicioMesAtualStr);
+  const fimMesAtualStr = fimMesAtual.toISOString().split('T')[0];
+  const despesasMesAtual = despesas.filter(d => {
+    if (!d.data) return false;
+    const dataFormatada = d.data.slice(0, 10);
+    return dataFormatada >= inicioMesAtualStr && dataFormatada <= fimMesAtualStr;
+  });
 
   const totalEntradas = vendasMesAtual.reduce((acc, v) => acc + Number(v.valorTotal || 0), 0);
   const totalEntradasAnterior = vendasMesAnterior.reduce((acc, v) => acc + Number(v.valorTotal || 0), 0);
@@ -56,7 +71,7 @@ export default function Dashboard() {
   const saldo = totalEntradas - totalEmpresa;
   const ticketMedio = vendasMesAtual.length > 0 ? totalEntradas / vendasMesAtual.length : 0;
 
-  // Top 3 produtos
+  // Top 3 produtos (considera todas as vendas, não apenas do mês – pode filtrar se quiser)
   const produtosMap: Record<string, { nome: string; quantidade: number; receita: number }> = {};
   vendas.forEach(v => {
     const nome = v.produto || 'Item Geral';
@@ -66,9 +81,9 @@ export default function Dashboard() {
   });
   const top3 = Object.values(produtosMap).sort((a, b) => b.quantidade - a.quantidade).slice(0, 3);
 
-  // Últimos 7 dias
+  // Últimos 7 dias a partir da data final do mês selecionado
   const ultimos7Dias = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
+    const d = new Date(fimMesAtual);
     d.setDate(d.getDate() - (6 - i));
     return d.toISOString().split('T')[0];
   });
@@ -119,11 +134,24 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 text-slate-200">
-      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
-        <h1 className="text-xl font-bold tracking-tight text-white">Dashboard</h1>
-        <p className="text-xs text-slate-400">Visão geral do desempenho financeiro do seu negócio.</p>
+      {/* Header + Seletor de mês */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-white">Dashboard</h1>
+          <p className="text-xs text-slate-400">Visão geral do desempenho financeiro do seu negócio.</p>
+        </div>
+        <div className="flex items-center gap-1 bg-[#020617] border border-slate-700 rounded px-3 py-2">
+          <Calendar size={14} className="text-slate-400" />
+          <input
+            type="month"
+            value={mesSelecionado}
+            onChange={(e) => setMesSelecionado(e.target.value)}
+            className="bg-transparent text-slate-200 text-sm focus:outline-none"
+          />
+        </div>
       </div>
 
+      {/* Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {cards.map((card) => {
           const Icon = card.icon;
@@ -146,6 +174,7 @@ export default function Dashboard() {
         })}
       </div>
 
+      {/* Gráfico + Top 3 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-5 lg:col-span-2">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
@@ -167,7 +196,7 @@ export default function Dashboard() {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-xs text-slate-500">Sem vendas nos últimos 7 dias.</p>
+              <p className="text-xs text-slate-500">Sem vendas nos últimos 7 dias do período.</p>
             )}
           </div>
         </div>
@@ -193,6 +222,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Últimas vendas */}
       <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-5">
         <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
           <DollarSign className="h-4 w-4 text-emerald-400" />
