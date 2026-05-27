@@ -31,10 +31,18 @@ export default function Dashboard() {
   const inicioMesAnterior = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
   const fimMesAnterior = new Date(agora.getFullYear(), agora.getMonth(), 0);
 
-  const vendasMesAtual = vendas.filter(v => new Date(v.dataVenda) >= inicioMesAtual);
+  // Filtro do mês atual (já corrigido)
+  const vendasMesAtual = vendas.filter(v => {
+    const [ano, mes, dia] = v.dataVenda.split('T')[0].split('-').map(Number);
+    const dataLocal = new Date(ano, mes - 1, dia);
+    return dataLocal >= inicioMesAtual;
+  });
+
+  // Filtro do mês anterior (CORRIGIDO)
   const vendasMesAnterior = vendas.filter(v => {
-    const d = new Date(v.dataVenda);
-    return d >= inicioMesAnterior && d <= fimMesAnterior;
+    const [ano, mes, dia] = v.dataVenda.split('T')[0].split('-').map(Number);
+    const dataLocal = new Date(ano, mes - 1, dia);
+    return dataLocal >= inicioMesAnterior && dataLocal <= fimMesAnterior;
   });
 
   const totalEntradas = vendasMesAtual.reduce((acc, v) => acc + Number(v.valorTotal || 0), 0);
@@ -58,7 +66,7 @@ export default function Dashboard() {
   });
   const top3 = Object.values(produtosMap).sort((a, b) => b.quantidade - a.quantidade).slice(0, 3);
 
-  // Últimos 7 dias
+  // Últimos 7 dias (CORRIGIDO para comparar apenas a data)
   const ultimos7Dias = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
@@ -68,7 +76,7 @@ export default function Dashboard() {
   const dadosGrafico = ultimos7Dias.map(dia => ({
     data: dia.slice(5), // MM-DD
     valor: vendas
-      .filter(v => v.dataVenda?.startsWith(dia))
+      .filter(v => v.dataVenda?.split('T')[0] === dia)
       .reduce((acc, v) => acc + Number(v.valorTotal || 0), 0),
   }));
 
