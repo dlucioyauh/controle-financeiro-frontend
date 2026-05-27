@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 import { ShoppingBag, Trash2, Calendar, DollarSign, Plus, RefreshCw, User } from 'lucide-react';
+import { TableSkeleton, Skeleton } from '../components/Skeleton';
 
 interface Venda {
   id: string;
@@ -59,19 +60,10 @@ export default function Vendas() {
 
   const handleCriarVenda = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Tentando cadastrar venda...'); // ← LOG DE DEPURAÇÃO
-
-    if (!produto) {
-      alert('Selecione um produto.');
-      return;
-    }
-
+    if (!produto) return alert('Selecione um produto.');
     const pUnitario = parseFloat(precoUnitario) || 0;
     const vTotal = pUnitario * quantidade;
-
     try {
-      console.log('Enviando payload:', { produto, quantidade, precoUnitario: pUnitario, valorTotal: vTotal, canalVenda, dataVenda: new Date(dataVenda).toISOString(), clienteId: clienteId || null, clienteNome: clienteNome || null }); // ← LOG
-
       await api.post('/vendas', {
         produto,
         quantidade,
@@ -82,9 +74,6 @@ export default function Vendas() {
         clienteId: clienteId || null,
         clienteNome: clienteNome || null,
       });
-
-      console.log('Venda cadastrada com sucesso.'); // ← LOG
-
       setProduto('');
       setQuantidade(1);
       setPrecoUnitario('');
@@ -93,9 +82,8 @@ export default function Vendas() {
       setClienteId('');
       setClienteNome('');
       carregarDados();
-    } catch (error: any) {
-      console.error('Erro ao salvar venda:', error); // ← LOG DETALHADO
-      alert(`Erro ao salvar venda: ${error?.response?.data?.message || error.message}`);
+    } catch (error) {
+      console.error('Erro ao salvar venda:', error);
     }
   };
 
@@ -115,6 +103,40 @@ export default function Vendas() {
     backgroundSize: '1.2em',
     backgroundRepeat: 'no-repeat',
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6 text-slate-200">
+        <div className="flex justify-between bg-[#0f172a] p-4 rounded-lg border border-slate-800">
+          <div>
+            <Skeleton className="h-6 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-8 w-8 rounded" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 space-y-4">
+            <Skeleton className="h-5 w-32 mb-4" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="lg:col-span-2">
+            <TableSkeleton rows={6} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 text-slate-200">

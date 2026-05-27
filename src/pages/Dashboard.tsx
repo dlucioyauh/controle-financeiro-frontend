@@ -4,12 +4,13 @@ import api from '../api';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import { CardSkeleton, ChartSkeleton, Skeleton } from '../components/Skeleton';
 
 export default function Dashboard() {
   const [despesas, setDespesas] = useState<any[]>([]);
   const [vendas, setVendas] = useState<any[]>([]);
+  const [carregando, setCarregando] = useState(true);
 
-  // Mês selecionado (formato 'YYYY-MM')
   const hoje = new Date();
   const mesAtualStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
   const [mesSelecionado, setMesSelecionado] = useState(mesAtualStr);
@@ -19,6 +20,7 @@ export default function Dashboard() {
   }, []);
 
   async function carregarDados() {
+    setCarregando(true);
     try {
       const [despesasRes, vendasRes] = await Promise.all([
         api.get('/despesas'),
@@ -28,31 +30,29 @@ export default function Dashboard() {
       setVendas(vendasRes.data);
     } catch (error) {
       console.error(error);
+    } finally {
+      setCarregando(false);
     }
   }
 
-  // Datas calculadas a partir do mês selecionado
   const [ano, mes] = mesSelecionado.split('-').map(Number);
   const inicioMesAtual = new Date(ano, mes - 1, 1);
-  const fimMesAtual = new Date(ano, mes, 0); // último dia do mês
+  const fimMesAtual = new Date(ano, mes, 0);
   const inicioMesAnterior = new Date(ano, mes - 2, 1);
   const fimMesAnterior = new Date(ano, mes - 1, 0);
 
-  // Filtro de vendas do mês selecionado
   const vendasMesAtual = vendas.filter(v => {
     const [anoV, mesV, diaV] = v.dataVenda.split('T')[0].split('-').map(Number);
     const dataLocal = new Date(anoV, mesV - 1, diaV);
     return dataLocal >= inicioMesAtual && dataLocal <= fimMesAtual;
   });
 
-  // Filtro de vendas do mês anterior
   const vendasMesAnterior = vendas.filter(v => {
     const [anoV, mesV, diaV] = v.dataVenda.split('T')[0].split('-').map(Number);
     const dataLocal = new Date(anoV, mesV - 1, diaV);
     return dataLocal >= inicioMesAnterior && dataLocal <= fimMesAnterior;
   });
 
-  // Filtro de despesas do mês selecionado (campo "data" é string 'YYYY-MM-DD')
   const inicioMesAtualStr = inicioMesAtual.toISOString().split('T')[0];
   const fimMesAtualStr = fimMesAtual.toISOString().split('T')[0];
   const despesasMesAtual = despesas.filter(d => {
@@ -71,7 +71,6 @@ export default function Dashboard() {
   const saldo = totalEntradas - totalEmpresa;
   const ticketMedio = vendasMesAtual.length > 0 ? totalEntradas / vendasMesAtual.length : 0;
 
-  // Top 3 produtos (considera todas as vendas, não apenas do mês – pode filtrar se quiser)
   const produtosMap: Record<string, { nome: string; quantidade: number; receita: number }> = {};
   vendas.forEach(v => {
     const nome = v.produto || 'Item Geral';
@@ -81,7 +80,6 @@ export default function Dashboard() {
   });
   const top3 = Object.values(produtosMap).sort((a, b) => b.quantidade - a.quantidade).slice(0, 3);
 
-  // Últimos 7 dias a partir da data final do mês selecionado
   const ultimos7Dias = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(fimMesAtual);
     d.setDate(d.getDate() - (6 - i));
@@ -131,6 +129,32 @@ export default function Dashboard() {
       bg: 'bg-blue-500/10',
     },
   ];
+
+  if (carregando) {
+    return (
+      <div className="space-y-6 text-slate-200">
+        <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
+          <Skeleton className="h-6 w-48 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2"><ChartSkeleton /></div>
+          <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-5">
+            <Skeleton className="h-4 w-32 mb-4" />
+            <Skeleton className="h-12 w-full mb-3" />
+            <Skeleton className="h-12 w-full mb-3" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 text-slate-200">

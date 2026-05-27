@@ -5,6 +5,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell
 } from 'recharts';
 import { DollarSign, ShoppingBag, TrendingUp, RefreshCw, Users } from 'lucide-react';
+import { CardSkeleton, ChartSkeleton, TableSkeleton } from '../components/Skeleton';
 
 interface AnalyticsData {
   totalReceita: number;
@@ -63,9 +64,35 @@ export default function Analytics() {
 
   const CORES_PIZZA = ['#06b6d4', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
 
+  if (loading) {
+    return (
+      <div className="space-y-6 text-slate-200">
+        <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
+          <div className="flex justify-between">
+            <div>
+              <div className="h-6 w-48 bg-slate-700/50 animate-pulse rounded mb-2" />
+              <div className="h-4 w-64 bg-slate-700/50 animate-pulse rounded" />
+            </div>
+            <div className="h-8 w-24 bg-slate-700/50 animate-pulse rounded" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ChartSkeleton />
+          <ChartSkeleton height="h-64" />
+        </div>
+        <ChartSkeleton height="h-72" />
+        <TableSkeleton rows={5} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 text-slate-200">
-
       {/* Topo / Filtro de Data */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
         <div>
@@ -126,7 +153,6 @@ export default function Analytics() {
 
       {/* Zona dos Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
         {/* Gráfico de Linha */}
         <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Evolução de Faturamento (Diário)</h4>
@@ -234,7 +260,6 @@ export default function Analytics() {
           <p className="text-xs text-slate-500 text-center py-6">Nenhum cliente identificado no período.</p>
         )}
       </div>
-
     </div>
   );
 }
