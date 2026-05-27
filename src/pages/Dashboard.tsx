@@ -31,7 +31,6 @@ export default function Dashboard() {
   const inicioMesAnterior = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
   const fimMesAnterior = new Date(agora.getFullYear(), agora.getMonth(), 0);
 
-  // --- FILTROS DE MÊS (CORRIGIDOS) ---
   const vendasMesAtual = vendas.filter(v => {
     const [ano, mes, dia] = v.dataVenda.split('T')[0].split('-').map(Number);
     const dataLocal = new Date(ano, mes - 1, dia);
@@ -44,7 +43,6 @@ export default function Dashboard() {
     return dataLocal >= inicioMesAnterior && dataLocal <= fimMesAnterior;
   });
 
-  // Filtra despesas do mês atual (campo "data" é string 'YYYY-MM-DD')
   const inicioMesAtualStr = inicioMesAtual.toISOString().split('T')[0];
   const despesasMesAtual = despesas.filter(d => d.data >= inicioMesAtualStr);
 
@@ -55,7 +53,6 @@ export default function Dashboard() {
     : null;
 
   const totalEmpresa = despesasMesAtual.reduce((acc, item) => acc + Number(item.valor), 0);
-
   const saldo = totalEntradas - totalEmpresa;
   const ticketMedio = vendasMesAtual.length > 0 ? totalEntradas / vendasMesAtual.length : 0;
 
@@ -82,6 +79,8 @@ export default function Dashboard() {
       .filter(v => v.dataVenda?.split('T')[0] === dia)
       .reduce((acc, v) => acc + Number(v.valorTotal || 0), 0),
   }));
+
+  const temDadosGrafico = dadosGrafico.some(d => d.valor > 0);
 
   const cards = [
     {
@@ -120,13 +119,11 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 text-slate-200">
-      {/* Header */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
         <h1 className="text-xl font-bold tracking-tight text-white">Dashboard</h1>
         <p className="text-xs text-slate-400">Visão geral do desempenho financeiro do seu negócio.</p>
       </div>
 
-      {/* Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {cards.map((card) => {
           const Icon = card.icon;
@@ -149,31 +146,32 @@ export default function Dashboard() {
         })}
       </div>
 
-      {/* Gráfico + Top 3 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Gráfico 7 dias */}
         <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-5 lg:col-span-2">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
             <BarChart2 className="h-4 w-4 text-blue-400" />
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">Faturamento — Últimos 7 dias</h2>
           </div>
-          <div className="h-48 text-xs">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={dadosGrafico}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="data" stroke="#64748b" fontSize={10} />
-                <YAxis stroke="#64748b" fontSize={10} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }}
-                  formatter={(v: any) => [`R$ ${Number(v).toFixed(2)}`, 'Faturamento']}
-                />
-                <Line type="monotone" dataKey="valor" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="h-48 text-xs flex items-center justify-center">
+            {temDadosGrafico ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dadosGrafico}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis dataKey="data" stroke="#64748b" fontSize={10} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }}
+                    formatter={(v: any) => [`R$ ${Number(v).toFixed(2)}`, 'Faturamento']}
+                  />
+                  <Line type="monotone" dataKey="valor" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-xs text-slate-500">Sem vendas nos últimos 7 dias.</p>
+            )}
           </div>
         </div>
 
-        {/* Top 3 produtos */}
         <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-5">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
             <TrendingUp className="h-4 w-4 text-emerald-400" />
@@ -195,7 +193,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Últimas vendas */}
       <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-5">
         <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
           <DollarSign className="h-4 w-4 text-emerald-400" />

@@ -50,7 +50,6 @@ export default function Financeiro() {
 
       setTotais({ receita, despesas: totalDespesas, saldo });
 
-      // Evolução do saldo
       const mapaDespesasDia: Record<string, number> = {};
       despesasFiltradas.forEach((d: any) => {
         const dia = d.data.slice(0, 10);
@@ -74,7 +73,6 @@ export default function Financeiro() {
 
       setEvolucaoSaldo(evo);
 
-      // Despesas por categoria
       const mapaCat: Record<string, number> = {};
       despesasFiltradas.forEach((d: any) => {
         const cat = d.categoria || 'Outros';
@@ -86,7 +84,6 @@ export default function Financeiro() {
       }));
       setDespesasPorCategoria(pizzaData);
 
-      // Transações unificadas
       const vendasDetalhadasRes = await api.get('/vendas');
       const vendasDetalhadas = (vendasDetalhadasRes.data || [])
         .filter((v: any) => {
@@ -129,13 +126,11 @@ export default function Financeiro() {
   const formatarMoeda = (valor: number) =>
     valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-  // Ordena categorias para o mini gráfico
   const categoriasOrdenadas = [...despesasPorCategoria]
     .sort((a, b) => b.value - a.value);
 
   return (
     <div className="space-y-6 text-slate-200 pb-10">
-      {/* Cabeçalho + Filtro */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white">Financeiro</h1>
@@ -162,7 +157,6 @@ export default function Financeiro() {
         </div>
       ) : (
         <>
-          {/* Cards de resumo */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 flex items-center justify-between">
               <div>
@@ -189,21 +183,24 @@ export default function Financeiro() {
             </div>
           </div>
 
-          {/* Gráficos lado a lado */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <h3 className="text-sm font-bold text-white mb-4">Evolução do Saldo Diário</h3>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={evolucaoSaldo}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="dia" stroke="#64748b" fontSize={10} />
-                    <YAxis stroke="#64748b" fontSize={10} />
-                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }}
-                      formatter={(value: any) => formatarMoeda(Number(value))} />
-                    <Line type="monotone" dataKey="saldo" stroke="#06b6d4" strokeWidth={3} dot={{ r: 4 }} name="Saldo" />
-                  </LineChart>
-                </ResponsiveContainer>
+              <div className="h-72 flex items-center justify-center">
+                {evolucaoSaldo.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={evolucaoSaldo}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <XAxis dataKey="dia" stroke="#64748b" fontSize={10} />
+                      <YAxis stroke="#64748b" fontSize={10} />
+                      <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }}
+                        formatter={(value: any) => formatarMoeda(Number(value))} />
+                      <Line type="monotone" dataKey="saldo" stroke="#06b6d4" strokeWidth={3} dot={{ r: 4 }} name="Saldo" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-xs text-slate-500">Sem movimentações no período.</p>
+                )}
               </div>
             </div>
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 flex flex-col">
@@ -229,9 +226,7 @@ export default function Financeiro() {
             </div>
           </div>
 
-          {/* 🔥 Duas colunas (Últimas Movimentações + Mini Gráfico + Despesas) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Coluna esquerda: Últimas movimentações */}
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <h3 className="text-sm font-bold text-white mb-4">Últimas Movimentações</h3>
               <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
@@ -261,9 +256,7 @@ export default function Financeiro() {
                             </span>
                           )}
                         </td>
-                        <td className="py-1.5 px-2 text-white max-w-[120px] truncate">
-                          {t.descricao}
-                        </td>
+                        <td className="py-1.5 px-2 text-white max-w-[120px] truncate">{t.descricao}</td>
                         <td className={`py-1.5 px-2 text-right font-bold ${t.valor >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                           {t.valor >= 0 ? '+' : ''}{formatarMoeda(Math.abs(t.valor))}
                         </td>
@@ -279,9 +272,7 @@ export default function Financeiro() {
               </div>
             </div>
 
-            {/* Coluna direita: Mini gráfico + Formulário de despesas */}
             <div className="space-y-6">
-              {/* Mini gráfico de barras por categoria */}
               <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
                 <h3 className="text-sm font-bold text-white mb-3">Distribuição de Gastos</h3>
                 {categoriasOrdenadas.length > 0 ? (
@@ -313,7 +304,6 @@ export default function Financeiro() {
                 )}
               </div>
 
-              {/* Formulário de despesas */}
               <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
                 <h2 className="text-sm font-bold text-white mb-4">Adicionar / Gerenciar Despesas</h2>
                 <Despesas onChange={carregarDados} />
