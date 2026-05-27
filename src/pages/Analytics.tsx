@@ -59,6 +59,8 @@ export default function Analytics() {
     ? Object.entries(dados.vendasPorDia).map(([data, valor]) => ({ data, valor }))
     : [];
 
+  const produtosData = dados?.produtosMaisVendidos || [];
+
   const CORES_PIZZA = ['#06b6d4', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
 
   return (
@@ -128,16 +130,20 @@ export default function Analytics() {
         {/* Gráfico de Linha */}
         <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Evolução de Faturamento (Diário)</h4>
-          <div className="h-64 text-xs">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={dadosLinha}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="data" stroke="#64748b" fontSize={10} />
-                <YAxis stroke="#64748b" fontSize={10} />
-                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }} />
-                <Line type="monotone" dataKey="valor" stroke="#3b82f6" name="Faturamento R$" strokeWidth={2} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="h-64 text-xs flex items-center justify-center">
+            {dadosLinha.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dadosLinha}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis dataKey="data" stroke="#64748b" fontSize={10} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }} />
+                  <Line type="monotone" dataKey="valor" stroke="#3b82f6" name="Faturamento R$" strokeWidth={2} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-xs text-slate-500">Sem dados de faturamento no período.</p>
+            )}
           </div>
         </div>
 
@@ -166,16 +172,20 @@ export default function Analytics() {
         {/* Gráfico de Barras */}
         <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 lg:col-span-2">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Top 10 Produtos Mais Vendidos (Quantidade)</h4>
-          <div className="h-72 text-xs">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dados?.produtosMaisVendidos || []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="nome" stroke="#64748b" fontSize={10} tickLine={false} />
-                <YAxis stroke="#64748b" fontSize={10} />
-                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }} />
-                <Bar dataKey="quantidade" fill="#06b6d4" name="Unidades Vendidas" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-72 text-xs flex items-center justify-center">
+            {produtosData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={produtosData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis dataKey="nome" stroke="#64748b" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }} />
+                  <Bar dataKey="quantidade" fill="#06b6d4" name="Unidades Vendidas" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-xs text-slate-500">Nenhum produto vendido no período.</p>
+            )}
           </div>
         </div>
       </div>
