@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Calculator } from 'lucide-react';
+import { Plus, Pencil, Trash2, Calculator, Lightbulb } from 'lucide-react';
 import api from '../api';
 
 export default function Receitas() {
@@ -22,6 +22,10 @@ export default function Receitas() {
   const [ingQuantidade, setIngQuantidade] = useState('');
 
   const [pesoFatiaSimulada, setPesoFatiaSimulada] = useState('150');
+
+  // Margens sugeridas (editáveis)
+  const [margemSugeridaCliente, setMargemSugeridaCliente] = useState('100');
+  const [margemSugeridaParceiro, setMargemSugeridaParceiro] = useState('50');
 
   async function carregar() {
     try {
@@ -57,7 +61,7 @@ export default function Receitas() {
     setIngredientesReceita((prev) => [
       ...prev,
       {
-        ingredienteId: ing.id, // ← string (UUID)
+        ingredienteId: ing.id,
         nome: ing.nome,
         quantidade: qtdUsada,
         unidade: ing.unidadeMedida ?? 'kg',
@@ -80,6 +84,15 @@ export default function Receitas() {
   const custoPorUnidade = rendimento ? custoTotal / Number(rendimento) : 0;
   const isPesoGramas = unidadeRendimento === 'gramas';
   const custoFatiaPersonalizada = isPesoGramas ? (custoTotal / Number(rendimento || 1)) * Number(pesoFatiaSimulada) : 0;
+
+  // Preços sugeridos para a receita INTEIRA
+  const precoSugeridoClienteInteiro = custoTotal * (1 + Number(margemSugeridaCliente) / 100);
+  const precoSugeridoParceiroInteiro = custoTotal * (1 + Number(margemSugeridaParceiro) / 100);
+
+  // Preços sugeridos por UNIDADE
+  const precoSugeridoClienteUnitario = custoPorUnidade * (1 + Number(margemSugeridaCliente) / 100);
+  const precoSugeridoParceiroUnitario = custoPorUnidade * (1 + Number(margemSugeridaParceiro) / 100);
+
   const margemFinal = precoVendaFinal ? ((Number(precoVendaFinal) - custoPorUnidade) / Number(precoVendaFinal)) * 100 : 0;
   const margemParceiro = precoVendaParceiro ? ((Number(precoVendaParceiro) - custoPorUnidade) / Number(precoVendaParceiro)) * 100 : 0;
 
@@ -100,7 +113,7 @@ export default function Receitas() {
       precoVendaFinal: Number(precoVendaFinal || 0),
       precoVendaParceiro: Number(precoVendaParceiro || 0),
       ingredientes: ingredientesReceita.map((i) => ({
-        ingredienteId: i.ingredienteId, // string
+        ingredienteId: i.ingredienteId,
         quantidade: i.quantidade,
         unidade: i.unidade,
         custoTotal: i.custoTotal,
@@ -109,7 +122,7 @@ export default function Receitas() {
 
     try {
       if (editandoId !== null) {
-        await api.patch(`/receitas/${editandoId}`, payload); // ← PATCH
+        await api.patch(`/receitas/${editandoId}`, payload);
         setEditandoId(null);
       } else {
         await api.post('/receitas', payload);
@@ -147,9 +160,7 @@ export default function Receitas() {
     setPrecoVendaFinal(String(r.precoVendaFinal || ''));
     setPrecoVendaParceiro(String(r.precoVendaParceiro || ''));
 
-    // Mapeia os ingredientes salvos, buscando o nome na lista carregada
     const ingsMapeados = (r.ingredientes || []).map((i: any) => {
-      // Agora compara strings diretamente (UUID)
       const ingCompleto = ingredientes.find((ing) => ing.id === i.ingredienteId);
       return {
         ingredienteId: i.ingredienteId,
@@ -218,6 +229,7 @@ export default function Receitas() {
             </div>
           </div>
 
+          {/* Ingredientes */}
           <div>
             <h4 className="text-white font-medium mb-3">Ingredientes da Receita</h4>
             <div className="flex gap-2 mb-3">
@@ -254,8 +266,9 @@ export default function Receitas() {
             ))}
           </div>
 
+          {/* Resumo de custos + Preços sugeridos */}
           {custoIngredientes > 0 && (
-            <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 space-y-2">
+            <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 space-y-3">
               <h4 className="text-white font-medium flex items-center gap-2">
                 <Calculator size={16} /> Resumo de Custos
               </h4>
@@ -264,7 +277,7 @@ export default function Receitas() {
                 <div className="flex justify-between text-gray-400"><span>Custos fixos ({custosFixosPorcentagem}%)</span><span>R$ {custoFixos.toFixed(2)}</span></div>
                 <div className="flex justify-between text-gray-400"><span>Mão de obra</span><span>R$ {Number(maoDeObra || 0).toFixed(2)}</span></div>
                 <div className="flex justify-between text-white font-bold border-t border-gray-700 pt-2 mt-2">
-                  <span>Custo Total</span><span className="text-amber-400">R$ {custoTotal.toFixed(2)}</span>
+                  <span>Custo Total da Receita</span><span className="text-amber-400">R$ {custoTotal.toFixed(2)}</span>
                 </div>
                 {rendimento && (
                   <div className="border-t border-gray-700/50 pt-2 mt-2 space-y-1">
@@ -281,26 +294,106 @@ export default function Receitas() {
                       </>
                     ) : (
                       <div className="flex justify-between text-blue-400 font-bold">
-                        <span>Custo por unidade ({unidadeRendimento})</span>
+                        <span>Custo por unidade</span>
                         <span>R$ {custoPorUnidade.toFixed(2)}</span>
                       </div>
                     )}
                   </div>
                 )}
               </div>
+
+              {/* 🔥 NOVA SEÇÃO: Preços Sugeridos (Inteiro + Unitário) */}
+              <div className="border-t border-gray-700 pt-3 mt-3 space-y-3">
+                <h4 className="text-white font-medium flex items-center gap-2">
+                  <Lightbulb size={16} className="text-yellow-400" /> Precificação Sugerida
+                </h4>
+
+                {/* Margens configuráveis */}
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="flex items-center gap-2 bg-[#0f172a]/60 p-2 rounded-lg">
+                    <span className="text-gray-400">Margem Cliente:</span>
+                    <input type="number" value={margemSugeridaCliente}
+                      onChange={(e) => setMargemSugeridaCliente(e.target.value)}
+                      className="w-14 bg-gray-800 border border-gray-700 rounded text-center text-white p-1" />
+                    <span className="text-gray-400">%</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-[#0f172a]/60 p-2 rounded-lg">
+                    <span className="text-gray-400">Margem Parceiro:</span>
+                    <input type="number" value={margemSugeridaParceiro}
+                      onChange={(e) => setMargemSugeridaParceiro(e.target.value)}
+                      className="w-14 bg-gray-800 border border-gray-700 rounded text-center text-white p-1" />
+                    <span className="text-gray-400">%</span>
+                  </div>
+                </div>
+
+                {/* Cards de preços sugeridos */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Cliente Final */}
+                  <div className="bg-[#0f172a]/60 p-3 rounded-lg border border-gray-700/50 space-y-2">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Cliente Final</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-400">Receita Inteira:</span>
+                      <span className="text-sm font-bold text-emerald-400">
+                        R$ {precoSugeridoClienteInteiro.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-400">
+                        {isPesoGramas ? 'p/ Fatia (' + pesoFatiaSimulada + 'g):' : 'p/ Unidade:'}
+                      </span>
+                      <span className="text-sm font-bold text-emerald-400">
+                        R$ {isPesoGramas ? ((custoTotal / Number(rendimento)) * Number(pesoFatiaSimulada) * (1 + Number(margemSugeridaCliente) / 100)).toFixed(2) : precoSugeridoClienteUnitario.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Parceiro */}
+                  <div className="bg-[#0f172a]/60 p-3 rounded-lg border border-gray-700/50 space-y-2">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Parceiro / Café</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-400">Receita Inteira:</span>
+                      <span className="text-sm font-bold text-blue-400">
+                        R$ {precoSugeridoParceiroInteiro.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-400">
+                        {isPesoGramas ? 'p/ Fatia (' + pesoFatiaSimulada + 'g):' : 'p/ Unidade:'}
+                      </span>
+                      <span className="text-sm font-bold text-blue-400">
+                        R$ {isPesoGramas ? ((custoTotal / Number(rendimento)) * Number(pesoFatiaSimulada) * (1 + Number(margemSugeridaParceiro) / 100)).toFixed(2) : precoSugeridoParceiroUnitario.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[10px] text-gray-500 italic">
+                  Os preços acima são sugestões baseadas no custo + margem. Você pode usá-los como referência ou ajustar manualmente abaixo.
+                </p>
+              </div>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* Preços de venda manuais */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="text-gray-400 text-sm mb-1 block">Preço Final (R$)</label>
-              <input type="number" value={precoVendaFinal} onChange={(e) => setPrecoVendaFinal(e.target.value)} className={inputClass} />
-              {precoVendaFinal && <p className={`text-xs mt-1 ${margemFinal > 0 ? 'text-green-400' : 'text-red-400'}`}>Margem: {margemFinal.toFixed(1)}%</p>}
+              <label className="text-gray-400 text-sm mb-1 block">Preço Comercial Cliente Final (R$)</label>
+              <input type="number" value={precoVendaFinal}
+                onChange={(e) => setPrecoVendaFinal(e.target.value)} className={inputClass} />
+              {precoVendaFinal && (
+                <p className={`text-xs mt-1 ${margemFinal > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  Margem sobre custo: {margemFinal.toFixed(1)}%
+                </p>
+              )}
             </div>
             <div>
-              <label className="text-gray-400 text-sm mb-1 block">Preço Parceiro (R$)</label>
-              <input type="number" value={precoVendaParceiro} onChange={(e) => setPrecoVendaParceiro(e.target.value)} className={inputClass} />
-              {precoVendaParceiro && <p className={`text-xs mt-1 ${margemParceiro > 0 ? 'text-green-400' : 'text-red-400'}`}>Margem: {margemParceiro.toFixed(1)}%</p>}
+              <label className="text-gray-400 text-sm mb-1 block">Preço Comercial Parceiro/Café (R$)</label>
+              <input type="number" value={precoVendaParceiro}
+                onChange={(e) => setPrecoVendaParceiro(e.target.value)} className={inputClass} />
+              {precoVendaParceiro && (
+                <p className={`text-xs mt-1 ${margemParceiro > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  Margem sobre custo: {margemParceiro.toFixed(1)}%
+                </p>
+              )}
             </div>
           </div>
 
@@ -315,6 +408,7 @@ export default function Receitas() {
         </div>
       )}
 
+      {/* Lista de receitas cadastradas */}
       <div className="bg-[#0f172a] rounded-2xl p-6 border border-white/10">
         <h3 className="text-lg font-semibold text-white mb-4">Receitas Cadastradas ({receitas.length})</h3>
         <div className="space-y-3">
