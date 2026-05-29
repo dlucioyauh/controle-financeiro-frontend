@@ -17,14 +17,14 @@ import {
 
 
 const links = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/analytics', label: 'Analytics', icon: TrendingUp },
-  { to: '/financeiro', label: 'Financeiro', icon: DollarSign },
-  { to: '/vendas', label: 'Vendas', icon: ShoppingBag },
-  { to: '/precificacao', label: 'Precificação', icon: ChefHat },
-  { to: '/relatorios', label: 'Relatórios', icon: FileText },
-  { to: '/clientes', label: 'Clientes', icon: Users },
-  { to: '/configuracoes', label: 'Configurações', icon: Settings },
+  { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/app/analytics', label: 'Analytics', icon: TrendingUp },
+  { to: '/app/financeiro', label: 'Financeiro', icon: DollarSign },
+  { to: '/app/vendas', label: 'Vendas', icon: ShoppingBag },
+  { to: '/app/precificacao', label: 'Precificação', icon: ChefHat },
+  { to: '/app/relatorios', label: 'Relatórios', icon: FileText },
+  { to: '/app/clientes', label: 'Clientes', icon: Users },
+  { to: '/app/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
 export default function MainLayout() {
@@ -133,10 +133,10 @@ export default function MainLayout() {
               ))}
               {user?.username === 'dlucio' && (
                 <Link
-                  to="/admin"
+                  to="/app/admin"
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                    location.pathname === '/admin'
+                    location.pathname === '/app/admin'
                       ? 'bg-blue-600 text-white'
                       : 'text-yellow-400 hover:text-white hover:bg-slate-800'
                   }`}

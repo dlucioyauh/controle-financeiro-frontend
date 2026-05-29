@@ -51,7 +51,7 @@ export default function Register({ onRegister }: RegisterProps) {
       const response = await api.post('/auth/register', payload);
       localStorage.setItem('token', response.data.access_token);
       if (onRegister) onRegister();
-      navigate('/');
+      navigate('/app');
     } catch (err: any) {
       if (err.response?.status === 409) {
         setErro('Usuário já existe. Escolha outro nome de usuário.');

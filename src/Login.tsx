@@ -13,9 +13,8 @@ function Login() {
     try {
       const response = await api.post('/auth/login', { username, password });
       localStorage.setItem('token', response.data.access_token);
-      navigate('/'); // Redireciona para o Dashboard (rota index dentro do MainLayout)
-    } catch (err) {
-      console.error(err);
+      navigate('/app'); // <- Dashboard protegido
+    } catch {
       setErro('Usuário ou senha incorretos');
     }
   }
