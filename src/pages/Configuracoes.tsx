@@ -1,164 +1,156 @@
 import { useEffect, useState } from 'react';
-import { Settings, User, Lock, Save } from 'lucide-react';
+import { Save, Key, User, MapPin } from 'lucide-react';
 import api from '../api';
 
 export default function Configuracoes() {
-  const [nomeNegocio, setNomeNegocio] = useState('');
-  const [username, setUsername] = useState('');
+  const [perfil, setPerfil] = useState<any>({});
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [msgPerfil, setMsgPerfil] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
-  const [msgSenha, setMsgSenha] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
-  const [salvandoPerfil, setSalvandoPerfil] = useState(false);
-  const [salvandoSenha, setSalvandoSenha] = useState(false);
+  const [mensagem, setMensagem] = useState('');
+
+  const carregarPerfil = async () => {
+    try {
+      const res = await api.get('/users/perfil');
+      setPerfil(res.data);
+    } catch (err) {
+      console.error('Erro ao carregar perfil:', err);
+    }
+  };
 
   useEffect(() => {
-    api.get('/users/perfil').then((res) => {
-      setNomeNegocio(res.data.nomeNegocio || '');
-      setUsername(res.data.username || '');
-    });
+    carregarPerfil();
   }, []);
 
-  async function salvarPerfil() {
-    setSalvandoPerfil(true);
-    setMsgPerfil(null);
+  const salvarPerfil = async () => {
     try {
-      await api.patch('/users/perfil', { nomeNegocio });
-      setMsgPerfil({ tipo: 'ok', texto: 'Perfil atualizado com sucesso!' });
-    } catch {
-      setMsgPerfil({ tipo: 'erro', texto: 'Erro ao salvar perfil.' });
-    } finally {
-      setSalvandoPerfil(false);
+      await api.patch('/users/perfil', {
+        nome: perfil.nome,
+        email: perfil.email,
+        nomeNegocio: perfil.nomeNegocio,
+        telefone: perfil.telefone,
+        enderecoOrigem: perfil.enderecoOrigem,
+        bairroOrigem: perfil.bairroOrigem,
+        cidadeOrigem: perfil.cidadeOrigem,
+        estadoOrigem: perfil.estadoOrigem,
+        cepOrigem: perfil.cepOrigem,
+        taxaFreteKm: parseFloat(perfil.taxaFreteKm) || 0.8,
+      });
+      setMensagem('Perfil atualizado com sucesso!');
+      setTimeout(() => setMensagem(''), 3000);
+    } catch (err) {
+      console.error('Erro ao salvar perfil:', err);
+      setMensagem('Erro ao salvar perfil.');
     }
-  }
+  };
 
-  async function alterarSenha() {
-    setMsgSenha(null);
+  const alterarSenha = async () => {
     if (novaSenha !== confirmarSenha) {
-      setMsgSenha({ tipo: 'erro', texto: 'As senhas não coincidem.' });
+      setMensagem('As senhas não coincidem.');
       return;
     }
-    if (novaSenha.length < 6) {
-      setMsgSenha({ tipo: 'erro', texto: 'A nova senha deve ter pelo menos 6 caracteres.' });
-      return;
-    }
-    setSalvandoSenha(true);
     try {
-      await api.patch('/users/alterar-senha', { senhaAtual, novaSenha });
-      setMsgSenha({ tipo: 'ok', texto: 'Senha alterada com sucesso!' });
+      await api.patch('/users/alterar-senha', {
+        senhaAtual,
+        novaSenha,
+      });
       setSenhaAtual('');
       setNovaSenha('');
       setConfirmarSenha('');
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Erro ao alterar senha.';
-      setMsgSenha({ tipo: 'erro', texto: msg });
-    } finally {
-      setSalvandoSenha(false);
+      setMensagem('Senha alterada com sucesso!');
+      setTimeout(() => setMensagem(''), 3000);
+    } catch (err) {
+      console.error('Erro ao alterar senha:', err);
+      setMensagem('Senha atual incorreta.');
     }
-  }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPerfil({ ...perfil, [e.target.name]: e.target.value });
+  };
 
   return (
-    <div className="space-y-6 text-slate-200">
+    <div className="space-y-6 text-slate-200 max-w-2xl mx-auto">
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
-        <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-          <Settings size={20} className="text-cyan-400" /> Configurações
+        <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <User size={20} className="text-cyan-400" /> Configurações
         </h1>
-        <p className="text-xs text-slate-400">Gerencie seu perfil e segurança da conta.</p>
+        <p className="text-xs text-slate-400">Gerencie seu perfil e endereço de origem.</p>
       </div>
 
-      {/* PERFIL */}
-      <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-6 space-y-4">
-        <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-          <User size={16} className="text-cyan-400" />
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider">Perfil</h2>
+      {mensagem && (
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs p-3 rounded-lg">
+          {mensagem}
         </div>
+      )}
 
-        <div className="space-y-1">
-          <label className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Usuário</label>
-          <input
-            value={username}
-            disabled
-            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-500 cursor-not-allowed"
-          />
+      {/* Perfil */}
+      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <User size={16} className="text-cyan-400" /> Dados do Perfil
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input name="nome" placeholder="Nome completo" value={perfil.nome || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="email" placeholder="E-mail" value={perfil.email || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="nomeNegocio" placeholder="Nome do negócio" value={perfil.nomeNegocio || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="telefone" placeholder="Telefone" value={perfil.telefone || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
         </div>
+      </div>
 
-        <div className="space-y-1">
-          <label className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Nome do Negócio</label>
-          <input
-            value={nomeNegocio}
-            onChange={(e) => setNomeNegocio(e.target.value)}
-            placeholder="Ex: Confeitaria da Ana"
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-          />
+      {/* Endereço de Origem (Frete) */}
+      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <MapPin size={16} className="text-cyan-400" /> Endereço de Origem (Entregas)
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input name="enderecoOrigem" placeholder="Rua, número" value={perfil.enderecoOrigem || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="bairroOrigem" placeholder="Bairro" value={perfil.bairroOrigem || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="cidadeOrigem" placeholder="Cidade" value={perfil.cidadeOrigem || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="estadoOrigem" placeholder="Estado (ex: SC)" value={perfil.estadoOrigem || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="cepOrigem" placeholder="CEP" value={perfil.cepOrigem || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <div className="relative">
+            <input name="taxaFreteKm" type="number" step="0.01" placeholder="Taxa por km (ex: 0.80)" value={perfil.taxaFreteKm || ''} onChange={handleChange}
+              className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full" />
+            <span className="absolute right-3 top-2.5 text-slate-400 text-sm">R$/km</span>
+          </div>
         </div>
-
-        {msgPerfil && (
-          <p className={`text-xs ${msgPerfil.tipo === 'ok' ? 'text-emerald-400' : 'text-red-400'}`}>
-            {msgPerfil.texto}
-          </p>
-        )}
-
-        <button
-          onClick={salvarPerfil}
-          disabled={salvandoPerfil}
-          className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-black font-bold px-4 py-2 rounded-lg text-xs transition-colors"
-        >
-          <Save size={14} />
-          {salvandoPerfil ? 'Salvando...' : 'Salvar Perfil'}
+        <p className="text-[10px] text-slate-500">
+          Configure seu endereço para calcular automaticamente a distância e o frete nas vendas.
+        </p>
+        <button onClick={salvarPerfil}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1">
+          <Save size={14} /> Salvar Perfil
         </button>
       </div>
 
-      {/* ALTERAR SENHA */}
-      <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-6 space-y-4">
-        <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-          <Lock size={16} className="text-cyan-400" />
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider">Alterar Senha</h2>
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Senha Atual</label>
-          <input
-            type="password"
-            value={senhaAtual}
+      {/* Alterar Senha */}
+      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Key size={16} className="text-yellow-400" /> Alterar Senha
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <input type="password" placeholder="Senha atual" value={senhaAtual}
             onChange={(e) => setSenhaAtual(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Nova Senha</label>
-          <input
-            type="password"
-            value={novaSenha}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input type="password" placeholder="Nova senha" value={novaSenha}
             onChange={(e) => setNovaSenha(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Confirmar Nova Senha</label>
-          <input
-            type="password"
-            value={confirmarSenha}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input type="password" placeholder="Confirmar nova senha" value={confirmarSenha}
             onChange={(e) => setConfirmarSenha(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-          />
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
         </div>
-
-        {msgSenha && (
-          <p className={`text-xs ${msgSenha.tipo === 'ok' ? 'text-emerald-400' : 'text-red-400'}`}>
-            {msgSenha.texto}
-          </p>
-        )}
-
-        <button
-          onClick={alterarSenha}
-          disabled={salvandoSenha}
-          className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-black font-bold px-4 py-2 rounded-lg text-xs transition-colors"
-        >
-          <Lock size={14} />
-          {salvandoSenha ? 'Alterando...' : 'Alterar Senha'}
+        <button onClick={alterarSenha}
+          className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1">
+          <Key size={14} /> Alterar Senha
         </button>
       </div>
     </div>

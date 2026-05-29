@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { ShoppingBag, Trash2, Calendar, DollarSign, Plus, RefreshCw, User } from 'lucide-react';
-import { TableSkeleton, Skeleton } from '../components/Skeleton';
+import { ShoppingBag, Trash2, Calendar, DollarSign, Plus, RefreshCw, User, Truck } from 'lucide-react';
 
 interface Venda {
   id: string;
@@ -12,6 +11,7 @@ interface Venda {
   canalVenda: string;
   dataVenda: string;
   clienteNome?: string;
+  clienteId?: string;
 }
 
 interface Receita {
@@ -22,6 +22,15 @@ interface Receita {
 interface Cliente {
   id: string;
   nome: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+interface FreteResult {
+  distanciaKm: string;
+  tempoMinutos: number;
+  valorFrete: string;
+  taxaFreteKm: number;
 }
 
 export default function Vendas() {
@@ -37,6 +46,10 @@ export default function Vendas() {
   const [dataVenda, setDataVenda] = useState(hoje);
   const [clienteId, setClienteId] = useState('');
   const [clienteNome, setClienteNome] = useState('');
+
+  // Frete
+  const [frete, setFrete] = useState<FreteResult | null>(null);
+  const [calculandoFrete, setCalculandoFrete] = useState(false);
 
   const carregarDados = async () => {
     setLoading(true);
@@ -64,7 +77,7 @@ export default function Vendas() {
     const pUnitario = parseFloat(precoUnitario) || 0;
     const vTotal = pUnitario * quantidade;
     try {
-      await api.post('/vendas', {
+      const payload: any = {
         produto,
         quantidade,
         precoUnitario: pUnitario,
@@ -73,14 +86,21 @@ export default function Vendas() {
         dataVenda: new Date(dataVenda).toISOString(),
         clienteId: clienteId || null,
         clienteNome: clienteNome || null,
-      });
-      setProduto('');
-      setQuantidade(1);
-      setPrecoUnitario('');
-      setCanalVenda('Balcão');
-      setDataVenda(hoje);
-      setClienteId('');
-      setClienteNome('');
+      };
+
+      // Se houver frete calculado, adiciona ao total
+      if (frete) {
+        payload.valorTotal = vTotal + parseFloat(frete.valorFrete);
+        // Opcional: armazenar o frete em um campo extra? Por enquanto não temos coluna.
+        // Podemos incluir no nome do produto ou em algum campo existente? Melhor apenas somar.
+        // Como a entidade Venda não tem campo frete, vamos somar ao valorTotal e talvez no futuro adicionar.
+        // Por ora, a venda é criada com o valor total incluindo o frete.
+      }
+
+      await api.post('/vendas', payload);
+      setProduto(''); setQuantidade(1); setPrecoUnitario('');
+      setCanalVenda('Balcão'); setDataVenda(hoje);
+      setClienteId(''); setClienteNome(''); setFrete(null);
       carregarDados();
     } catch (error) {
       console.error('Erro ao salvar venda:', error);
@@ -97,6 +117,20 @@ export default function Vendas() {
     }
   };
 
+  const calcularFrete = async () => {
+    if (!clienteId) return alert('Selecione um cliente.');
+    setCalculandoFrete(true);
+    try {
+      const res = await api.post('/vendas/calcular-frete', { clienteId });
+      setFrete(res.data);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Erro ao calcular frete.');
+      setFrete(null);
+    } finally {
+      setCalculandoFrete(false);
+    }
+  };
+
   const selectStyle = {
     backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
     backgroundPosition: 'right 0.75rem center',
@@ -104,43 +138,8 @@ export default function Vendas() {
     backgroundRepeat: 'no-repeat',
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6 text-slate-200">
-        <div className="flex justify-between bg-[#0f172a] p-4 rounded-lg border border-slate-800">
-          <div>
-            <Skeleton className="h-6 w-48 mb-2" />
-            <Skeleton className="h-4 w-64" />
-          </div>
-          <Skeleton className="h-8 w-8 rounded" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 space-y-4">
-            <Skeleton className="h-5 w-32 mb-4" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <div className="grid grid-cols-2 gap-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="lg:col-span-2">
-            <TableSkeleton rows={6} />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 text-slate-200">
-      {/* Header */}
       <div className="flex items-center justify-between bg-[#0f172a] p-4 rounded-lg border border-slate-800">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white">Registro de Vendas</h1>
@@ -152,7 +151,6 @@ export default function Vendas() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Formulário */}
         <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 h-fit space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
             <ShoppingBag className="h-4 w-4 text-cyan-400" />
@@ -160,16 +158,11 @@ export default function Vendas() {
           </div>
 
           <form onSubmit={handleCriarVenda} className="space-y-4 text-xs">
-            {/* Produto */}
             <div>
               <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Produto / Item</label>
-              <select
-                value={produto}
-                onChange={e => setProduto(e.target.value)}
+              <select value={produto} onChange={e => setProduto(e.target.value)}
                 className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10 transition-colors pr-8 appearance-none"
-                style={selectStyle}
-                required
-              >
+                style={selectStyle} required>
                 <option value="" className="bg-[#0f172a]">-- Selecione o Produto --</option>
                 {receitas.map(rec => (
                   <option key={rec.id} value={rec.nome} className="bg-[#0f172a]">{rec.nome}</option>
@@ -177,22 +170,19 @@ export default function Vendas() {
               </select>
             </div>
 
-            {/* Cliente */}
             <div>
               <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">
                 Cliente <span className="text-slate-500 normal-case font-normal">(opcional)</span>
               </label>
-              <select
-                value={clienteId}
-                onChange={e => {
-                  const id = e.target.value;
-                  setClienteId(id);
-                  const c = clientes.find(c => c.id === id);
-                  setClienteNome(c ? c.nome : '');
-                }}
+              <select value={clienteId} onChange={e => {
+                const id = e.target.value;
+                setClienteId(id);
+                const c = clientes.find(c => c.id === id);
+                setClienteNome(c ? c.nome : '');
+                setFrete(null); // resetar frete ao trocar cliente
+              }}
                 className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10 transition-colors pr-8 appearance-none"
-                style={selectStyle}
-              >
+                style={selectStyle}>
                 <option value="" className="bg-[#0f172a]">-- Sem cliente --</option>
                 {clientes.map(c => (
                   <option key={c.id} value={c.id} className="bg-[#0f172a]">{c.nome}</option>
@@ -200,38 +190,43 @@ export default function Vendas() {
               </select>
             </div>
 
-            {/* Quantidade e Preço */}
+            {/* Botão Calcular Frete */}
+            {clienteId && (
+              <div>
+                <button type="button" onClick={calcularFrete} disabled={calculandoFrete}
+                  className="w-full bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-semibold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors">
+                  <Truck size={14} />
+                  {calculandoFrete ? 'Calculando...' : 'Calcular Frete'}
+                </button>
+                {frete && (
+                  <div className="mt-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2 text-xs text-emerald-400 space-y-1">
+                    <p>Distância: {frete.distanciaKm} km</p>
+                    <p>Tempo estimado: {frete.tempoMinutos} min</p>
+                    <p className="font-bold">Frete: R$ {frete.valorFrete} (R$ {frete.taxaFreteKm}/km)</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Quantidade</label>
-                <input
-                  type="number" min="1" value={quantidade}
-                  onChange={e => setQuantidade(parseInt(e.target.value) || 1)}
-                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10"
-                  required
-                />
+                <input type="number" min="1" value={quantidade} onChange={e => setQuantidade(parseInt(e.target.value) || 1)}
+                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10" required />
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Preço Unitário (R$)</label>
-                <input
-                  type="number" step="0.01" placeholder="0.00" value={precoUnitario}
-                  onChange={e => setPrecoUnitario(e.target.value)}
-                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10"
-                  required
-                />
+                <input type="number" step="0.01" placeholder="0.00" value={precoUnitario} onChange={e => setPrecoUnitario(e.target.value)}
+                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10" required />
               </div>
             </div>
 
-            {/* Canal e Data */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Canal de Venda</label>
-                <select
-                  value={canalVenda}
-                  onChange={e => setCanalVenda(e.target.value)}
+                <select value={canalVenda} onChange={e => setCanalVenda(e.target.value)}
                   className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10 transition-colors pr-8 appearance-none"
-                  style={selectStyle}
-                >
+                  style={selectStyle}>
                   <option value="Balcão" className="bg-[#0f172a]">Balcão</option>
                   <option value="Encomenda" className="bg-[#0f172a]">Encomenda</option>
                   <option value="Instagram" className="bg-[#0f172a]">Instagram</option>
@@ -241,27 +236,20 @@ export default function Vendas() {
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Data da Venda</label>
-                <input
-                  type="date" value={dataVenda}
-                  onChange={e => setDataVenda(e.target.value)}
-                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10"
-                  required
-                />
+                <input type="date" value={dataVenda} onChange={e => setDataVenda(e.target.value)}
+                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10" required />
               </div>
             </div>
 
-            {/* Total */}
             <div className="bg-[#020617]/50 p-3 rounded-lg border border-slate-850 flex justify-between items-center">
               <span className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">Valor Total Estimado:</span>
               <span className="text-emerald-400 font-bold text-base">
-                R$ {((parseFloat(precoUnitario) || 0) * quantidade).toFixed(2)}
+                R$ {((parseFloat(precoUnitario) || 0) * quantidade + (frete ? parseFloat(frete.valorFrete) : 0)).toFixed(2)}
               </span>
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
-            >
+            <button type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors">
               <Plus className="h-3.5 w-3.5" /> Registrar Venda
             </button>
           </form>
@@ -313,20 +301,14 @@ export default function Vendas() {
                       </span>
                     </td>
                     <td className="py-2.5 text-right">
-                      <button
-                        onClick={() => handleRemoverVenda(v.id)}
-                        className="p-1 text-slate-500 hover:text-red-400 rounded hover:bg-red-500/10 transition"
-                      >
+                      <button onClick={() => handleRemoverVenda(v.id)}
+                        className="p-1 text-slate-500 hover:text-red-400 rounded hover:bg-red-500/10 transition">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </td>
                   </tr>
                 )) : (
-                  <tr>
-                    <td colSpan={8} className="py-6 text-center text-slate-500 italic">
-                      Nenhuma venda registrada no sistema.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={8} className="py-6 text-center text-slate-500 italic">Nenhuma venda registrada no sistema.</td></tr>
                 )}
               </tbody>
             </table>
