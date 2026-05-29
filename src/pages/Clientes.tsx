@@ -1,3 +1,4 @@
+import 'leaflet/dist/leaflet.css'; // ← PRIMEIRO, antes de qualquer outro import
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { MapPin, List } from 'lucide-react';
@@ -7,9 +8,11 @@ import api from '../api';
 // Ícone customizado para o marcador
 const marcadorIcon = new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
+  shadowSize: [41, 41],
 });
 
 interface ClienteMapa {
@@ -51,7 +54,7 @@ export default function Clientes() {
 
   const salvarCliente = async () => {
     if (!nome) return alert('O nome é obrigatório.');
-    const payload = { nome, telefone, endereco, bairro, cidade, estado, cep };
+    const payload: any = { nome, telefone, endereco, bairro, cidade, estado, cep };
 
     // Geocodificação automática ao salvar
     if (endereco && cidade) {
@@ -62,10 +65,12 @@ export default function Clientes() {
         );
         const dados = await resp.json();
         if (dados.length > 0) {
-          (payload as any).latitude = parseFloat(dados[0].lat);
-          (payload as any).longitude = parseFloat(dados[0].lon);
+          payload.latitude = parseFloat(dados[0].lat);
+          payload.longitude = parseFloat(dados[0].lon);
         }
-      } catch { /* ignora erro de geocodificação */ }
+      } catch (err) {
+        console.error('Erro na geocodificação:', err);
+      }
     }
 
     try {
@@ -117,7 +122,7 @@ export default function Clientes() {
 
       {/* Mapa */}
       {mostrarMapa && (
-        <div className="bg-[#0f172a] rounded-lg border border-slate-800 overflow-hidden" style={{ height: '400px' }}>
+        <div style={{ height: '400px', width: '100%' }} className="bg-[#0f172a] rounded-lg border border-slate-800 overflow-hidden">
           <MapContainer center={[-27.5954, -48.5480]} zoom={10} style={{ height: '100%', width: '100%' }}>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
