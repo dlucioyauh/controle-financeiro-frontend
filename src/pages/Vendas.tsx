@@ -142,7 +142,7 @@ export default function Vendas() {
     <div className="space-y-6 text-slate-200">
       <div className="flex items-center justify-between bg-[#0f172a] p-4 rounded-lg border border-slate-800">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-white">Registro de Vendas</h1>
+          <h1 className="text-xl font-bold tracking-tight text-white">Registro de Vendas 🚀</h1>
           <p className="text-xs text-slate-400">Insira os fluxos de entrada e gerencie o faturamento comercial.</p>
         </div>
         <button onClick={carregarDados} className="p-2 text-slate-400 hover:text-white rounded bg-[#1e293b] border border-slate-700 transition-colors">
