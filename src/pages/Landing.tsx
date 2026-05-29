@@ -92,7 +92,7 @@ export default function Landing() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-4 py-1.5 mb-8">
               <Star size={14} className="text-cyan-400 fill-cyan-400" />
-              <span className="text-xs text-cyan-400 font-medium">O melhor para confeiteiros e pequenos negócios</span>
+              <span className="text-xs text-cyan-400 font-medium">O melhor para confeiteiros e pequenos negócios 🚀</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight">
