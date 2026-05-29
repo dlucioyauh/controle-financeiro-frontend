@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, Trash2, Shield, Loader2 } from 'lucide-react';
+import { Trash2, Shield, Loader2 } from 'lucide-react';
 import api from '../api';
 
 interface Usuario {

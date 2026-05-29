@@ -14,7 +14,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import api from '../api';
+
 
 const links = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
