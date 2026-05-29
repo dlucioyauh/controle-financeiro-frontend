@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  baseURL: 'https://controle-financeiro-backend-staging.up.railway.app',  // ← Forçado para staging
 });
 
 api.interceptors.request.use((config) => {
