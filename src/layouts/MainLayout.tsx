@@ -58,7 +58,9 @@ export default function MainLayout() {
       {/* Sidebar para desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-[#0f172a] border-r border-slate-800 p-4">
         <div className="flex items-center gap-2 mb-8">
-          <img src="/vite.svg" alt="Logo" className="h-8" />
+          <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <ChefHat size={18} className="text-white" />
+          </div>
           <span className="text-white font-bold text-lg">IonFinance</span>
         </div>
         <nav className="flex-1 space-y-1">

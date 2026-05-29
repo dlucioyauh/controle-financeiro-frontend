@@ -18,15 +18,18 @@ interface Usuario {
 export default function Admin() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState('');
   const [excluindo, setExcluindo] = useState<string | null>(null);
 
   const carregarUsuarios = async () => {
     setLoading(true);
+    setErro('');
     try {
       const res = await api.get('/users');
       setUsuarios(res.data);
-    } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
+    } catch (err: any) {
+      console.error('Erro ao carregar usuários:', err);
+      setErro(err?.response?.data?.message || 'Erro ao carregar usuários. Verifique sua conexão.');
     } finally {
       setLoading(false);
     }
@@ -58,6 +61,18 @@ export default function Admin() {
     return (
       <div className="flex justify-center py-20">
         <Loader2 size={32} className="animate-spin text-cyan-400" />
+      </div>
+    );
+  }
+
+  if (erro) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-400 space-y-4">
+        <Shield size={40} className="text-red-400" />
+        <p className="text-center">{erro}</p>
+        <button onClick={carregarUsuarios} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+          Tentar novamente
+        </button>
       </div>
     );
   }
