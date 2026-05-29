@@ -24,7 +24,7 @@ export default function Configuracoes() {
 
   const salvarPerfil = async () => {
     try {
-      await api.patch('/users/perfil', {
+      const payload: any = {
         nome: perfil.nome,
         email: perfil.email,
         nomeNegocio: perfil.nomeNegocio,
@@ -35,7 +35,26 @@ export default function Configuracoes() {
         estadoOrigem: perfil.estadoOrigem,
         cepOrigem: perfil.cepOrigem,
         taxaFreteKm: parseFloat(perfil.taxaFreteKm) || 0.8,
-      });
+      };
+
+      // Geocodificação do endereço de origem
+      if (perfil.enderecoOrigem && perfil.cidadeOrigem) {
+        try {
+          const enderecoCompleto = `${perfil.enderecoOrigem}, ${perfil.bairroOrigem}, ${perfil.cidadeOrigem}, ${perfil.estadoOrigem}, Brasil`;
+          const resp = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoCompleto)}`
+          );
+          const dados = await resp.json();
+          if (dados.length > 0) {
+            payload.latitudeOrigem = parseFloat(dados[0].lat);
+            payload.longitudeOrigem = parseFloat(dados[0].lon);
+          }
+        } catch (err) {
+          console.error('Erro na geocodificação do endereço de origem:', err);
+        }
+      }
+
+      await api.patch('/users/perfil', payload);
       setMensagem('Perfil atualizado com sucesso!');
       setTimeout(() => setMensagem(''), 3000);
     } catch (err) {
