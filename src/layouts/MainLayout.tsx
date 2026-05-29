@@ -80,9 +80,9 @@ export default function MainLayout() {
           ))}
           {user?.username === 'dlucio' && (
             <Link
-              to="/admin"
+              to="/app/admin"
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                location.pathname === '/admin'
+                location.pathname === '/app/admin'
                   ? 'bg-blue-600 text-white'
                   : 'text-yellow-400 hover:text-white hover:bg-slate-800'
               }`}
