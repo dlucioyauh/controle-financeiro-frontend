@@ -1,22 +1,21 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from './api';
 
-interface Props {
-  onLogin?: () => void;
-}
-
-function Login({ onLogin }: Props) {
+function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [erro, setErro] = useState('');
+  const navigate = useNavigate();
 
   async function handleLogin() {
+    setErro('');
     try {
       const response = await api.post('/auth/login', { username, password });
       localStorage.setItem('token', response.data.access_token);
-      if (onLogin) onLogin();
-    } catch {
+      navigate('/'); // Redireciona para o Dashboard (rota index dentro do MainLayout)
+    } catch (err) {
+      console.error(err);
       setErro('Usuário ou senha incorretos');
     }
   }
