@@ -1,162 +1,199 @@
-import { useState, useEffect } from 'react';
-import { Users, Plus, Pencil, Trash2, Phone, MapPin, X, Check } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapPin, List } from 'lucide-react';
+import L from 'leaflet';
 import api from '../api';
 
-interface Cliente {
+// Ícone customizado para o marcador
+const marcadorIcon = new L.Icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+});
+
+interface ClienteMapa {
   id: string;
   nome: string;
-  telefone: string;
-  endereco: string;
-  bairro: string;
-  cidade: string;
+  latitude: number;
+  longitude: number;
+  endereco?: string;
+  bairro?: string;
+  cidade?: string;
 }
 
-const vazio = { nome: '', telefone: '', endereco: '', bairro: '', cidade: '' };
-
 export default function Clientes() {
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [form, setForm] = useState(vazio);
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [clientesMapa, setClientesMapa] = useState<ClienteMapa[]>([]);
+  const [mostrarMapa, setMostrarMapa] = useState(true);
+
+  const [nome, setNome] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [endereco, setEndereco] = useState('');
+  const [bairro, setBairro] = useState('');
+  const [cidade, setCidade] = useState('');
+  const [estado, setEstado] = useState('');
+  const [cep, setCep] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => { carregar(); }, []);
+  const carregarClientes = async () => {
+    const [listaRes, mapaRes] = await Promise.all([
+      api.get('/clientes'),
+      api.get('/clientes/mapa'),
+    ]);
+    setClientes(listaRes.data);
+    setClientesMapa(mapaRes.data.filter((c: ClienteMapa) => c.latitude && c.longitude));
+  };
 
-  async function carregar() {
-    setLoading(true);
-    try {
-      const res = await api.get('/clientes');
-      setClientes(res.data);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  }
+  useEffect(() => {
+    carregarClientes();
+  }, []);
 
-  async function salvar() {
-    if (!form.nome.trim()) return alert('Nome é obrigatório.');
+  const salvarCliente = async () => {
+    if (!nome) return alert('O nome é obrigatório.');
+    const payload = { nome, telefone, endereco, bairro, cidade, estado, cep };
+
+    // Geocodificação automática ao salvar
+    if (endereco && cidade) {
+      try {
+        const enderecoCompleto = `${endereco}, ${bairro}, ${cidade}, ${estado}, Brasil`;
+        const resp = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoCompleto)}`
+        );
+        const dados = await resp.json();
+        if (dados.length > 0) {
+          (payload as any).latitude = parseFloat(dados[0].lat);
+          (payload as any).longitude = parseFloat(dados[0].lon);
+        }
+      } catch { /* ignora erro de geocodificação */ }
+    }
+
     try {
       if (editandoId) {
-        await api.patch(`/clientes/${editandoId}`, form);
+        await api.patch(`/clientes/${editandoId}`, payload);
+        setEditandoId(null);
       } else {
-        await api.post('/clientes', form);
+        await api.post('/clientes', payload);
       }
-      setForm(vazio);
-      setEditandoId(null);
-      carregar();
-    } catch (e) { console.error(e); }
-  }
+      limparForm();
+      carregarClientes();
+    } catch (err) {
+      alert('Erro ao salvar cliente.');
+    }
+  };
 
-  function editar(c: Cliente) {
-    setEditandoId(c.id);
-    setForm({ nome: c.nome, telefone: c.telefone, endereco: c.endereco, bairro: c.bairro, cidade: c.cidade });
-  }
+  const limparForm = () => {
+    setNome(''); setTelefone(''); setEndereco(''); setBairro('');
+    setCidade(''); setEstado(''); setCep(''); setEditandoId(null);
+  };
 
-  async function remover(id: string) {
-    if (!confirm('Remover este cliente?')) return;
-    await api.delete(`/clientes/${id}`);
-    carregar();
-  }
+  const editarCliente = (c: any) => {
+    setNome(c.nome); setTelefone(c.telefone || ''); setEndereco(c.endereco || '');
+    setBairro(c.bairro || ''); setCidade(c.cidade || ''); setEstado(c.estado || '');
+    setCep(c.cep || ''); setEditandoId(c.id);
+  };
+
+  const excluirCliente = async (id: string) => {
+    if (confirm('Deseja excluir este cliente?')) {
+      await api.delete(`/clientes/${id}`);
+      carregarClientes();
+    }
+  };
 
   return (
     <div className="space-y-6 text-slate-200">
-      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
-        <h1 className="text-xl font-bold tracking-tight text-white">Clientes</h1>
-        <p className="text-xs text-slate-400">Cadastre e gerencie seus clientes.</p>
+      {/* Cabeçalho */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-white">Clientes</h1>
+          <p className="text-xs text-slate-400">Cadastre e gerencie seus clientes.</p>
+        </div>
+        <button onClick={() => setMostrarMapa(!mostrarMapa)}
+          className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+          {mostrarMapa ? <List size={16} /> : <MapPin size={16} />}
+          {mostrarMapa ? 'Ocultar Mapa' : 'Mostrar Mapa'}
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Formulário */}
-        <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 h-fit space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
-            <Users className="h-4 w-4 text-cyan-400" />
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-              {editandoId ? 'Editar Cliente' : 'Novo Cliente'}
-            </h2>
-          </div>
-
-          <div className="space-y-3 text-xs">
-            {[
-              { label: 'Nome', key: 'nome', placeholder: 'Nome completo' },
-              { label: 'Telefone', key: 'telefone', placeholder: '(48) 99999-9999' },
-              { label: 'Endereço', key: 'endereco', placeholder: 'Rua, número' },
-              { label: 'Bairro', key: 'bairro', placeholder: 'Bairro' },
-              { label: 'Cidade', key: 'cidade', placeholder: 'Cidade' },
-            ].map(({ label, key, placeholder }) => (
-              <div key={key}>
-                <label className="block text-[11px] font-bold text-white mb-1 uppercase tracking-wide">{label}</label>
-                <input
-                  type="text"
-                  placeholder={placeholder}
-                  value={form[key as keyof typeof form]}
-                  onChange={e => setForm({ ...form, [key]: e.target.value })}
-                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10"
-                />
-              </div>
+      {/* Mapa */}
+      {mostrarMapa && (
+        <div className="bg-[#0f172a] rounded-lg border border-slate-800 overflow-hidden" style={{ height: '400px' }}>
+          <MapContainer center={[-27.5954, -48.5480]} zoom={10} style={{ height: '100%', width: '100%' }}>
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {clientesMapa.map((c) => (
+              <Marker key={c.id} position={[c.latitude, c.longitude]} icon={marcadorIcon}>
+                <Popup>
+                  <strong>{c.nome}</strong><br />
+                  {c.endereco && `${c.endereco}, `}{c.bairro && `${c.bairro}, `}{c.cidade}
+                </Popup>
+              </Marker>
             ))}
-          </div>
+          </MapContainer>
+        </div>
+      )}
 
-          <div className="flex gap-2 pt-1">
-            <button
-              onClick={salvar}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
-            >
-              {editandoId ? <><Check className="h-3.5 w-3.5" /> Salvar</> : <><Plus className="h-3.5 w-3.5" /> Cadastrar</>}
-            </button>
-            {editandoId && (
-              <button
-                onClick={() => { setForm(vazio); setEditandoId(null); }}
-                className="px-3 py-2.5 rounded-lg border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
+      {/* Formulário */}
+      <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 space-y-4">
+        <h3 className="text-sm font-bold text-white">{editandoId ? 'Editar Cliente' : 'Novo Cliente'}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <input placeholder="Nome *" value={nome} onChange={(e) => setNome(e.target.value)}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input placeholder="Telefone" value={telefone} onChange={(e) => setTelefone(e.target.value)}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input placeholder="Rua, número" value={endereco} onChange={(e) => setEndereco(e.target.value)}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input placeholder="Bairro" value={bairro} onChange={(e) => setBairro(e.target.value)}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input placeholder="Cidade" value={cidade} onChange={(e) => setCidade(e.target.value)}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input placeholder="Estado (ex: SC)" value={estado} onChange={(e) => setEstado(e.target.value)}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input placeholder="CEP" value={cep} onChange={(e) => setCep(e.target.value)}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+        <div className="flex gap-2">
+          <button onClick={salvarCliente} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+            {editandoId ? 'Atualizar' : 'Cadastrar'}
+          </button>
+          {editandoId && <button onClick={limparForm} className="text-slate-400 hover:text-white text-sm">Cancelar</button>}
+        </div>
+      </div>
+
+      {/* Lista de clientes */}
+      <div className="bg-[#0f172a] rounded-lg border border-slate-800 overflow-x-auto">
+        <table className="w-full text-xs text-slate-300">
+          <thead className="text-[10px] text-slate-500 uppercase border-b border-slate-800">
+            <tr>
+              <th className="py-2 px-3 text-left">Nome</th>
+              <th className="py-2 px-3 text-left">Telefone</th>
+              <th className="py-2 px-3 text-left">Endereço</th>
+              <th className="py-2 px-3 text-left">Bairro</th>
+              <th className="py-2 px-3 text-left">Cidade</th>
+              <th className="py-2 px-3 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800/40">
+            {clientes.map((c) => (
+              <tr key={c.id} className="hover:bg-slate-800/20 transition-colors">
+                <td className="py-2 px-3 font-medium text-white">{c.nome}</td>
+                <td className="py-2 px-3">{c.telefone || '—'}</td>
+                <td className="py-2 px-3">{c.endereco || '—'}</td>
+                <td className="py-2 px-3">{c.bairro || '—'}</td>
+                <td className="py-2 px-3">{c.cidade || '—'}</td>
+                <td className="py-2 px-3 text-right flex gap-2 justify-end">
+                  <button onClick={() => editarCliente(c)} className="text-yellow-400 hover:text-yellow-300">Editar</button>
+                  <button onClick={() => excluirCliente(c.id)} className="text-red-400 hover:text-red-300">Excluir</button>
+                </td>
+              </tr>
+            ))}
+            {clientes.length === 0 && (
+              <tr><td colSpan={6} className="py-8 text-center text-slate-500">Nenhum cliente cadastrado ainda.</td></tr>
             )}
-          </div>
-        </div>
-
-        {/* Lista */}
-        <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 lg:col-span-2 space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
-            <Users className="h-4 w-4 text-blue-400" />
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-              Clientes Cadastrados ({clientes.length})
-            </h2>
-          </div>
-
-          {loading ? (
-            <p className="text-xs text-slate-500 italic text-center py-6">Carregando...</p>
-          ) : clientes.length === 0 ? (
-            <p className="text-xs text-slate-500 italic text-center py-6">Nenhum cliente cadastrado ainda.</p>
-          ) : (
-            <div className="space-y-2">
-              {clientes.map(c => (
-                <div key={c.id} className="bg-white/5 rounded-lg p-4 flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-white text-sm truncate">{c.nome}</p>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-                      {c.telefone && (
-                        <span className="flex items-center gap-1 text-xs text-slate-400">
-                          <Phone className="h-3 w-3" /> {c.telefone}
-                        </span>
-                      )}
-                      {(c.endereco || c.bairro || c.cidade) && (
-                        <span className="flex items-center gap-1 text-xs text-slate-400">
-                          <MapPin className="h-3 w-3" />
-                          {[c.endereco, c.bairro, c.cidade].filter(Boolean).join(', ')}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <button onClick={() => editar(c)} className="p-1.5 text-slate-500 hover:text-blue-400 rounded hover:bg-blue-500/10 transition">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button onClick={() => remover(c.id)} className="p-1.5 text-slate-500 hover:text-red-400 rounded hover:bg-red-500/10 transition">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          </tbody>
+        </table>
       </div>
     </div>
   );
