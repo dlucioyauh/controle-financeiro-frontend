@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import api from './api';
 
 interface Props {
-  onLogin: () => void;
+  onLogin?: () => void;
 }
 
 function Login({ onLogin }: Props) {
@@ -15,7 +15,7 @@ function Login({ onLogin }: Props) {
     try {
       const response = await api.post('/auth/login', { username, password });
       localStorage.setItem('token', response.data.access_token);
-      onLogin();
+      if (onLogin) onLogin();
     } catch {
       setErro('Usuário ou senha incorretos');
     }

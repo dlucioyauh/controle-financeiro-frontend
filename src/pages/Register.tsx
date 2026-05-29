@@ -4,7 +4,7 @@ import { ChefHat, Loader2 } from 'lucide-react';
 import api from '../api';
 
 interface RegisterProps {
-  onRegister: () => void;
+  onRegister?: () => void;
 }
 
 export default function Register({ onRegister }: RegisterProps) {
@@ -50,7 +50,7 @@ export default function Register({ onRegister }: RegisterProps) {
       };
       const response = await api.post('/auth/register', payload);
       localStorage.setItem('token', response.data.access_token);
-      onRegister();
+      if (onRegister) onRegister();
       navigate('/');
     } catch (err: any) {
       if (err.response?.status === 409) {
