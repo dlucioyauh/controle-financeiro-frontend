@@ -317,4 +317,4 @@ export default function Vendas() {
       </div>
     </div>
   );
-}
+}// force frontend redeploy
