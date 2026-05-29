@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
@@ -11,7 +11,15 @@ import Configuracoes from './pages/Configuracoes';
 import Landing from './pages/Landing';
 import Login from './Login';
 import Register from './pages/Register';
-import Admin from './pages/Admin'; // ← nova importação
+import Admin from './pages/Admin';
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
 
 export default function App() {
   return (
@@ -20,7 +28,13 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route element={<MainLayout />}>
+        <Route
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="financeiro" element={<Financeiro />} />
@@ -29,7 +43,7 @@ export default function App() {
           <Route path="relatorios" element={<Relatorios />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="configuracoes" element={<Configuracoes />} />
-          <Route path="admin" element={<Admin />} /> {/* ← nova rota */}
+          <Route path="admin" element={<Admin />} />
         </Route>
       </Routes>
     </BrowserRouter>
