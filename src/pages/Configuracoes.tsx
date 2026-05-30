@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, Key, User, MapPin } from 'lucide-react';
+import { Save, Key, User, MapPin, Building, Crown, Palette } from 'lucide-react';
 import api from '../api';
 
 export default function Configuracoes() {
@@ -35,6 +35,10 @@ export default function Configuracoes() {
         estadoOrigem: perfil.estadoOrigem,
         cepOrigem: perfil.cepOrigem,
         taxaFreteKm: parseFloat(perfil.taxaFreteKm) || 0.8,
+        cnpj: perfil.cnpj,
+        logo: perfil.logo,
+        plano: perfil.plano,
+        tema: perfil.tema,
       };
 
       // Geocodificação do endereço de origem
@@ -84,7 +88,7 @@ export default function Configuracoes() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setPerfil({ ...perfil, [e.target.name]: e.target.value });
   };
 
@@ -94,7 +98,7 @@ export default function Configuracoes() {
         <h1 className="text-xl font-bold text-white flex items-center gap-2">
           <User size={20} className="text-cyan-400" /> Configurações
         </h1>
-        <p className="text-xs text-slate-400">Gerencie seu perfil e endereço de origem.</p>
+        <p className="text-xs text-slate-400">Gerencie seu perfil, endereço de origem e preferências.</p>
       </div>
 
       {mensagem && (
@@ -103,7 +107,7 @@ export default function Configuracoes() {
         </div>
       )}
 
-      {/* Perfil */}
+      {/* Dados do Perfil */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <User size={16} className="text-cyan-400" /> Dados do Perfil
@@ -120,7 +124,23 @@ export default function Configuracoes() {
         </div>
       </div>
 
-      {/* Endereço de Origem (Frete) */}
+      {/* Dados da Empresa (CNPJ + Logo) */}
+      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Building size={16} className="text-cyan-400" /> Dados da Empresa
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input name="cnpj" placeholder="CNPJ (ex: 00.000.000/0001-00)" value={perfil.cnpj || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="logo" placeholder="URL da logo" value={perfil.logo || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+        <p className="text-[10px] text-slate-500">
+          Insira a URL da sua logo (recomendado hospedar em um serviço de imagens). O CNPJ é opcional.
+        </p>
+      </div>
+
+      {/* Endereço de Origem */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <MapPin size={16} className="text-cyan-400" /> Endereço de Origem (Entregas)
@@ -142,13 +162,38 @@ export default function Configuracoes() {
             <span className="absolute right-3 top-2.5 text-slate-400 text-sm">R$/km</span>
           </div>
         </div>
-        <p className="text-[10px] text-slate-500">
-          Configure seu endereço para calcular automaticamente a distância e o frete nas vendas.
-        </p>
         <button onClick={salvarPerfil}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1">
           <Save size={14} /> Salvar Perfil
         </button>
+      </div>
+
+      {/* Plano e Preferências */}
+      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Crown size={16} className="text-yellow-400" /> Plano e Preferências
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Plano atual</label>
+            <select name="plano" value={perfil.plano || 'free'} onChange={handleChange}
+              className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full">
+              <option value="free">Free</option>
+              <option value="pro">Pro</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Tema</label>
+            <select name="tema" value={perfil.tema || 'dark'} onChange={handleChange}
+              className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full">
+              <option value="dark">Escuro</option>
+              <option value="light">Claro</option>
+            </select>
+          </div>
+        </div>
+        <p className="text-[10px] text-slate-500">
+          O tema será aplicado em uma atualização futura. O plano Pro desbloqueará funcionalidades premium em breve.
+        </p>
       </div>
 
       {/* Alterar Senha */}
