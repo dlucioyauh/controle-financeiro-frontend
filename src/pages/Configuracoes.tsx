@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, Key, User, MapPin } from 'lucide-react';
+import { Save, Key, User, MapPin, Building, Crown } from 'lucide-react';
 import api from '../api';
 
 export default function Configuracoes() {
@@ -35,9 +35,11 @@ export default function Configuracoes() {
         estadoOrigem: perfil.estadoOrigem,
         cepOrigem: perfil.cepOrigem,
         taxaFreteKm: parseFloat(perfil.taxaFreteKm) || 0.8,
+        cnpj: perfil.cnpj,
+        logo: perfil.logo,
+        plano: perfil.plano,
       };
 
-      // Geocodificação do endereço de origem
       if (perfil.enderecoOrigem && perfil.cidadeOrigem) {
         try {
           const enderecoCompleto = `${perfil.enderecoOrigem}, ${perfil.bairroOrigem}, ${perfil.cidadeOrigem}, ${perfil.estadoOrigem}, Brasil`;
@@ -55,8 +57,7 @@ export default function Configuracoes() {
       }
 
       await api.patch('/users/perfil', payload);
-      setMensagem('Perfil atualizado com sucesso!');
-      setTimeout(() => setMensagem(''), 3000);
+      window.location.reload();
     } catch (err) {
       console.error('Erro ao salvar perfil:', err);
       setMensagem('Erro ao salvar perfil.');
@@ -84,7 +85,7 @@ export default function Configuracoes() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setPerfil({ ...perfil, [e.target.name]: e.target.value });
   };
 
@@ -94,7 +95,7 @@ export default function Configuracoes() {
         <h1 className="text-xl font-bold text-white flex items-center gap-2">
           <User size={20} className="text-cyan-400" /> Configurações
         </h1>
-        <p className="text-xs text-slate-400">Gerencie seu perfil e endereço de origem.</p>
+        <p className="text-xs text-slate-400">Gerencie seu perfil, endereço de origem e preferências.</p>
       </div>
 
       {mensagem && (
@@ -103,7 +104,6 @@ export default function Configuracoes() {
         </div>
       )}
 
-      {/* Perfil */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <User size={16} className="text-cyan-400" /> Dados do Perfil
@@ -120,7 +120,21 @@ export default function Configuracoes() {
         </div>
       </div>
 
-      {/* Endereço de Origem (Frete) */}
+      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Building size={16} className="text-cyan-400" /> Dados da Empresa
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input name="cnpj" placeholder="CNPJ (ex: 00.000.000/0001-00)" value={perfil.cnpj || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="logo" placeholder="URL da logo" value={perfil.logo || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+        <p className="text-[10px] text-slate-500">
+          Faça upload da sua logo em um serviço como <a href="https://imgbb.com" target="_blank" className="underline text-cyan-400">ImgBB</a> e cole o link direto da imagem aqui.
+        </p>
+      </div>
+
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <MapPin size={16} className="text-cyan-400" /> Endereço de Origem (Entregas)
@@ -142,16 +156,58 @@ export default function Configuracoes() {
             <span className="absolute right-3 top-2.5 text-slate-400 text-sm">R$/km</span>
           </div>
         </div>
-        <p className="text-[10px] text-slate-500">
-          Configure seu endereço para calcular automaticamente a distância e o frete nas vendas.
-        </p>
         <button onClick={salvarPerfil}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1">
           <Save size={14} /> Salvar Perfil
         </button>
       </div>
 
-      {/* Alterar Senha */}
+      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Crown size={16} className="text-yellow-400" /> Plano e Preferências
+        </h2>
+
+        {perfil.plano === 'free' && perfil.trialEndsAt && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-xs text-yellow-400">
+            ⏳ Seu período de teste termina em{' '}
+            {new Date(perfil.trialEndsAt).toLocaleDateString('pt-BR')}.
+            Após isso, escolha um plano para continuar usando o sistema.
+          </div>
+        )}
+
+        <div>
+          <label className="text-xs text-slate-400 mb-1 block">Plano atual</label>
+          <select name="plano" value={perfil.plano || 'free'} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full">
+            <option value="free">Free (7 dias)</option>
+            <option value="basic">Basic</option>
+            <option value="pro">Pro</option>
+            <option value="premium">Premium</option>
+          </select>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
+            <h4 className="font-bold text-white">Basic</h4>
+            <p className="text-slate-400 mt-1">Funcionalidades essenciais</p>
+            <p className="text-cyan-400 font-bold mt-2">R$ ??/mês</p>
+          </div>
+          <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
+            <h4 className="font-bold text-white">Pro</h4>
+            <p className="text-slate-400 mt-1">Recursos avançados</p>
+            <p className="text-cyan-400 font-bold mt-2">R$ ??/mês</p>
+          </div>
+          <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
+            <h4 className="font-bold text-white">Premium</h4>
+            <p className="text-slate-400 mt-1">Tudo incluso + suporte</p>
+            <p className="text-cyan-400 font-bold mt-2">R$ ??/mês</p>
+          </div>
+        </div>
+        <p className="text-[10px] text-slate-500">
+          Após o teste de 7 dias, escolha um plano para continuar. Os preços serão definidos em breve.
+        </p>
+      </div>
+
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <Key size={16} className="text-yellow-400" /> Alterar Senha
