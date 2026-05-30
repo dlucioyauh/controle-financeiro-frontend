@@ -59,8 +59,10 @@ export default function Configuracoes() {
       }
 
       await api.patch('/users/perfil', payload);
-      setMensagem('Perfil atualizado com sucesso!');
-      setTimeout(() => setMensagem(''), 3000);
+
+      // Salva o tema no localStorage e recarrega para aplicar
+      localStorage.setItem('tema', perfil.tema || 'dark');
+      window.location.reload();
     } catch (err) {
       console.error('Erro ao salvar perfil:', err);
       setMensagem('Erro ao salvar perfil.');
@@ -136,7 +138,7 @@ export default function Configuracoes() {
             className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
         </div>
         <p className="text-[10px] text-slate-500">
-          Insira a URL da sua logo (recomendado hospedar em um serviço de imagens). O CNPJ é opcional.
+          Faça upload da sua logo em um serviço como <a href="https://imgbb.com" target="_blank" className="underline text-cyan-400">ImgBB</a> e cole o link direto da imagem aqui.
         </p>
       </div>
 
@@ -173,13 +175,25 @@ export default function Configuracoes() {
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <Crown size={16} className="text-yellow-400" /> Plano e Preferências
         </h2>
+
+        {/* Informações do trial */}
+        {perfil.plano === 'free' && perfil.trialEndsAt && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-xs text-yellow-400">
+            ⏳ Seu período de teste termina em{' '}
+            {new Date(perfil.trialEndsAt).toLocaleDateString('pt-BR')}.
+            Após isso, escolha um plano para continuar usando o sistema.
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-xs text-slate-400 mb-1 block">Plano atual</label>
             <select name="plano" value={perfil.plano || 'free'} onChange={handleChange}
               className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full">
-              <option value="free">Free</option>
+              <option value="free">Free (7 dias)</option>
+              <option value="basic">Basic</option>
               <option value="pro">Pro</option>
+              <option value="premium">Premium</option>
             </select>
           </div>
           <div>
@@ -191,8 +205,27 @@ export default function Configuracoes() {
             </select>
           </div>
         </div>
+
+        {/* Cards dos planos */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
+            <h4 className="font-bold text-white">Basic</h4>
+            <p className="text-slate-400 mt-1">Funcionalidades essenciais</p>
+            <p className="text-cyan-400 font-bold mt-2">R$ ??/mês</p>
+          </div>
+          <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
+            <h4 className="font-bold text-white">Pro</h4>
+            <p className="text-slate-400 mt-1">Recursos avançados</p>
+            <p className="text-cyan-400 font-bold mt-2">R$ ??/mês</p>
+          </div>
+          <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
+            <h4 className="font-bold text-white">Premium</h4>
+            <p className="text-slate-400 mt-1">Tudo incluso + suporte</p>
+            <p className="text-cyan-400 font-bold mt-2">R$ ??/mês</p>
+          </div>
+        </div>
         <p className="text-[10px] text-slate-500">
-          O tema será aplicado em uma atualização futura. O plano Pro desbloqueará funcionalidades premium em breve.
+          Após o teste de 7 dias, escolha um plano para continuar. Os preços serão definidos em breve.
         </p>
       </div>
 

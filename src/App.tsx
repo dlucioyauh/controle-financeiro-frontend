@@ -34,6 +34,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
+          path="/app"
           element={
             <ProtectedRoute>
               <MainLayout />
@@ -47,7 +48,7 @@ export default function App() {
           <Route path="precificacao" element={<Precificacao />} />
           <Route path="relatorios" element={<Relatorios />} />
           <Route path="clientes" element={<Clientes />} />
-          <Route path="configuracoes" element={<Configuracoes />} />
+          <Route path="configuracoes" element={<Configuracoes />} />  {/* ← ROTA CORRIGIDA */}
           <Route path="admin" element={<Admin />} />
         </Route>
       </Routes>
