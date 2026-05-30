@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, Key, User, MapPin, Building, Crown, Palette } from 'lucide-react';
+import { Save, Key, User, MapPin, Building, Crown } from 'lucide-react';
 import api from '../api';
 
 export default function Configuracoes() {
