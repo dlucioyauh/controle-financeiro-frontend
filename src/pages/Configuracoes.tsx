@@ -38,10 +38,8 @@ export default function Configuracoes() {
         cnpj: perfil.cnpj,
         logo: perfil.logo,
         plano: perfil.plano,
-        tema: perfil.tema,
       };
 
-      // Geocodificação do endereço de origem
       if (perfil.enderecoOrigem && perfil.cidadeOrigem) {
         try {
           const enderecoCompleto = `${perfil.enderecoOrigem}, ${perfil.bairroOrigem}, ${perfil.cidadeOrigem}, ${perfil.estadoOrigem}, Brasil`;
@@ -59,9 +57,6 @@ export default function Configuracoes() {
       }
 
       await api.patch('/users/perfil', payload);
-
-      // Salva o tema no localStorage e recarrega para aplicar
-      localStorage.setItem('tema', perfil.tema || 'dark');
       window.location.reload();
     } catch (err) {
       console.error('Erro ao salvar perfil:', err);
@@ -109,7 +104,6 @@ export default function Configuracoes() {
         </div>
       )}
 
-      {/* Dados do Perfil */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <User size={16} className="text-cyan-400" /> Dados do Perfil
@@ -126,7 +120,6 @@ export default function Configuracoes() {
         </div>
       </div>
 
-      {/* Dados da Empresa (CNPJ + Logo) */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <Building size={16} className="text-cyan-400" /> Dados da Empresa
@@ -142,7 +135,6 @@ export default function Configuracoes() {
         </p>
       </div>
 
-      {/* Endereço de Origem */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <MapPin size={16} className="text-cyan-400" /> Endereço de Origem (Entregas)
@@ -170,13 +162,11 @@ export default function Configuracoes() {
         </button>
       </div>
 
-      {/* Plano e Preferências */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <Crown size={16} className="text-yellow-400" /> Plano e Preferências
         </h2>
 
-        {/* Informações do trial */}
         {perfil.plano === 'free' && perfil.trialEndsAt && (
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-xs text-yellow-400">
             ⏳ Seu período de teste termina em{' '}
@@ -185,28 +175,17 @@ export default function Configuracoes() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs text-slate-400 mb-1 block">Plano atual</label>
-            <select name="plano" value={perfil.plano || 'free'} onChange={handleChange}
-              className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full">
-              <option value="free">Free (7 dias)</option>
-              <option value="basic">Basic</option>
-              <option value="pro">Pro</option>
-              <option value="premium">Premium</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-slate-400 mb-1 block">Tema</label>
-            <select name="tema" value={perfil.tema || 'dark'} onChange={handleChange}
-              className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full">
-              <option value="dark">Escuro</option>
-              <option value="light">Claro</option>
-            </select>
-          </div>
+        <div>
+          <label className="text-xs text-slate-400 mb-1 block">Plano atual</label>
+          <select name="plano" value={perfil.plano || 'free'} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full">
+            <option value="free">Free (7 dias)</option>
+            <option value="basic">Basic</option>
+            <option value="pro">Pro</option>
+            <option value="premium">Premium</option>
+          </select>
         </div>
 
-        {/* Cards dos planos */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
             <h4 className="font-bold text-white">Basic</h4>
@@ -229,7 +208,6 @@ export default function Configuracoes() {
         </p>
       </div>
 
-      {/* Alterar Senha */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <Key size={16} className="text-yellow-400" /> Alterar Senha
