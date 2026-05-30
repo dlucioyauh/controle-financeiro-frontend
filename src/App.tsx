@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
@@ -20,16 +21,19 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    const tema = localStorage.getItem('tema') || 'dark';
+    document.documentElement.classList.toggle('light', tema === 'light');
+    document.documentElement.classList.toggle('dark', tema === 'dark');
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-
-        {/* Área protegida */}
         <Route
-          path="/app"
           element={
             <ProtectedRoute>
               <MainLayout />
