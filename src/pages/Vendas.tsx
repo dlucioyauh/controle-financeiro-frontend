@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { ShoppingBag, Trash2, Calendar, DollarSign, Plus, RefreshCw, User, Truck } from 'lucide-react';
+import { ShoppingBag, Trash2, Calendar, DollarSign, Plus, RefreshCw, User, Truck, AlertTriangle } from 'lucide-react';
 
 interface Venda {
   id: string;
@@ -47,21 +47,25 @@ export default function Vendas() {
   const [clienteId, setClienteId] = useState('');
   const [clienteNome, setClienteNome] = useState('');
 
-  // Frete
   const [frete, setFrete] = useState<FreteResult | null>(null);
   const [calculandoFrete, setCalculandoFrete] = useState(false);
+  const [plano, setPlano] = useState<string>('free'); // ← estado do plano
+  const [planoCarregado, setPlanoCarregado] = useState(false);
 
   const carregarDados = async () => {
     setLoading(true);
     try {
-      const [vendasRes, receitasRes, clientesRes] = await Promise.all([
+      const [vendasRes, receitasRes, clientesRes, perfilRes] = await Promise.all([
         api.get('/vendas'),
         api.get('/receitas'),
         api.get('/clientes'),
+        api.get('/users/perfil'), // obtém o plano do usuário
       ]);
       setVendas(vendasRes.data);
       setReceitas(receitasRes.data);
       setClientes(clientesRes.data);
+      setPlano(perfilRes.data.plano || 'free');
+      setPlanoCarregado(true);
     } catch (error) {
       console.error('Erro ao carregar dados de vendas:', error);
     } finally {
@@ -88,13 +92,8 @@ export default function Vendas() {
         clienteNome: clienteNome || null,
       };
 
-      // Se houver frete calculado, adiciona ao total
       if (frete) {
         payload.valorTotal = vTotal + parseFloat(frete.valorFrete);
-        // Opcional: armazenar o frete em um campo extra? Por enquanto não temos coluna.
-        // Podemos incluir no nome do produto ou em algum campo existente? Melhor apenas somar.
-        // Como a entidade Venda não tem campo frete, vamos somar ao valorTotal e talvez no futuro adicionar.
-        // Por ora, a venda é criada com o valor total incluindo o frete.
       }
 
       await api.post('/vendas', payload);
@@ -131,6 +130,8 @@ export default function Vendas() {
     }
   };
 
+  const podeCalcularFrete = plano === 'pro' || plano === 'premium';
+
   const selectStyle = {
     backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
     backgroundPosition: 'right 0.75rem center',
@@ -138,11 +139,15 @@ export default function Vendas() {
     backgroundRepeat: 'no-repeat',
   };
 
+  if (!planoCarregado) {
+    return <div className="flex justify-center py-20"><span className="text-slate-400">Carregando...</span></div>;
+  }
+
   return (
     <div className="space-y-6 text-slate-200">
       <div className="flex items-center justify-between bg-[#0f172a] p-4 rounded-lg border border-slate-800">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-white">Registro de Vendas 🚀</h1>
+          <h1 className="text-xl font-bold tracking-tight text-white">Registro de Vendas</h1>
           <p className="text-xs text-slate-400">Insira os fluxos de entrada e gerencie o faturamento comercial.</p>
         </div>
         <button onClick={carregarDados} className="p-2 text-slate-400 hover:text-white rounded bg-[#1e293b] border border-slate-700 transition-colors">
@@ -179,7 +184,7 @@ export default function Vendas() {
                 setClienteId(id);
                 const c = clientes.find(c => c.id === id);
                 setClienteNome(c ? c.nome : '');
-                setFrete(null); // resetar frete ao trocar cliente
+                setFrete(null);
               }}
                 className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10 transition-colors pr-8 appearance-none"
                 style={selectStyle}>
@@ -190,19 +195,28 @@ export default function Vendas() {
               </select>
             </div>
 
-            {/* Botão Calcular Frete */}
+            {/* Cálculo de Frete */}
             {clienteId && (
               <div>
-                <button type="button" onClick={calcularFrete} disabled={calculandoFrete}
-                  className="w-full bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-semibold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors">
-                  <Truck size={14} />
-                  {calculandoFrete ? 'Calculando...' : 'Calcular Frete'}
-                </button>
-                {frete && (
-                  <div className="mt-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2 text-xs text-emerald-400 space-y-1">
-                    <p>Distância: {frete.distanciaKm} km</p>
-                    <p>Tempo estimado: {frete.tempoMinutos} min</p>
-                    <p className="font-bold">Frete: R$ {frete.valorFrete} (R$ {frete.taxaFreteKm}/km)</p>
+                {podeCalcularFrete ? (
+                  <>
+                    <button type="button" onClick={calcularFrete} disabled={calculandoFrete}
+                      className="w-full bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-semibold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors">
+                      <Truck size={14} />
+                      {calculandoFrete ? 'Calculando...' : 'Calcular Frete'}
+                    </button>
+                    {frete && (
+                      <div className="mt-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2 text-xs text-emerald-400 space-y-1">
+                        <p>Distância: {frete.distanciaKm} km</p>
+                        <p>Tempo estimado: {frete.tempoMinutos} min</p>
+                        <p className="font-bold">Frete: R$ {frete.valorFrete} (R$ {frete.taxaFreteKm}/km)</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 flex items-start gap-2 text-xs text-yellow-400">
+                    <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                    <span>Cálculo de frete disponível nos planos Pro e Premium. Faça upgrade nas Configurações.</span>
                   </div>
                 )}
               </div>
@@ -317,4 +331,4 @@ export default function Vendas() {
       </div>
     </div>
   );
-}// force frontend redeploy
+}
