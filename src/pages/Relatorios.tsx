@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, Download, FileSpreadsheet, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -25,6 +25,16 @@ export default function Relatorios() {
   const [gerando, setGerando] = useState(false);
   const [modo, setModo] = useState<'pdf' | 'excel' | null>(null);
   const [erro, setErro] = useState('');
+
+  // Plano do usuário
+  const [plano, setPlano] = useState('free');
+  const podeGerarRelatorio = plano !== 'free';
+
+  useEffect(() => {
+    api.get('/users/perfil')
+      .then(res => setPlano(res.data.plano || 'free'))
+      .catch(() => setPlano('free'));
+  }, []);
 
   const buscarDados = async () => {
     const [ano, mesNum] = mes.split('-');
@@ -303,6 +313,14 @@ export default function Relatorios() {
         <p className="text-xs text-slate-400">Exporte relatórios profissionais com tabelas e resumos.</p>
       </div>
 
+      {/* Alerta para plano Free */}
+      {!podeGerarRelatorio && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-xs text-yellow-400">
+          Relatórios em PDF e Excel estão disponíveis a partir do plano <strong>Basic</strong>. 
+          <a href="/app/configuracoes" className="underline ml-1">Faça upgrade</a>.
+        </div>
+      )}
+
       <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-5">
         <label className="block text-[11px] uppercase tracking-wide text-slate-400 font-medium mb-2">Mês de Referência</label>
         <input type="month" value={mes} onChange={(e) => setMes(e.target.value)} className="bg-[#020617] border border-slate-700 text-slate-200 px-3 py-2 rounded-lg text-xs focus:outline-none focus:border-cyan-500" />
@@ -314,21 +332,37 @@ export default function Relatorios() {
         <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-6 space-y-3">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-red-500/10 rounded-xl"><FileText size={24} className="text-red-400" /></div>
-            <div><h3 className="text-sm font-bold text-white">Relatório Mensal PDF</h3><p className="text-xs text-slate-400">Profissional com tabelas e resumos</p></div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Relatório Mensal PDF</h3>
+              <p className="text-xs text-slate-400">Profissional com tabelas e resumos</p>
+            </div>
           </div>
-          <button onClick={gerarPDF} disabled={gerando} className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-xs transition-colors">
+          <button
+            onClick={gerarPDF}
+            disabled={gerando || !podeGerarRelatorio}
+            title={!podeGerarRelatorio ? 'Disponível a partir do plano Basic' : ''}
+            className={`w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-lg text-xs transition-colors`}
+          >
             {gerando && modo === 'pdf' ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            {gerando && modo === 'pdf' ? 'Gerando PDF...' : 'Gerar PDF'}
+            {!podeGerarRelatorio ? 'Indisponível (upgrade)' : gerando && modo === 'pdf' ? 'Gerando PDF...' : 'Gerar PDF'}
           </button>
         </div>
         <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-6 space-y-3">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-emerald-500/10 rounded-xl"><FileSpreadsheet size={24} className="text-emerald-400" /></div>
-            <div><h3 className="text-sm font-bold text-white">Exportar Excel</h3><p className="text-xs text-slate-400">Dados completos para análise</p></div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Exportar Excel</h3>
+              <p className="text-xs text-slate-400">Dados completos para análise</p>
+            </div>
           </div>
-          <button onClick={exportarExcel} disabled={gerando} className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-xs transition-colors">
+          <button
+            onClick={exportarExcel}
+            disabled={gerando || !podeGerarRelatorio}
+            title={!podeGerarRelatorio ? 'Disponível a partir do plano Basic' : ''}
+            className={`w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-lg text-xs transition-colors`}
+          >
             {gerando && modo === 'excel' ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            {gerando && modo === 'excel' ? 'Exportando...' : 'Exportar Excel'}
+            {!podeGerarRelatorio ? 'Indisponível (upgrade)' : gerando && modo === 'excel' ? 'Exportando...' : 'Exportar Excel'}
           </button>
         </div>
       </div>
