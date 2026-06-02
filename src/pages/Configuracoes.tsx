@@ -8,6 +8,7 @@ export default function Configuracoes() {
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [mensagem, setMensagem] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   const carregarPerfil = async () => {
     try {
@@ -40,6 +41,7 @@ export default function Configuracoes() {
         plano: perfil.plano,
       };
 
+      // Geocodificação do endereço de origem
       if (perfil.enderecoOrigem && perfil.cidadeOrigem) {
         try {
           const enderecoCompleto = `${perfil.enderecoOrigem}, ${perfil.bairroOrigem}, ${perfil.cidadeOrigem}, ${perfil.estadoOrigem}, Brasil`;
@@ -57,11 +59,41 @@ export default function Configuracoes() {
       }
 
       await api.patch('/users/perfil', payload);
+
+      // Atualiza a logo no localStorage
+      if (payload.logo) {
+        localStorage.setItem('logo', payload.logo);
+      } else {
+        localStorage.removeItem('logo');
+      }
+
       window.location.reload();
     } catch (err) {
       console.error('Erro ao salvar perfil:', err);
       setMensagem('Erro ao salvar perfil.');
     }
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 200 * 1024) {
+      setMensagem('A imagem deve ter no máximo 200 KB.');
+      return;
+    }
+
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setPerfil({ ...perfil, logo: event.target?.result as string });
+      setUploading(false);
+    };
+    reader.onerror = () => {
+      setMensagem('Erro ao ler a imagem.');
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const alterarSenha = async () => {
@@ -104,6 +136,7 @@ export default function Configuracoes() {
         </div>
       )}
 
+      {/* Dados do Perfil */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <User size={16} className="text-cyan-400" /> Dados do Perfil
@@ -120,6 +153,7 @@ export default function Configuracoes() {
         </div>
       </div>
 
+      {/* Dados da Empresa (CNPJ + Logo com Upload) */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <Building size={16} className="text-cyan-400" /> Dados da Empresa
@@ -127,14 +161,41 @@ export default function Configuracoes() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input name="cnpj" placeholder="CNPJ (ex: 00.000.000/0001-00)" value={perfil.cnpj || ''} onChange={handleChange}
             className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
-          <input name="logo" placeholder="URL da logo" value={perfil.logo || ''} onChange={handleChange}
+          <input name="logo" placeholder="URL da logo (opcional)" value={perfil.logo || ''} onChange={handleChange}
             className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
         </div>
+
+        {/* Upload de logo */}
+        <div className="flex items-center gap-3">
+          <label className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs px-3 py-2 rounded-lg cursor-pointer transition-colors flex items-center gap-1">
+            📁 Escolher arquivo
+            <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+          </label>
+          <span className="text-xs text-slate-400">
+            {uploading ? 'Carregando...' : 'PNG, JPG ou GIF (máx. 200 KB)'}
+          </span>
+        </div>
+
+        {/* Preview da logo */}
+        {perfil.logo && (
+          <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg">
+            <img src={perfil.logo} alt="Logo preview" className="h-12 w-12 rounded object-cover border border-slate-600" />
+            <span className="text-xs text-slate-400">Preview da logo</span>
+            <button
+              onClick={() => setPerfil({ ...perfil, logo: '' })}
+              className="text-red-400 text-xs hover:underline ml-auto"
+            >
+              Remover
+            </button>
+          </div>
+        )}
+
         <p className="text-[10px] text-slate-500">
-          Faça upload da sua logo em um serviço como <a href="https://imgbb.com" target="_blank" className="underline text-cyan-400">ImgBB</a> e cole o link direto da imagem aqui.
+          A logo aparecerá no menu lateral e nos relatórios.
         </p>
       </div>
 
+      {/* Endereço de Origem */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <MapPin size={16} className="text-cyan-400" /> Endereço de Origem (Entregas)
@@ -162,6 +223,7 @@ export default function Configuracoes() {
         </button>
       </div>
 
+      {/* Plano e Preferências */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <Crown size={16} className="text-yellow-400" /> Plano e Preferências
@@ -175,15 +237,25 @@ export default function Configuracoes() {
           </div>
         )}
 
-        <div>
-          <label className="text-xs text-slate-400 mb-1 block">Plano atual</label>
-          <select name="plano" value={perfil.plano || 'free'} onChange={handleChange}
-            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full">
-            <option value="free">Free (7 dias)</option>
-            <option value="basic">Basic</option>
-            <option value="pro">Pro</option>
-            <option value="premium">Premium</option>
-          </select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Plano atual</label>
+            <select name="plano" value={perfil.plano || 'free'} onChange={handleChange}
+              className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full">
+              <option value="free">Free (7 dias)</option>
+              <option value="basic">Basic</option>
+              <option value="pro">Pro</option>
+              <option value="premium">Premium</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Tema</label>
+            <select name="tema" value={perfil.tema || 'dark'} onChange={handleChange}
+              className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full">
+              <option value="dark">Escuro</option>
+              <option value="light">Claro</option>
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
@@ -208,6 +280,7 @@ export default function Configuracoes() {
         </p>
       </div>
 
+      {/* Alterar Senha */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
         <h2 className="text-sm font-bold text-white flex items-center gap-2">
           <Key size={16} className="text-yellow-400" /> Alterar Senha
