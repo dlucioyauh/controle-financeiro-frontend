@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Briefcase, User } from 'lucide-react';
+import { Plus, Pencil, Trash2, Briefcase, User, ArrowDown, ArrowUp } from 'lucide-react';
 import api from '../api';
 
 interface DespesasProps {
@@ -18,33 +18,20 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
   const [despesas, setDespesas] = useState<any[]>([]);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [filtroMes, setFiltroMes] = useState('');
+  const [tipoLancamento, setTipoLancamento] = useState<'despesa' | 'receita'>('despesa'); // ← novo estado
 
   const podePessoal = plano === 'pro' || plano === 'premium';
-  const tipo = modoAtivo; // usa o modo controlado pelo pai
+  const tipo = modoAtivo;
 
-  const categoriasEmpresa = [
-    'Fornecedor',
-    'Contas (Água/Luz/Internet)',
-    'Entregas/Fretes',
-    'Marketing',
-    'Equipamentos',
-    'Impostos/Taxas',
-    'Mão de Obra',
-    'Outros',
-  ];
-
-  const categoriasPessoal = [
-    'Moradia',
-    'Alimentação',
-    'Lazer',
-    'Saúde',
-    'Educação',
-    'Transporte',
-    'Outros',
-  ];
+  const categoriasEmpresa = ['Fornecedor','Contas (Água/Luz/Internet)','Entregas/Fretes','Marketing','Equipamentos','Impostos/Taxas','Mão de Obra','Outros'];
+  const categoriasPessoalDespesa = ['Moradia','Alimentação','Lazer','Saúde','Educação','Transporte','Outros'];
+  const categoriasPessoalReceita = ['Salário','Freelance','Investimentos','Vendas','Reembolso','Presente','Outros'];
 
   async function carregarDespesas() {
-    const endpoint = tipo === 'pessoal' ? '/despesas/pessoais' : '/despesas';
+    let endpoint = '/despesas';
+    if (tipo === 'pessoal') {
+      endpoint = tipoLancamento === 'receita' ? '/despesas/receitas-pessoais' : '/despesas/pessoais';
+    }
     const r = await api.get(endpoint);
     setDespesas(r.data);
   }
@@ -61,6 +48,7 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
       formaPagamento,
       data,
       pessoal: tipo === 'pessoal',
+      tipo: tipoLancamento,    // ← envia o tipo
     };
     try {
       if (editandoId !== null) {
@@ -69,11 +57,9 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
       } else {
         await api.post('/despesas', payload);
       }
-      setDescricao('');
-      setValor('');
-      setCategoria(tipo === 'pessoal' ? 'Moradia' : 'Fornecedor');
-      setData('');
-      setFormaPagamento('Pix');
+      setDescricao(''); setValor('');
+      setCategoria(tipo === 'pessoal' ? (tipoLancamento === 'receita' ? 'Salário' : 'Moradia') : 'Fornecedor');
+      setData(''); setFormaPagamento('Pix');
       await carregarDespesas();
       if (onChange) onChange();
     } catch (error) {
@@ -94,19 +80,21 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
     setData(despesa.data?.slice(0, 10) ?? '');
     setFormaPagamento(despesa.formaPagamento ?? 'Pix');
     setEditandoId(despesa.id);
+    if (despesa.pessoal) {
+      setTipoLancamento(despesa.tipo === 'receita' ? 'receita' : 'despesa');
+    }
   }
 
   useEffect(() => {
     carregarDespesas();
-  }, [tipo]);
+  }, [tipo, tipoLancamento]);
 
   const despesasFiltradas = despesas.filter((item) => {
     const mesOk = !filtroMes || item.data?.slice(0, 7) === filtroMes;
     return mesOk;
   });
 
-  const inputCompacto =
-    'bg-gray-800 border border-gray-700 text-white placeholder-gray-500 px-2 py-2 rounded-lg text-xs focus:outline-none focus:border-blue-500 transition-colors';
+  const inputCompacto = 'bg-gray-800 border border-gray-700 text-white placeholder-gray-500 px-2 py-2 rounded-lg text-xs focus:outline-none focus:border-blue-500 transition-colors';
 
   const alternarModo = (novoModo: 'empresa' | 'pessoal') => {
     if (novoModo === 'pessoal' && !podePessoal) {
@@ -114,7 +102,12 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
       return;
     }
     if (onToggleModo) onToggleModo(novoModo);
-    setCategoria(novoModo === 'pessoal' ? 'Moradia' : 'Fornecedor');
+    setCategoria(novoModo === 'pessoal' ? (tipoLancamento === 'receita' ? 'Salário' : 'Moradia') : 'Fornecedor');
+  };
+
+  const alternarTipoLancamento = (novoTipo: 'despesa' | 'receita') => {
+    setTipoLancamento(novoTipo);
+    setCategoria(novoTipo === 'receita' ? 'Salário' : 'Moradia');
   };
 
   return (
@@ -122,52 +115,60 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
       {/* Toggle Empresa / Pessoal */}
       <div className="flex justify-center">
         <div className="bg-gray-800 rounded-xl p-1 flex gap-1">
-          <button
-            onClick={() => alternarModo('empresa')}
+          <button onClick={() => alternarModo('empresa')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-              tipo === 'empresa'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <Briefcase size={16} />
-            Empresa
+              tipo === 'empresa' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-400 hover:text-white'
+            }`}>
+            <Briefcase size={16} /> Empresa
           </button>
-          <button
-            onClick={() => alternarModo('pessoal')}
+          <button onClick={() => alternarModo('pessoal')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-              tipo === 'pessoal'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20'
-                : 'text-gray-400 hover:text-white'
+              tipo === 'pessoal' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-gray-400 hover:text-white'
             } ${!podePessoal ? 'opacity-50 cursor-not-allowed' : ''}`}
-            title={!podePessoal ? 'Disponível nos planos Pro e Premium' : 'Despesas pessoais'}
-          >
-            <User size={16} />
-            Pessoal
+            title={!podePessoal ? 'Disponível nos planos Pro e Premium' : 'Despesas pessoais'}>
+            <User size={16} /> Pessoal
           </button>
         </div>
       </div>
 
+      {/* Toggle Despesa / Receita (apenas no modo pessoal) */}
+      {tipo === 'pessoal' && (
+        <div className="flex justify-center">
+          <div className="bg-gray-800 rounded-xl p-1 flex gap-1">
+            <button onClick={() => alternarTipoLancamento('despesa')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                tipoLancamento === 'despesa' ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'text-gray-400 hover:text-white'
+              }`}>
+              <ArrowDown size={16} /> Despesa
+            </button>
+            <button onClick={() => alternarTipoLancamento('receita')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                tipoLancamento === 'receita' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-gray-400 hover:text-white'
+              }`}>
+              <ArrowUp size={16} /> Receita
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Formulário */}
       <div className="bg-gray-900 rounded-xl p-3 border border-gray-800">
         <h3 className="text-sm font-semibold text-white mb-2">
-          {editandoId ? '✏ Editar Despesa' : `➕ Nova Despesa ${tipo === 'pessoal' ? 'Pessoal' : 'Empresarial'}`}
+          {editandoId ? '✏ Editar' : `➕ Nova ${tipo === 'pessoal' ? (tipoLancamento === 'receita' ? 'Receita' : 'Despesa') + ' Pessoal' : 'Despesa Empresarial'}`}
         </h3>
         <div className="flex flex-wrap items-end gap-2">
-          <input type="text" placeholder="Descrição" value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
+          <input type="text" placeholder="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)}
             className={`${inputCompacto} flex-[2] min-w-[130px]`} />
-          <input type="number" placeholder="Valor" value={valor}
-            onChange={(e) => setValor(e.target.value)}
+          <input type="number" placeholder="Valor" value={valor} onChange={(e) => setValor(e.target.value)}
             className={`${inputCompacto} flex-1 min-w-[90px]`} />
-          <input type="date" value={data}
-            onChange={(e) => setData(e.target.value)}
+          <input type="date" value={data} onChange={(e) => setData(e.target.value)}
             className={`${inputCompacto} flex-1 min-w-[110px]`} />
           <select value={categoria} onChange={(e) => setCategoria(e.target.value)}
             className={`${inputCompacto} flex-1 min-w-[100px]`}>
-            {(tipo === 'pessoal' ? categoriasPessoal : categoriasEmpresa).map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
+            {(tipo === 'pessoal'
+              ? (tipoLancamento === 'receita' ? categoriasPessoalReceita : categoriasPessoalDespesa)
+              : categoriasEmpresa
+            ).map(cat => <option key={cat} value={cat}>{cat}</option>)}
           </select>
           <select value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value)}
             className={`${inputCompacto} flex-1 min-w-[100px]`}>
@@ -179,9 +180,10 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
             <option value="Transferência">Transferência</option>
           </select>
           <button onClick={salvarDespesa} disabled={!descricao || !valor || !data}
-            className={`flex items-center gap-1 ${tipo === 'pessoal' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'} disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors`}>
-            <Plus size={14} />
-            {editandoId ? 'Atualizar' : 'Salvar'}
+            className={`flex items-center gap-1 ${
+              tipo === 'pessoal' ? (tipoLancamento === 'receita' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-purple-600 hover:bg-purple-700') : 'bg-blue-600 hover:bg-blue-700'
+            } disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors`}>
+            <Plus size={14} /> {editandoId ? 'Atualizar' : 'Salvar'}
           </button>
         </div>
       </div>
@@ -197,31 +199,35 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
         </div>
 
         <div className="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
-          {despesasFiltradas.map((despesa) => (
-            <div key={despesa.id}
+          {despesasFiltradas.map((item) => (
+            <div key={item.id}
               className="bg-gray-800 rounded-lg p-2.5 flex items-center justify-between gap-2 border border-gray-700 hover:border-gray-600 transition-colors">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-xs font-semibold text-white truncate">{despesa.descricao}</p>
+                  <p className="text-xs font-semibold text-white truncate">{item.descricao}</p>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                    despesa.pessoal ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
+                    item.pessoal
+                      ? (item.tipo === 'receita' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-purple-500/20 text-purple-400')
+                      : 'bg-blue-500/20 text-blue-400'
                   }`}>
-                    {despesa.pessoal ? 'Pessoal' : 'Empresa'}
+                    {item.pessoal ? (item.tipo === 'receita' ? 'Receita' : 'Pessoal') : 'Empresa'}
                   </span>
                 </div>
                 <p className="text-[10px] text-gray-400 mt-0.5">
-                  {despesa.categoria} • {despesa.formaPagamento} • {despesa.data?.slice(0, 10)}
+                  {item.categoria} • {item.formaPagamento} • {item.data?.slice(0, 10)}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <p className="text-xs font-bold text-red-400 whitespace-nowrap">
-                  R$ {Number(despesa.valor).toFixed(2)}
+                <p className={`text-xs font-bold whitespace-nowrap ${
+                  item.tipo === 'receita' ? 'text-emerald-400' : 'text-red-400'
+                }`}>
+                  {item.tipo === 'receita' ? '+' : '-'} R$ {Number(item.valor).toFixed(2)}
                 </p>
-                <button onClick={() => editarDespesa(despesa)}
+                <button onClick={() => editarDespesa(item)}
                   className="p-1 rounded bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 transition-colors">
                   <Pencil size={12} />
                 </button>
-                <button onClick={() => deletarDespesa(despesa.id)}
+                <button onClick={() => deletarDespesa(item.id)}
                   className="p-1 rounded bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors">
                   <Trash2 size={12} />
                 </button>
@@ -229,7 +235,7 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
             </div>
           ))}
           {despesasFiltradas.length === 0 && (
-            <p className="text-center text-gray-500 py-4 text-xs">Nenhuma despesa encontrada.</p>
+            <p className="text-center text-gray-500 py-4 text-xs">Nenhum lançamento encontrado.</p>
           )}
         </div>
       </div>

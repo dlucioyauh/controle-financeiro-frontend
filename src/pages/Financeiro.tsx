@@ -25,7 +25,7 @@ export default function Financeiro() {
   const [despesasPorCategoria, setDespesasPorCategoria] = useState<any[]>([]);
   const [transacoes, setTransacoes] = useState<any[]>([]);
   const [plano, setPlano] = useState('free');
-  const [modoExibicao, setModoExibicao] = useState<'empresa' | 'pessoal'>('empresa'); // ← novo estado
+  const [modoExibicao, setModoExibicao] = useState<'empresa' | 'pessoal'>('empresa');
 
   useEffect(() => {
     api.get('/users/perfil')
@@ -38,57 +38,68 @@ export default function Financeiro() {
     try {
       const [vendasRes, despesasRes] = await Promise.all([
         api.get('/vendas/estatisticas', { params: { dataInicio, dataFim } }),
-        api.get('/despesas'), // sempre carrega todas (empresariais) – para modo empresa
+        api.get('/despesas'),
       ]);
 
       const vendasData = vendasRes.data;
-      const receita = vendasData?.totalReceita || 0;
+      let receita = vendasData?.totalReceita || 0;
 
-      // Despesas empresariais (padrão) ou pessoais (se modo = pessoal)
-      const despesasFiltradas = (despesasRes.data || []).filter((d: any) => {
+      // Despesas empresariais ou pessoais (despesas + receitas)
+      const todasDespesas = (despesasRes.data || []).filter((d: any) => {
         if (!d.data) return false;
         const dataFormatada = d.data.slice(0, 10);
         const okData = dataFormatada >= dataInicio && dataFormatada <= dataFim;
-        // Filtra pelo tipo atual
         if (modoExibicao === 'pessoal') return okData && d.pessoal === true;
-        return okData && !d.pessoal; // empresa (ou false/null)
+        return okData && !d.pessoal;
       });
 
-      const totalDespesas = despesasFiltradas.reduce(
-        (acc: number, d: any) => acc + Number(d.valor || 0),
-        0,
-      );
+      // Separar receitas pessoais (entradas) e despesas pessoais (saídas)
+      const receitasPessoais = todasDespesas.filter((d: any) => d.tipo === 'receita');
+      const despesasPessoais = todasDespesas.filter((d: any) => d.tipo !== 'receita'); // 'despesa' ou null
+
+      if (modoExibicao === 'pessoal') {
+        // Receitas pessoais = soma das entradas
+        receita = receitasPessoais.reduce((acc: number, d: any) => acc + Number(d.valor || 0), 0);
+      }
+
+      const totalDespesas = despesasPessoais.reduce((acc: number, d: any) => acc + Number(d.valor || 0), 0);
       const saldo = receita - totalDespesas;
 
       setTotais({ receita, despesas: totalDespesas, saldo });
 
-      // Evolução do saldo
+      // Evolução do saldo (considerando receitas e despesas)
       const mapaDespesasDia: Record<string, number> = {};
-      despesasFiltradas.forEach((d: any) => {
+      despesasPessoais.forEach((d: any) => {
         const dia = d.data.slice(0, 10);
         mapaDespesasDia[dia] = (mapaDespesasDia[dia] || 0) + Number(d.valor || 0);
+      });
+      const mapaReceitasDia: Record<string, number> = {};
+      receitasPessoais.forEach((d: any) => {
+        const dia = d.data.slice(0, 10);
+        mapaReceitasDia[dia] = (mapaReceitasDia[dia] || 0) + Number(d.valor || 0);
       });
 
       const vendasPorDia = vendasData?.vendasPorDia || {};
       const todasDatas = new Set([
         ...Object.keys(vendasPorDia),
         ...Object.keys(mapaDespesasDia),
+        ...Object.keys(mapaReceitasDia),
       ]);
 
       const evo = Array.from(todasDatas)
         .sort()
         .map((dia) => ({
           dia: new Date(dia + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-          receita: Number(vendasPorDia[dia] || 0),
+          receita: (Number(vendasPorDia[dia] || 0) + Number(mapaReceitasDia[dia] || 0)),
           despesas: Number(mapaDespesasDia[dia] || 0),
-          saldo: Number(vendasPorDia[dia] || 0) - Number(mapaDespesasDia[dia] || 0),
+          saldo: (Number(vendasPorDia[dia] || 0) + Number(mapaReceitasDia[dia] || 0)) - Number(mapaDespesasDia[dia] || 0),
         }));
 
       setEvolucaoSaldo(evo);
 
-      // Despesas por categoria
+      // Despesas por categoria (apenas despesas)
       const mapaCat: Record<string, number> = {};
-      despesasFiltradas.forEach((d: any) => {
+      despesasPessoais.forEach((d: any) => {
         const cat = d.categoria || 'Outros';
         mapaCat[cat] = (mapaCat[cat] || 0) + Number(d.valor || 0);
       });
@@ -114,15 +125,22 @@ export default function Financeiro() {
           canal: v.canalVenda,
         }));
 
-      const despesasTrans = despesasFiltradas.map((d: any) => ({
+      const despesasTrans = despesasPessoais.map((d: any) => ({
         tipo: modoExibicao === 'pessoal' ? 'despesa-pessoal' : 'despesa',
         data: d.data.slice(0, 10),
         descricao: d.descricao || 'Sem descrição',
         valor: -Number(d.valor),
         categoria: d.categoria,
       }));
+      const receitasTrans = receitasPessoais.map((d: any) => ({
+        tipo: 'receita-pessoal',
+        data: d.data.slice(0, 10),
+        descricao: d.descricao || 'Sem descrição',
+        valor: Number(d.valor),
+        categoria: d.categoria,
+      }));
 
-      const todasTransacoes = [...vendasDetalhadas, ...despesasTrans]
+      const todasTransacoes = [...vendasDetalhadas, ...despesasTrans, ...receitasTrans]
         .sort((a, b) => b.data.localeCompare(a.data))
         .slice(0, 15);
 
@@ -136,7 +154,7 @@ export default function Financeiro() {
 
   useEffect(() => {
     carregarDados();
-  }, [dataInicio, dataFim, modoExibicao]); // recarrega ao alternar modo
+  }, [dataInicio, dataFim, modoExibicao]);
 
   const formatarMoeda = (valor: number) =>
     valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -146,7 +164,6 @@ export default function Financeiro() {
 
   return (
     <div className="space-y-6 text-slate-200 pb-10">
-      {/* Cabeçalho + Filtro + Badge de modo */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
         <div className="flex items-center gap-3">
           <div>
@@ -182,12 +199,11 @@ export default function Financeiro() {
         </div>
       ) : (
         <>
-          {/* Cards de resumo */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 flex items-center justify-between">
               <div>
                 <p className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">
-                  {modoExibicao === 'pessoal' ? 'Receitas Gerais' : 'Receitas'}
+                  {modoExibicao === 'pessoal' ? 'Receitas Pessoais' : 'Receitas'}
                 </p>
                 <p className="text-2xl font-bold text-emerald-400 mt-1">{formatarMoeda(totais.receita)}</p>
               </div>
@@ -215,7 +231,6 @@ export default function Financeiro() {
             </div>
           </div>
 
-          {/* Gráficos */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <h3 className="text-sm font-bold text-white mb-4">
@@ -263,7 +278,6 @@ export default function Financeiro() {
             </div>
           </div>
 
-          {/* Últimas movimentações + Gerenciador de despesas */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <h3 className="text-sm font-bold text-white mb-4">Últimas Movimentações</h3>
@@ -287,6 +301,10 @@ export default function Financeiro() {
                           {t.tipo === 'venda' ? (
                             <span className="inline-flex items-center gap-1 text-emerald-400">
                               <ArrowUpRight size={10} /> Venda
+                            </span>
+                          ) : t.tipo === 'receita-pessoal' ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-400">
+                              <ArrowUpRight size={10} /> Receita P.
                             </span>
                           ) : t.tipo === 'despesa-pessoal' ? (
                             <span className="inline-flex items-center gap-1 text-purple-400">
