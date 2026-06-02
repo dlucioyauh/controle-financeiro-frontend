@@ -24,9 +24,9 @@ export default function Financeiro() {
   const [evolucaoSaldo, setEvolucaoSaldo] = useState<any[]>([]);
   const [despesasPorCategoria, setDespesasPorCategoria] = useState<any[]>([]);
   const [transacoes, setTransacoes] = useState<any[]>([]);
-  const [plano, setPlano] = useState('free');   // ← novo estado
+  const [plano, setPlano] = useState('free');
+  const [modoExibicao, setModoExibicao] = useState<'empresa' | 'pessoal'>('empresa'); // ← novo estado
 
-  // Busca o plano do usuário logado
   useEffect(() => {
     api.get('/users/perfil')
       .then(res => setPlano(res.data.plano || 'free'))
@@ -38,16 +38,20 @@ export default function Financeiro() {
     try {
       const [vendasRes, despesasRes] = await Promise.all([
         api.get('/vendas/estatisticas', { params: { dataInicio, dataFim } }),
-        api.get('/despesas'),
+        api.get('/despesas'), // sempre carrega todas (empresariais) – para modo empresa
       ]);
 
       const vendasData = vendasRes.data;
       const receita = vendasData?.totalReceita || 0;
 
+      // Despesas empresariais (padrão) ou pessoais (se modo = pessoal)
       const despesasFiltradas = (despesasRes.data || []).filter((d: any) => {
         if (!d.data) return false;
         const dataFormatada = d.data.slice(0, 10);
-        return dataFormatada >= dataInicio && dataFormatada <= dataFim;
+        const okData = dataFormatada >= dataInicio && dataFormatada <= dataFim;
+        // Filtra pelo tipo atual
+        if (modoExibicao === 'pessoal') return okData && d.pessoal === true;
+        return okData && !d.pessoal; // empresa (ou false/null)
       });
 
       const totalDespesas = despesasFiltradas.reduce(
@@ -58,6 +62,7 @@ export default function Financeiro() {
 
       setTotais({ receita, despesas: totalDespesas, saldo });
 
+      // Evolução do saldo
       const mapaDespesasDia: Record<string, number> = {};
       despesasFiltradas.forEach((d: any) => {
         const dia = d.data.slice(0, 10);
@@ -81,6 +86,7 @@ export default function Financeiro() {
 
       setEvolucaoSaldo(evo);
 
+      // Despesas por categoria
       const mapaCat: Record<string, number> = {};
       despesasFiltradas.forEach((d: any) => {
         const cat = d.categoria || 'Outros';
@@ -92,6 +98,7 @@ export default function Financeiro() {
       }));
       setDespesasPorCategoria(pizzaData);
 
+      // Transações unificadas
       const vendasDetalhadasRes = await api.get('/vendas');
       const vendasDetalhadas = (vendasDetalhadasRes.data || [])
         .filter((v: any) => {
@@ -108,7 +115,7 @@ export default function Financeiro() {
         }));
 
       const despesasTrans = despesasFiltradas.map((d: any) => ({
-        tipo: 'despesa',
+        tipo: modoExibicao === 'pessoal' ? 'despesa-pessoal' : 'despesa',
         data: d.data.slice(0, 10),
         descricao: d.descricao || 'Sem descrição',
         valor: -Number(d.valor),
@@ -129,7 +136,7 @@ export default function Financeiro() {
 
   useEffect(() => {
     carregarDados();
-  }, [dataInicio, dataFim]);
+  }, [dataInicio, dataFim, modoExibicao]); // recarrega ao alternar modo
 
   const formatarMoeda = (valor: number) =>
     valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -139,10 +146,20 @@ export default function Financeiro() {
 
   return (
     <div className="space-y-6 text-slate-200 pb-10">
+      {/* Cabeçalho + Filtro + Badge de modo */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-white">Financeiro</h1>
-          <p className="text-xs text-slate-400">Centro de Controle Financeiro</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-white">Financeiro</h1>
+            <p className="text-xs text-slate-400">Centro de Controle Financeiro</p>
+          </div>
+          <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+            modoExibicao === 'pessoal'
+              ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+              : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+          }`}>
+            {modoExibicao === 'pessoal' ? '👤 Pessoal' : '🏢 Empresa'}
+          </span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1 bg-[#020617] border border-slate-700 rounded px-2 py-1 text-xs">
@@ -165,24 +182,31 @@ export default function Financeiro() {
         </div>
       ) : (
         <>
+          {/* Cards de resumo */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 flex items-center justify-between">
               <div>
-                <p className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Receitas</p>
+                <p className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">
+                  {modoExibicao === 'pessoal' ? 'Receitas Gerais' : 'Receitas'}
+                </p>
                 <p className="text-2xl font-bold text-emerald-400 mt-1">{formatarMoeda(totais.receita)}</p>
               </div>
               <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400"><TrendingUp size={24} /></div>
             </div>
             <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 flex items-center justify-between">
               <div>
-                <p className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Despesas</p>
+                <p className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">
+                  {modoExibicao === 'pessoal' ? 'Despesas Pessoais' : 'Despesas'}
+                </p>
                 <p className="text-2xl font-bold text-red-400 mt-1">{formatarMoeda(totais.despesas)}</p>
               </div>
               <div className="p-3 bg-red-500/10 rounded-xl text-red-400"><TrendingDown size={24} /></div>
             </div>
             <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 flex items-center justify-between">
               <div>
-                <p className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Saldo</p>
+                <p className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">
+                  {modoExibicao === 'pessoal' ? 'Saldo Pessoal' : 'Saldo'}
+                </p>
                 <p className={`text-2xl font-bold mt-1 ${totais.saldo >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>
                   {formatarMoeda(totais.saldo)}
                 </p>
@@ -191,9 +215,12 @@ export default function Financeiro() {
             </div>
           </div>
 
+          {/* Gráficos */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
-              <h3 className="text-sm font-bold text-white mb-4">Evolução do Saldo Diário</h3>
+              <h3 className="text-sm font-bold text-white mb-4">
+                {modoExibicao === 'pessoal' ? 'Evolução do Saldo Pessoal' : 'Evolução do Saldo Diário'}
+              </h3>
               <div className="h-72 flex items-center justify-center">
                 {evolucaoSaldo.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -203,7 +230,7 @@ export default function Financeiro() {
                       <YAxis stroke="#64748b" fontSize={10} />
                       <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }}
                         formatter={(value: any) => formatarMoeda(Number(value))} />
-                      <Line type="monotone" dataKey="saldo" stroke="#06b6d4" strokeWidth={3} dot={{ r: 4 }} name="Saldo" />
+                      <Line type="monotone" dataKey="saldo" stroke={modoExibicao === 'pessoal' ? '#a855f7' : '#06b6d4'} strokeWidth={3} dot={{ r: 4 }} name="Saldo" />
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
@@ -212,7 +239,9 @@ export default function Financeiro() {
               </div>
             </div>
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 flex flex-col">
-              <h3 className="text-sm font-bold text-white mb-4">Despesas por Categoria</h3>
+              <h3 className="text-sm font-bold text-white mb-4">
+                {modoExibicao === 'pessoal' ? 'Gastos Pessoais por Categoria' : 'Despesas por Categoria'}
+              </h3>
               <div className="flex-1 flex items-center justify-center">
                 {despesasPorCategoria.length > 0 ? (
                   <ResponsiveContainer width="100%" height={250}>
@@ -234,6 +263,7 @@ export default function Financeiro() {
             </div>
           </div>
 
+          {/* Últimas movimentações + Gerenciador de despesas */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <h3 className="text-sm font-bold text-white mb-4">Últimas Movimentações</h3>
@@ -257,6 +287,10 @@ export default function Financeiro() {
                           {t.tipo === 'venda' ? (
                             <span className="inline-flex items-center gap-1 text-emerald-400">
                               <ArrowUpRight size={10} /> Venda
+                            </span>
+                          ) : t.tipo === 'despesa-pessoal' ? (
+                            <span className="inline-flex items-center gap-1 text-purple-400">
+                              <ArrowDownRight size={10} /> Desp. Pessoal
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-red-400">
@@ -314,7 +348,7 @@ export default function Financeiro() {
 
               <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
                 <h2 className="text-sm font-bold text-white mb-4">Adicionar / Gerenciar Despesas</h2>
-                <Despesas onChange={carregarDados} plano={plano} />
+                <Despesas onChange={carregarDados} plano={plano} modoAtivo={modoExibicao} onToggleModo={setModoExibicao} />
               </div>
             </div>
           </div>
