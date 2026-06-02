@@ -26,7 +26,6 @@ export default function Relatorios() {
   const [modo, setModo] = useState<'pdf' | 'excel' | null>(null);
   const [erro, setErro] = useState('');
 
-  // Plano do usuário
   const [plano, setPlano] = useState('free');
   const podeGerarRelatorio = plano !== 'free';
 
@@ -90,6 +89,17 @@ export default function Relatorios() {
       const margem = 16;
       const larguraUtil = 178;
       let y = margem;
+
+      // Logo do usuário (se existir)
+      const logoBase64 = localStorage.getItem('logo');
+      if (logoBase64) {
+        try {
+          doc.addImage(logoBase64, 'PNG', margem, y, 20, 20);
+          y += 22;
+        } catch (err) {
+          console.warn('Não foi possível adicionar a logo ao PDF:', err);
+        }
+      }
 
       const novaPagina = () => {
         doc.addPage();
@@ -313,7 +323,6 @@ export default function Relatorios() {
         <p className="text-xs text-slate-400">Exporte relatórios profissionais com tabelas e resumos.</p>
       </div>
 
-      {/* Alerta para plano Free */}
       {!podeGerarRelatorio && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-xs text-yellow-400">
           Relatórios em PDF e Excel estão disponíveis a partir do plano <strong>Basic</strong>. 

@@ -8,7 +8,7 @@ export default function Configuracoes() {
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [mensagem, setMensagem] = useState('');
-  const [uploading, setUploading] = useState(false); // ← novo
+  const [uploading, setUploading] = useState(false);
 
   const carregarPerfil = async () => {
     try {
@@ -37,7 +37,7 @@ export default function Configuracoes() {
         cepOrigem: perfil.cepOrigem,
         taxaFreteKm: parseFloat(perfil.taxaFreteKm) || 0.8,
         cnpj: perfil.cnpj,
-        logo: perfil.logo, // base64 ou URL
+        logo: perfil.logo,
         plano: perfil.plano,
       };
 
@@ -59,6 +59,14 @@ export default function Configuracoes() {
       }
 
       await api.patch('/users/perfil', payload);
+
+      // Atualiza a logo no localStorage
+      if (payload.logo) {
+        localStorage.setItem('logo', payload.logo);
+      } else {
+        localStorage.removeItem('logo');
+      }
+
       window.location.reload();
     } catch (err) {
       console.error('Erro ao salvar perfil:', err);
@@ -70,7 +78,6 @@ export default function Configuracoes() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Limitar tamanho (200 KB)
     if (file.size > 200 * 1024) {
       setMensagem('A imagem deve ter no máximo 200 KB.');
       return;
