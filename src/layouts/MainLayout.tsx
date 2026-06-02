@@ -14,7 +14,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-
+import api from '../api';
 
 const links = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
@@ -32,6 +32,7 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [logo, setLogo] = useState(localStorage.getItem('logo') || '');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -46,21 +47,42 @@ export default function MainLayout() {
     } catch {
       navigate('/login');
     }
+
+    // Busca a logo do perfil se não estiver em cache
+    if (!localStorage.getItem('logo')) {
+      api.get('/users/perfil')
+        .then(res => {
+          if (res.data.logo) {
+            localStorage.setItem('logo', res.data.logo);
+            setLogo(res.data.logo);
+          }
+        })
+        .catch(() => {});
+    }
   }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('logo');
     navigate('/login');
   };
+
+  const LogoComponent = () => (
+    logo ? (
+      <img src={logo} alt="Logo" className="h-8 w-8 rounded object-cover" />
+    ) : (
+      <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/20">
+        <ChefHat size={18} className="text-white" />
+      </div>
+    )
+  );
 
   return (
     <div className="min-h-screen flex bg-[#020617]">
       {/* Sidebar para desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-[#0f172a] border-r border-slate-800 p-4">
         <div className="flex items-center gap-2 mb-8">
-          <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/20">
-            <ChefHat size={18} className="text-white" />
-          </div>
+          <LogoComponent />
           <span className="text-white font-bold text-lg">IonFinance</span>
         </div>
         <nav className="flex-1 space-y-1">
@@ -106,7 +128,10 @@ export default function MainLayout() {
         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-white">
           {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
-        <span className="text-white font-bold">IonFinance</span>
+        <div className="flex items-center gap-2">
+          <LogoComponent />
+          <span className="text-white font-bold">IonFinance</span>
+        </div>
         <button onClick={handleLogout} className="text-slate-400">
           <LogOut size={20} />
         </button>
