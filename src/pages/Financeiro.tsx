@@ -36,34 +36,30 @@ export default function Financeiro() {
   const carregarDados = async () => {
     setCarregando(true);
     try {
-      // Buscar estatísticas de vendas, todas as despesas e receitas pessoais
+      // Buscar dados de acordo com o modo
+      const isPessoal = modoExibicao === 'pessoal';
+
       const [vendasRes, despesasRes, receitasPessoaisRes] = await Promise.all([
         api.get('/vendas/estatisticas', { params: { dataInicio, dataFim } }),
-        api.get('/despesas'),
-        modoExibicao === 'pessoal' ? api.get('/despesas/receitas-pessoais') : Promise.resolve({ data: [] }),
+        isPessoal ? api.get('/despesas/pessoais') : api.get('/despesas'),
+        isPessoal ? api.get('/despesas/receitas-pessoais') : Promise.resolve({ data: [] }),
       ]);
 
       const vendasData = vendasRes.data;
       let receita = vendasData?.totalReceita || 0;
 
-      // Despesas (empresariais ou pessoais)
-      const despesasFiltradas = (despesasRes.data || []).filter((d: any) => {
-        if (!d.data) return false;
-        const dataFormatada = d.data.slice(0, 10);
-        const okData = dataFormatada >= dataInicio && dataFormatada <= dataFim;
-        if (modoExibicao === 'pessoal') return okData && d.pessoal === true && d.tipo !== 'receita';
-        return okData && !d.pessoal && d.tipo !== 'receita';
-      });
-
-      // Receitas pessoais (entradas)
-      const receitasPessoais = (receitasPessoaisRes.data || []).filter((d: any) => {
+      // Filtrar por data
+      const filtraPorData = (lista: any[]) => lista.filter((d: any) => {
         if (!d.data) return false;
         const dataFormatada = d.data.slice(0, 10);
         return dataFormatada >= dataInicio && dataFormatada <= dataFim;
       });
 
-      if (modoExibicao === 'pessoal') {
-        receita = receitasPessoais.reduce((acc: number, d: any) => acc + Number(d.valor || 0), 0);
+      const despesasFiltradas = filtraPorData(despesasRes.data || []);
+      const receitasPessoaisFiltradas = filtraPorData(receitasPessoaisRes.data || []);
+
+      if (isPessoal) {
+        receita = receitasPessoaisFiltradas.reduce((acc: number, d: any) => acc + Number(d.valor || 0), 0);
       }
 
       const totalDespesas = despesasFiltradas.reduce((acc: number, d: any) => acc + Number(d.valor || 0), 0);
@@ -78,7 +74,7 @@ export default function Financeiro() {
         mapaDespesasDia[dia] = (mapaDespesasDia[dia] || 0) + Number(d.valor || 0);
       });
       const mapaReceitasDia: Record<string, number> = {};
-      receitasPessoais.forEach((d: any) => {
+      receitasPessoaisFiltradas.forEach((d: any) => {
         const dia = d.data.slice(0, 10);
         mapaReceitasDia[dia] = (mapaReceitasDia[dia] || 0) + Number(d.valor || 0);
       });
@@ -130,13 +126,13 @@ export default function Financeiro() {
         }));
 
       const despesasTrans = despesasFiltradas.map((d: any) => ({
-        tipo: modoExibicao === 'pessoal' ? 'despesa-pessoal' : 'despesa',
+        tipo: isPessoal ? 'despesa-pessoal' : 'despesa',
         data: d.data.slice(0, 10),
         descricao: d.descricao || 'Sem descrição',
         valor: -Number(d.valor),
         categoria: d.categoria,
       }));
-      const receitasTrans = receitasPessoais.map((d: any) => ({
+      const receitasTrans = receitasPessoaisFiltradas.map((d: any) => ({
         tipo: 'receita-pessoal',
         data: d.data.slice(0, 10),
         descricao: d.descricao || 'Sem descrição',
