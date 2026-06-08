@@ -144,10 +144,10 @@ export default function Configuracoes() {
     }
   };
 
-  // Mapeia os price IDs das variáveis de ambiente do frontend
-  const priceBasic = import.meta.env.VITE_STRIPE_PRICE_BASIC || '';
-  const pricePro = import.meta.env.VITE_STRIPE_PRICE_PRO || '';
-  const pricePremium = import.meta.env.VITE_STRIPE_PRICE_PREMIUM || '';
+  // Price IDs de TESTE do Stripe (novos, válidos para modo teste)
+  const priceBasic = import.meta.env.VITE_STRIPE_PRICE_BASIC || 'price_1TgB1WRxnn8X2fAM5pL8MCG8';
+  const pricePro = import.meta.env.VITE_STRIPE_PRICE_PRO || 'price_1TgB2sRxnn8X2fAMGozAIlMr';
+  const pricePremium = import.meta.env.VITE_STRIPE_PRICE_PREMIUM || 'price_1TgB3yRxnn8X2fAMtVdqzTJ4';
 
   return (
     <div className="space-y-6 text-slate-200 max-w-2xl mx-auto">
@@ -267,7 +267,6 @@ export default function Configuracoes() {
           </div>
         )}
 
-        {/* Assinatura ativa */}
         {perfil.stripeSubscriptionStatus === 'active' && (
           <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-xs text-emerald-400 flex items-center justify-between">
             <span>✅ Assinatura ativa ({perfil.plano})</span>
