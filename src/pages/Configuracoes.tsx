@@ -39,7 +39,7 @@ export default function Configuracoes() {
         taxaFreteKm: parseFloat(perfil.taxaFreteKm) || 0.8,
         cnpj: perfil.cnpj,
         logo: perfil.logo,
-        plano: perfil.plano,       // ← ainda enviamos, mas o backend ignora se não for dlucio
+        plano: perfil.plano,
       };
 
       if (perfil.enderecoOrigem && perfil.cidadeOrigem) {
@@ -170,7 +170,90 @@ export default function Configuracoes() {
         </div>
       )}
 
-      {/* ... (restante do JSX permanece igual até a seção de Plano e Preferências) ... */}
+      {/* Dados do Perfil */}
+      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <User size={16} className="text-cyan-400" /> Dados do Perfil
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input name="nome" placeholder="Nome completo" value={perfil.nome || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="email" placeholder="E-mail" value={perfil.email || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="nomeNegocio" placeholder="Nome do negócio" value={perfil.nomeNegocio || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="telefone" placeholder="Telefone" value={perfil.telefone || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+      </div>
+
+      {/* Dados da Empresa (CNPJ + Logo com Upload) */}
+      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Building size={16} className="text-cyan-400" /> Dados da Empresa
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input name="cnpj" placeholder="CNPJ (ex: 00.000.000/0001-00)" value={perfil.cnpj || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="logo" placeholder="URL da logo (opcional)" value={perfil.logo || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+
+        <div className="flex items-center gap-3">
+          <label className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs px-3 py-2 rounded-lg cursor-pointer transition-colors flex items-center gap-1">
+            📁 Escolher arquivo
+            <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+          </label>
+          <span className="text-xs text-slate-400">
+            {uploading ? 'Carregando...' : 'PNG, JPG ou GIF (máx. 200 KB)'}
+          </span>
+        </div>
+
+        {perfil.logo && (
+          <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg">
+            <img src={perfil.logo} alt="Logo preview" className="h-12 w-12 rounded object-cover border border-slate-600" />
+            <span className="text-xs text-slate-400">Preview da logo</span>
+            <button
+              onClick={() => setPerfil({ ...perfil, logo: '' })}
+              className="text-red-400 text-xs hover:underline ml-auto"
+            >
+              Remover
+            </button>
+          </div>
+        )}
+
+        <p className="text-[10px] text-slate-500">
+          A logo aparecerá no menu lateral e nos relatórios.
+        </p>
+      </div>
+
+      {/* Endereço de Origem */}
+      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <MapPin size={16} className="text-cyan-400" /> Endereço de Origem (Entregas)
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input name="enderecoOrigem" placeholder="Rua, número" value={perfil.enderecoOrigem || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="bairroOrigem" placeholder="Bairro" value={perfil.bairroOrigem || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="cidadeOrigem" placeholder="Cidade" value={perfil.cidadeOrigem || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="estadoOrigem" placeholder="Estado (ex: SC)" value={perfil.estadoOrigem || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input name="cepOrigem" placeholder="CEP" value={perfil.cepOrigem || ''} onChange={handleChange}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <div className="relative">
+            <input name="taxaFreteKm" type="number" step="0.01" placeholder="Taxa por km (ex: 0.80)" value={perfil.taxaFreteKm || ''} onChange={handleChange}
+              className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full" />
+            <span className="absolute right-3 top-2.5 text-slate-400 text-sm">R$/km</span>
+          </div>
+        </div>
+        <button onClick={salvarPerfil}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1">
+          <Save size={14} /> Salvar Perfil
+        </button>
+      </div>
 
       {/* Plano e Preferências */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
@@ -202,7 +285,7 @@ export default function Configuracoes() {
               name="plano"
               value={perfil.plano || 'free'}
               onChange={handleChange}
-              disabled={!isAdmin}   // ← APENAS ADMIN PODE ALTERAR MANUALMENTE
+              disabled={!isAdmin}
               className={`bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full ${
                 !isAdmin ? 'opacity-70 cursor-not-allowed' : ''
               }`}
@@ -230,14 +313,75 @@ export default function Configuracoes() {
 
         {/* Cards dos planos com botão de assinatura */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          {/* ... (mantenha os cards exatamente como estavam) ... */}
+          <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
+            <h4 className="font-bold text-white">Basic</h4>
+            <p className="text-slate-400 mt-1">Funcionalidades essenciais</p>
+            <p className="text-cyan-400 font-bold mt-2">R$ 10/mês</p>
+            {perfil.plano !== 'basic' && (
+              <button
+                onClick={() => assinarPlano(priceBasic)}
+                disabled={assinarLoading === priceBasic}
+                className="mt-2 w-full bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white py-1.5 rounded-lg text-xs font-medium transition-colors"
+              >
+                {assinarLoading === priceBasic ? 'Redirecionando...' : 'Assinar Basic'}
+              </button>
+            )}
+          </div>
+          <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
+            <h4 className="font-bold text-white">Pro</h4>
+            <p className="text-slate-400 mt-1">Recursos avançados</p>
+            <p className="text-cyan-400 font-bold mt-2">R$ 30/mês</p>
+            {perfil.plano !== 'pro' && (
+              <button
+                onClick={() => assinarPlano(pricePro)}
+                disabled={assinarLoading === pricePro}
+                className="mt-2 w-full bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white py-1.5 rounded-lg text-xs font-medium transition-colors"
+              >
+                {assinarLoading === pricePro ? 'Redirecionando...' : 'Assinar Pro'}
+              </button>
+            )}
+          </div>
+          <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
+            <h4 className="font-bold text-white">Premium</h4>
+            <p className="text-slate-400 mt-1">Tudo incluso + suporte</p>
+            <p className="text-cyan-400 font-bold mt-2">R$ 50/mês</p>
+            {perfil.plano !== 'premium' && (
+              <button
+                onClick={() => assinarPlano(pricePremium)}
+                disabled={assinarLoading === pricePremium}
+                className="mt-2 w-full bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white py-1.5 rounded-lg text-xs font-medium transition-colors"
+              >
+                {assinarLoading === pricePremium ? 'Redirecionando...' : 'Assinar Premium'}
+              </button>
+            )}
+          </div>
         </div>
         <p className="text-[10px] text-slate-500">
           Após o teste de 7 dias, escolha um plano para continuar.
         </p>
       </div>
 
-      {/* ... (restante do JSX permanece igual) ... */}
+      {/* Alterar Senha */}
+      <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Key size={16} className="text-yellow-400" /> Alterar Senha
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <input type="password" placeholder="Senha atual" value={senhaAtual}
+            onChange={(e) => setSenhaAtual(e.target.value)}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input type="password" placeholder="Nova senha" value={novaSenha}
+            onChange={(e) => setNovaSenha(e.target.value)}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <input type="password" placeholder="Confirmar nova senha" value={confirmarSenha}
+            onChange={(e) => setConfirmarSenha(e.target.value)}
+            className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+        <button onClick={alterarSenha}
+          className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1">
+          <Key size={14} /> Alterar Senha
+        </button>
+      </div>
     </div>
   );
 }
