@@ -9,6 +9,7 @@ export default function Configuracoes() {
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [mensagem, setMensagem] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [assinarLoading, setAssinarLoading] = useState<string | null>(null);
 
   const carregarPerfil = async () => {
     try {
@@ -41,7 +42,6 @@ export default function Configuracoes() {
         plano: perfil.plano,
       };
 
-      // Geocodificação do endereço de origem
       if (perfil.enderecoOrigem && perfil.cidadeOrigem) {
         try {
           const enderecoCompleto = `${perfil.enderecoOrigem}, ${perfil.bairroOrigem}, ${perfil.cidadeOrigem}, ${perfil.estadoOrigem}, Brasil`;
@@ -60,7 +60,6 @@ export default function Configuracoes() {
 
       await api.patch('/users/perfil', payload);
 
-      // Atualiza a logo no localStorage
       if (payload.logo) {
         localStorage.setItem('logo', payload.logo);
       } else {
@@ -121,6 +120,37 @@ export default function Configuracoes() {
     setPerfil({ ...perfil, [e.target.name]: e.target.value });
   };
 
+  // Stripe: assinar plano
+  const assinarPlano = async (priceId: string) => {
+    setAssinarLoading(priceId);
+    try {
+      const res = await api.post('/stripe/create-checkout-session', { priceId });
+      window.location.href = res.data.url;
+    } catch (err) {
+      console.error('Erro ao iniciar checkout:', err);
+      setMensagem('Erro ao iniciar pagamento. Tente novamente.');
+      setAssinarLoading(null);
+    }
+  };
+
+  // Stripe: portal do cliente
+  const abrirPortal = async () => {
+    try {
+      const res = await api.get('/stripe/portal');
+      window.location.href = res.data.url;
+    } catch (err) {
+      console.error('Erro ao abrir portal:', err);
+      setMensagem('Erro ao abrir portal de gerenciamento.');
+    }
+  };
+
+  // Price IDs de TESTE do Stripe
+  const priceBasic = import.meta.env.VITE_STRIPE_PRICE_BASIC || 'price_1TgB1WRxnn8X2fAM5pL8MCG8';
+  const pricePro = import.meta.env.VITE_STRIPE_PRICE_PRO || 'price_1TgB2sRxnn8X2fAMGozAIlMr';
+  const pricePremium = import.meta.env.VITE_STRIPE_PRICE_PREMIUM || 'price_1TgB3yRxnn8X2fAMtVdqzTJ4';
+
+  const isAdmin = perfil.username === 'dlucio';
+
   return (
     <div className="space-y-6 text-slate-200 max-w-2xl mx-auto">
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
@@ -131,7 +161,11 @@ export default function Configuracoes() {
       </div>
 
       {mensagem && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs p-3 rounded-lg">
+        <div className={`text-xs p-3 rounded-lg ${
+          mensagem.includes('Erro')
+            ? 'bg-red-500/10 border border-red-500/30 text-red-400'
+            : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+        }`}>
           {mensagem}
         </div>
       )}
@@ -165,7 +199,6 @@ export default function Configuracoes() {
             className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
         </div>
 
-        {/* Upload de logo */}
         <div className="flex items-center gap-3">
           <label className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs px-3 py-2 rounded-lg cursor-pointer transition-colors flex items-center gap-1">
             📁 Escolher arquivo
@@ -176,7 +209,6 @@ export default function Configuracoes() {
           </span>
         </div>
 
-        {/* Preview da logo */}
         {perfil.logo && (
           <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg">
             <img src={perfil.logo} alt="Logo preview" className="h-12 w-12 rounded object-cover border border-slate-600" />
@@ -237,16 +269,37 @@ export default function Configuracoes() {
           </div>
         )}
 
+        {perfil.stripeSubscriptionStatus === 'active' && (
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-xs text-emerald-400 flex items-center justify-between">
+            <span>✅ Assinatura ativa ({perfil.plano})</span>
+            <button onClick={abrirPortal} className="underline text-cyan-400 hover:text-cyan-300">
+              Gerenciar assinatura
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-xs text-slate-400 mb-1 block">Plano atual</label>
-            <select name="plano" value={perfil.plano || 'free'} onChange={handleChange}
-              className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full">
+            <select
+              name="plano"
+              value={perfil.plano || 'free'}
+              onChange={handleChange}
+              disabled={!isAdmin}
+              className={`bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full ${
+                !isAdmin ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
+            >
               <option value="free">Free (7 dias)</option>
               <option value="basic">Basic</option>
               <option value="pro">Pro</option>
               <option value="premium">Premium</option>
             </select>
+            {!isAdmin && (
+              <p className="text-[10px] text-slate-500 mt-1">
+                O plano é alterado automaticamente após a confirmação do pagamento. Use os botões abaixo para fazer upgrade.
+              </p>
+            )}
           </div>
           <div>
             <label className="text-xs text-slate-400 mb-1 block">Tema</label>
@@ -258,25 +311,53 @@ export default function Configuracoes() {
           </div>
         </div>
 
+        {/* Cards dos planos com botão de assinatura */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
             <h4 className="font-bold text-white">Basic</h4>
             <p className="text-slate-400 mt-1">Funcionalidades essenciais</p>
-            <p className="text-cyan-400 font-bold mt-2">R$ ??/mês</p>
+            <p className="text-cyan-400 font-bold mt-2">R$ 10/mês</p>
+            {perfil.plano !== 'basic' && (
+              <button
+                onClick={() => assinarPlano(priceBasic)}
+                disabled={assinarLoading === priceBasic}
+                className="mt-2 w-full bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white py-1.5 rounded-lg text-xs font-medium transition-colors"
+              >
+                {assinarLoading === priceBasic ? 'Redirecionando...' : 'Assinar Basic'}
+              </button>
+            )}
           </div>
           <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
             <h4 className="font-bold text-white">Pro</h4>
             <p className="text-slate-400 mt-1">Recursos avançados</p>
-            <p className="text-cyan-400 font-bold mt-2">R$ ??/mês</p>
+            <p className="text-cyan-400 font-bold mt-2">R$ 30/mês</p>
+            {perfil.plano !== 'pro' && (
+              <button
+                onClick={() => assinarPlano(pricePro)}
+                disabled={assinarLoading === pricePro}
+                className="mt-2 w-full bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white py-1.5 rounded-lg text-xs font-medium transition-colors"
+              >
+                {assinarLoading === pricePro ? 'Redirecionando...' : 'Assinar Pro'}
+              </button>
+            )}
           </div>
           <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
             <h4 className="font-bold text-white">Premium</h4>
             <p className="text-slate-400 mt-1">Tudo incluso + suporte</p>
-            <p className="text-cyan-400 font-bold mt-2">R$ ??/mês</p>
+            <p className="text-cyan-400 font-bold mt-2">R$ 50/mês</p>
+            {perfil.plano !== 'premium' && (
+              <button
+                onClick={() => assinarPlano(pricePremium)}
+                disabled={assinarLoading === pricePremium}
+                className="mt-2 w-full bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white py-1.5 rounded-lg text-xs font-medium transition-colors"
+              >
+                {assinarLoading === pricePremium ? 'Redirecionando...' : 'Assinar Premium'}
+              </button>
+            )}
           </div>
         </div>
         <p className="text-[10px] text-slate-500">
-          Após o teste de 7 dias, escolha um plano para continuar. Os preços serão definidos em breve.
+          Após o teste de 7 dias, escolha um plano para continuar.
         </p>
       </div>
 
