@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
@@ -29,31 +30,31 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/app"
-          element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="financeiro" element={<Financeiro />} />
-          <Route path="vendas" element={<Vendas />} />
-          <Route path="precificacao" element={<Precificacao />} />
-          <Route path="relatorios" element={<Relatorios />} />
-          <Route path="clientes" element={<Clientes />} />
-          <Route path="configuracoes" element={<Configuracoes />} />  {/* ← ROTA CORRIGIDA */}
-          <Route path="admin" element={<Admin />} />
-        </Route>
-      </Routes>
+      <FeatureFlagsProvider>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/app"
+            element={
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="financeiro" element={<Financeiro />} />
+            <Route path="vendas" element={<Vendas />} />
+            <Route path="precificacao" element={<Precificacao />} />
+            <Route path="relatorios" element={<Relatorios />} />
+            <Route path="clientes" element={<Clientes />} />
+            <Route path="configuracoes" element={<Configuracoes />} />
+            <Route path="admin" element={<Admin />} />
+          </Route>
+        </Routes>
+      </FeatureFlagsProvider>
     </BrowserRouter>
   );
-}// force rebuild
-// force env vars
-// production deploy
+}
