@@ -1,30 +1,42 @@
 @import "tailwindcss";
 
-/* Reset for theme testing */
-html.dark,
-html.dark * {
-  background-color: #020617 !important;
-  color: #f8fafc !important;
-  border-color: #1e293b !important;
+/* Tema escuro (padrão) */
+:root {
+  --bg-page: #020617;
+  --bg-card: #0f172a;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border: #1e293b;
+  --button-bg: #020617;
 }
 
-html.light,
-html.light * {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
+/* Tema claro (aplica quando a classe 'light' está no <html>) */
+html.light {
+  --bg-page: #f1f5f9;
+  --bg-card: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border: #cbd5e1;
+  --button-bg: #e2e8f0;
 }
 
-/* Preserve images and SVGs from being overwritten */
-html.dark img,
-html.light img,
-html.dark svg,
-html.light svg {
-  background-color: transparent !important;
+/* Aplicação global das variáveis */
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Optional: keep button backgrounds as they were */
-html.dark button,
-html.light button {
-  background-color: inherit !important;
+/* Exemplo para cards – você pode expandir para outros componentes */
+.card {
+  background-color: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+/* Botão do tema (se quiser manter fundo dinâmico) */
+.theme-toggle {
+  background-color: var(--button-bg);
+  border-color: var(--border);
+  color: var(--text-secondary);
 }
