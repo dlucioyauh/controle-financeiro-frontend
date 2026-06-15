@@ -1,33 +1,30 @@
 @import "tailwindcss";
 
-/* Tema escuro (padrão) */
-:root {
-  --bg-page: #020617;
-  --bg-card: #0f172a;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --border: #1e293b;
-}
-
-/* Tema claro (quando a classe 'light' estiver no html) */
-html.light {
-  --bg-page: #f1f5f9;
-  --bg-card: #ffffff;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --border: #cbd5e1;
-}
-
-body {
-  background-color: var(--bg-page);
-  color: var(--text-primary);
-}
-html.light body {
-  background-color: white !important;
-  color: black !important;
-}
-
-html.dark body {
+/* Reset for theme testing */
+html.dark,
+html.dark * {
   background-color: #020617 !important;
   color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+
+html.light,
+html.light * {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Preserve images and SVGs from being overwritten */
+html.dark img,
+html.light img,
+html.dark svg,
+html.light svg {
+  background-color: transparent !important;
+}
+
+/* Optional: keep button backgrounds as they were */
+html.dark button,
+html.light button {
+  background-color: inherit !important;
 }
