@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
+import { BarChart3 } from 'lucide-react';
 
 const links = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
@@ -26,6 +27,7 @@ const links = [
   { to: '/app/relatorios', label: 'Relatórios', icon: FileText },
   { to: '/app/clientes', label: 'Clientes', icon: Users },
   { to: '/app/configuracoes', label: 'Configurações', icon: Settings },
+  { to: '/app/relatorios-avancados', label: 'Relatórios Avançados', icon: BarChart3 },
 ];
 
 export default function MainLayout() {
