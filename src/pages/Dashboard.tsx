@@ -5,8 +5,11 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { CardSkeleton, ChartSkeleton, Skeleton } from '../components/Skeleton';
+import { useFeatureFlag } from '../contexts/FeatureFlagsContext';
 
 export default function Dashboard() {
+  const dashboardPessoalEnabled = useFeatureFlag('dashboard_pessoal');
+
   const [despesasEmpresa, setDespesasEmpresa] = useState<any[]>([]);
   const [despesasPessoais, setDespesasPessoais] = useState<any[]>([]);
   const [receitasPessoais, setReceitasPessoais] = useState<any[]>([]);
@@ -198,20 +201,22 @@ export default function Dashboard() {
           <p className="text-xs text-slate-400">Visão geral do desempenho financeiro do seu negócio.</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex bg-[#020617] border border-slate-700 rounded-md p-1">
-            <button
-              onClick={() => setModo('empresa')}
-              className={`px-3 py-1 text-sm rounded transition ${modo === 'empresa' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}
-            >
-              Empresa
-            </button>
-            <button
-              onClick={() => setModo('pessoal')}
-              className={`px-3 py-1 text-sm rounded transition ${modo === 'pessoal' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}
-            >
-              Pessoal
-            </button>
-          </div>
+          {dashboardPessoalEnabled && (
+            <div className="flex bg-[#020617] border border-slate-700 rounded-md p-1">
+              <button
+                onClick={() => setModo('empresa')}
+                className={`px-3 py-1 text-sm rounded transition ${modo === 'empresa' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}
+              >
+                Empresa
+              </button>
+              <button
+                onClick={() => setModo('pessoal')}
+                className={`px-3 py-1 text-sm rounded transition ${modo === 'pessoal' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}
+              >
+                Pessoal
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-1 bg-[#020617] border border-slate-700 rounded px-3 py-2">
             <Calendar size={14} className="text-slate-400" />
             <input
@@ -224,6 +229,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {cards.map((card) => {
           const Icon = card.icon;
@@ -246,6 +252,7 @@ export default function Dashboard() {
         })}
       </div>
 
+      {/* Gráfico + Top 3 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-5 lg:col-span-2">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
