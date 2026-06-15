@@ -1,1 +1,52 @@
 @import "tailwindcss";
+
+/* Tema escuro (padrão) – NADA MUDOU */
+:root {
+  --bg-page: #020617;
+  --bg-card: #0f172a;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border: #1e293b;
+}
+
+/* Tema claro – apenas redefine as cores que usamos em classes fixas */
+html.light {
+  --bg-page: #f1f5f9;
+  --bg-card: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border: #cbd5e1;
+}
+
+/* Aplica as variáveis em elementos base (body, etc.) */
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+}
+
+/* Sobrescreve classes fixas quando em modo claro (sem !important sempre) */
+html.light .bg-\[\#0f172a\] {
+  background-color: var(--bg-card);
+}
+html.light .bg-\[\#020617\] {
+  background-color: var(--bg-page);
+}
+html.light .text-slate-400 {
+  color: var(--text-secondary);
+}
+html.light .border-slate-800 {
+  border-color: var(--border);
+}
+html.light .text-slate-200 {
+  color: var(--text-primary);
+}
+html.light .text-white {
+  color: var(--text-primary);
+}
+
+/* Preserva gradientes e ícones */
+html.light .bg-gradient-to-br,
+html.light .shadow-lg,
+html.light .shadow-cyan-500\/20 {
+  background-image: none; /* ou mantenha, depende */
+}

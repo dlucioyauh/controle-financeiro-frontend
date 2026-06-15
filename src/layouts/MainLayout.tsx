@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import api from '../api';
+import ThemeToggle from '../components/ThemeToggle';
 
 const links = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
@@ -40,7 +41,6 @@ export default function MainLayout() {
       navigate('/login');
       return;
     }
-    // Decodifica o payload do token para obter o username
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       setUser(payload);
@@ -48,7 +48,6 @@ export default function MainLayout() {
       navigate('/login');
     }
 
-    // Busca a logo do perfil se não estiver em cache
     if (!localStorage.getItem('logo')) {
       api.get('/users/perfil')
         .then(res => {
@@ -114,13 +113,16 @@ export default function MainLayout() {
             </Link>
           )}
         </nav>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 mt-4 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
-        >
-          <LogOut size={18} />
-          Sair
-        </button>
+        <div className="mt-4 flex flex-col gap-2">
+          <ThemeToggle />
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
+          >
+            <LogOut size={18} />
+            Sair
+          </button>
+        </div>
       </aside>
 
       {/* Mobile header */}
@@ -132,9 +134,12 @@ export default function MainLayout() {
           <LogoComponent />
           <span className="text-white font-bold">IonFinance</span>
         </div>
-        <button onClick={handleLogout} className="text-slate-400">
-          <LogOut size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button onClick={handleLogout} className="text-slate-400">
+            <LogOut size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Mobile sidebar */}
