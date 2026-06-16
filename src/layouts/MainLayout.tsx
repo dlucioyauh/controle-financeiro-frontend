@@ -18,14 +18,16 @@ import {
 import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useFeatureFlag } from '../contexts/FeatureFlagsContext';
+import OnboardingTour from '../components/OnboardingTour'; // ← NOVO
 
+// Links base (sem Relatórios ainda)
 const linksBase = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/app/analytics', label: 'Analytics', icon: TrendingUp },
+  { to: '/app/analytics', label: 'Analytics', icon: TrendingUp, 'data-tour': 'analytics' },
   { to: '/app/financeiro', label: 'Financeiro', icon: DollarSign },
-  { to: '/app/vendas', label: 'Vendas', icon: ShoppingBag },
-  { to: '/app/precificacao', label: 'Precificação', icon: ChefHat },
-  { to: '/app/clientes', label: 'Clientes', icon: Users },
+  { to: '/app/vendas', label: 'Vendas', icon: ShoppingBag, 'data-tour': 'vendas' },
+  { to: '/app/precificacao', label: 'Precificação', icon: ChefHat, 'data-tour': 'precificacao' },
+  { to: '/app/clientes', label: 'Clientes', icon: Users, 'data-tour': 'clientes' },
   { to: '/app/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
@@ -42,8 +44,8 @@ export default function MainLayout() {
   const links = [
     ...linksBase,
     relatorioAvancadoEnabled
-      ? { to: '/app/relatorios-avancados', label: 'Relatórios', icon: BarChart3 }
-      : { to: '/app/relatorios', label: 'Relatórios', icon: FileText },
+      ? { to: '/app/relatorios-avancados', label: 'Relatórios', icon: BarChart3, 'data-tour': 'relatorios' }
+      : { to: '/app/relatorios', label: 'Relatórios', icon: FileText, 'data-tour': 'relatorios' },
   ];
 
   useEffect(() => {
@@ -96,10 +98,11 @@ export default function MainLayout() {
           <span className="text-white font-bold text-lg">IonFinance</span>
         </div>
         <nav className="flex-1 space-y-1">
-          {links.map(({ to, label, icon: Icon }) => (
+          {links.map(({ to, label, icon: Icon, 'data-tour': tour }) => (
             <Link
               key={to}
               to={to}
+              data-tour={tour}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                 location.pathname === to
                   ? 'bg-blue-600 text-white'
@@ -159,10 +162,11 @@ export default function MainLayout() {
           <div className="absolute inset-0 bg-black/60" onClick={() => setSidebarOpen(false)} />
           <div className="relative w-64 bg-[#0f172a] p-4 z-50">
             <nav className="space-y-1 mt-14">
-              {links.map(({ to, label, icon: Icon }) => (
+              {links.map(({ to, label, icon: Icon, 'data-tour': tour }) => (
                 <Link
                   key={to}
                   to={to}
+                  data-tour={tour}
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                     location.pathname === to
@@ -197,6 +201,9 @@ export default function MainLayout() {
       <main className="flex-1 p-4 lg:p-6 mt-12 lg:mt-0 overflow-auto">
         <Outlet />
       </main>
+
+      {/* Onboarding Tour – aparece sobre toda a aplicação */}
+      <OnboardingTour />
     </div>
   );
 }
