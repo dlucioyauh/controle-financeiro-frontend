@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Save, Key, User, MapPin, Building, Crown, Check } from 'lucide-react';
+import { Save, Key, User, MapPin, Building, Crown, Check, Bell } from 'lucide-react';
 import api from '../api';
 
 interface PlanoCard {
   nome: string;
   preco: string;
-  periodo: string;
   descricao: string;
   limites: { label: string; value: string }[];
   recursos: string[];
@@ -20,13 +19,13 @@ export default function Configuracoes() {
   const [mensagem, setMensagem] = useState('');
   const [uploading, setUploading] = useState(false);
   const [assinarLoading, setAssinarLoading] = useState<string | null>(null);
+  const [prefs, setPrefs] = useState({ trialRemindersEnabled: true, reportFrequency: 'monthly' });
 
   const planos: PlanoCard[] = [
     {
       nome: 'Free',
       preco: 'R$ 0',
-      periodo: 'sempre grátis',
-      descricao: 'Para experimentar o sistema',
+      descricao: 'Para testar o sistema',
       limites: [
         { label: 'Vendas/mês', value: '10' },
         { label: 'Clientes', value: '5' },
@@ -37,7 +36,6 @@ export default function Configuracoes() {
     {
       nome: 'Basic',
       preco: 'R$ 29,90',
-      periodo: '/mês',
       descricao: 'Para pequenos negócios',
       limites: [
         { label: 'Vendas/mês', value: '100' },
@@ -49,20 +47,18 @@ export default function Configuracoes() {
     {
       nome: 'Pro',
       preco: 'R$ 79,90',
-      periodo: '/mês',
       descricao: 'Para negócios em crescimento',
       limites: [
         { label: 'Vendas/mês', value: 'Ilimitado' },
         { label: 'Clientes', value: 'Ilimitado' },
         { label: 'Receitas', value: 'Ilimitado' },
       ],
-      recursos: ['Tudo do Basic', 'Relatórios avançados', 'Mapa de clientes', 'Cálculo de frete', 'Suporte prioritário'],
+      recursos: ['Tudo do Basic', 'Relatórios avançados (gráficos, filtros)', 'Mapa de clientes', 'Cálculo de frete', 'Suporte prioritário'],
       destaque: true,
     },
     {
       nome: 'Premium',
       preco: 'R$ 199,90',
-      periodo: '/mês',
       descricao: 'Para empresas consolidadas',
       limites: [
         { label: 'Vendas/mês', value: 'Ilimitado' },
@@ -82,8 +78,18 @@ export default function Configuracoes() {
     }
   };
 
+  const carregarPreferencias = async () => {
+    try {
+      const res = await api.get('/notifications/preferences');
+      setPrefs(res.data);
+    } catch (err) {
+      console.error('Erro ao carregar preferências:', err);
+    }
+  };
+
   useEffect(() => {
     carregarPerfil();
+    carregarPreferencias();
   }, []);
 
   const salvarPerfil = async () => {
@@ -113,14 +119,29 @@ export default function Configuracoes() {
             payload.latitudeOrigem = parseFloat(dados[0].lat);
             payload.longitudeOrigem = parseFloat(dados[0].lon);
           }
-        } catch (err) {}
+        } catch (err) {
+          console.error('Erro na geocodificação:', err);
+        }
       }
+
       await api.patch('/users/perfil', payload);
       if (payload.logo) localStorage.setItem('logo', payload.logo);
       else localStorage.removeItem('logo');
       window.location.reload();
     } catch (err) {
+      console.error(err);
       setMensagem('Erro ao salvar perfil.');
+    }
+  };
+
+  const salvarPreferencias = async () => {
+    try {
+      await api.patch('/notifications/preferences', prefs);
+      setMensagem('Preferências salvas com sucesso!');
+      setTimeout(() => setMensagem(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setMensagem('Erro ao salvar preferências.');
     }
   };
 
@@ -195,7 +216,7 @@ export default function Configuracoes() {
         <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
           <User size={24} className="text-cyan-400" /> Configurações
         </h1>
-        <p className="text-slate-400 text-sm mt-1">Gerencie seus dados e planos de assinatura</p>
+        <p className="text-slate-400 text-sm mt-1">Gerencie seus dados e preferências</p>
       </div>
 
       {mensagem && (
@@ -207,8 +228,9 @@ export default function Configuracoes() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Coluna esquerda – Formulários */}
+        {/* Coluna esquerda – Perfil, Empresa, Endereço */}
         <div className="space-y-6">
+          {/* Perfil */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
             <h2 className="text-white font-medium flex items-center gap-2 mb-4">
               <User size={16} className="text-cyan-400" /> Perfil
@@ -225,6 +247,7 @@ export default function Configuracoes() {
             </div>
           </div>
 
+          {/* Empresa */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
             <h2 className="text-white font-medium flex items-center gap-2 mb-4">
               <Building size={16} className="text-cyan-400" /> Empresa
@@ -250,6 +273,7 @@ export default function Configuracoes() {
             )}
           </div>
 
+          {/* Endereço de Origem */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
             <h2 className="text-white font-medium flex items-center gap-2 mb-4">
               <MapPin size={16} className="text-cyan-400" /> Endereço de Origem (entregas)
@@ -272,13 +296,14 @@ export default function Configuracoes() {
               </div>
             </div>
             <button onClick={salvarPerfil} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1">
-              <Save size={14} /> Salvar alterações
+              <Save size={14} /> Salvar perfil
             </button>
           </div>
         </div>
 
-        {/* Coluna direita – Planos e Segurança */}
+        {/* Coluna direita – Planos, Notificações, Segurança */}
         <div className="space-y-6">
+          {/* Planos */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
             <div className="flex justify-between items-center mb-4">
               <div>
@@ -296,7 +321,6 @@ export default function Configuracoes() {
               {planos.map((plano) => {
                 const isCurrentPlan = perfil.plano === plano.nome.toLowerCase();
                 const priceId = plano.nome === 'Basic' ? priceBasic : plano.nome === 'Pro' ? pricePro : plano.nome === 'Premium' ? pricePremium : null;
-
                 return (
                   <div
                     key={plano.nome}
@@ -318,7 +342,7 @@ export default function Configuracoes() {
                     </div>
                     <div className="mt-2">
                       <span className="text-2xl font-bold text-white">{plano.preco}</span>
-                      {plano.periodo !== 'sempre grátis' && <span className="text-slate-400 text-sm">{plano.periodo}</span>}
+                      {plano.nome !== 'Free' && <span className="text-slate-400 text-sm">/mês</span>}
                     </div>
 
                     <div className="mt-3">
@@ -368,6 +392,43 @@ export default function Configuracoes() {
             )}
           </div>
 
+          {/* Notificações */}
+          <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
+            <h2 className="text-white font-medium flex items-center gap-2 mb-4">
+              <Bell size={16} className="text-cyan-400" /> Notificações
+            </h2>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={prefs.trialRemindersEnabled}
+                  onChange={(e) => setPrefs({ ...prefs, trialRemindersEnabled: e.target.checked })}
+                  className="w-4 h-4 accent-cyan-500"
+                />
+                <label className="text-sm text-slate-300">Receber lembretes de expiração do trial</label>
+              </div>
+              <div>
+                <label className="text-sm text-slate-300 block mb-1">Frequência de relatórios</label>
+                <select
+                  value={prefs.reportFrequency}
+                  onChange={(e) => setPrefs({ ...prefs, reportFrequency: e.target.value as any })}
+                  className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white w-full max-w-xs"
+                >
+                  <option value="weekly">Semanal</option>
+                  <option value="monthly">Mensal</option>
+                  <option value="never">Nunca</option>
+                </select>
+              </div>
+              <button
+                onClick={salvarPreferencias}
+                className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1 transition"
+              >
+                <Save size={14} /> Salvar preferências
+              </button>
+            </div>
+          </div>
+
+          {/* Segurança */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
             <h2 className="text-white font-medium flex items-center gap-2 mb-4">
               <Key size={16} className="text-yellow-400" /> Segurança
