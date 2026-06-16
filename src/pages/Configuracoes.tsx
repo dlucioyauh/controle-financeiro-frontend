@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, Key, User, MapPin, Building, Crown, Check, X } from 'lucide-react';
+import { Save, Key, User, MapPin, Building, Crown, Check } from 'lucide-react';
 import api from '../api';
 
 interface PlanoCard {
@@ -189,8 +189,6 @@ export default function Configuracoes() {
   const pricePro = import.meta.env.VITE_STRIPE_PRICE_PRO || 'price_1TgB2sRxnn8X2fAMGozAIlMr';
   const pricePremium = import.meta.env.VITE_STRIPE_PRICE_PREMIUM || 'price_1TgB3yRxnn8X2fAMtVdqzTJ4';
 
-  const isAdmin = perfil.username === 'dlucio';
-
   return (
     <div className="space-y-8 text-slate-200 max-w-6xl mx-auto px-4 lg:px-6 py-6">
       {/* Header */}
@@ -209,7 +207,7 @@ export default function Configuracoes() {
         </div>
       )}
 
-      {/* Grid de duas colunas para os formulários */}
+      {/* Grid de duas colunas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Coluna esquerda: Perfil + Empresa + Endereço */}
         <div className="space-y-6">
@@ -284,7 +282,7 @@ export default function Configuracoes() {
           </div>
         </div>
 
-        {/* Coluna direita: Planos (cards modernos) */}
+        {/* Coluna direita: Planos e Segurança */}
         <div className="space-y-6">
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
             <div className="flex items-center justify-between mb-4">
