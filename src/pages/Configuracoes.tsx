@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, Key, User, MapPin, Building, Crown, Check, X } from 'lucide-react';
+import { Save, Key, User, MapPin, Building, Crown, Check } from 'lucide-react';
 import api from '../api';
 
 interface PlanoCard {
@@ -191,7 +191,6 @@ export default function Configuracoes() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-      {/* Cabeçalho */}
       <div>
         <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
           <User size={24} className="text-cyan-400" /> Configurações
@@ -210,7 +209,6 @@ export default function Configuracoes() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Coluna esquerda – Formulários */}
         <div className="space-y-6">
-          {/* Perfil */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
             <h2 className="text-white font-medium flex items-center gap-2 mb-4">
               <User size={16} className="text-cyan-400" /> Perfil
@@ -227,7 +225,6 @@ export default function Configuracoes() {
             </div>
           </div>
 
-          {/* Empresa + Logo */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
             <h2 className="text-white font-medium flex items-center gap-2 mb-4">
               <Building size={16} className="text-cyan-400" /> Empresa
@@ -253,7 +250,6 @@ export default function Configuracoes() {
             )}
           </div>
 
-          {/* Endereço de Origem */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
             <h2 className="text-white font-medium flex items-center gap-2 mb-4">
               <MapPin size={16} className="text-cyan-400" /> Endereço de Origem (entregas)
@@ -372,7 +368,6 @@ export default function Configuracoes() {
             )}
           </div>
 
-          {/* Segurança – Alterar Senha */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
             <h2 className="text-white font-medium flex items-center gap-2 mb-4">
               <Key size={16} className="text-yellow-400" /> Segurança
