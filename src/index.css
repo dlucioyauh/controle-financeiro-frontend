@@ -13,11 +13,11 @@
 
 /* Tema claro – cores suaves e legíveis */
 html.light {
-  --bg-page: #f1f5f9;        /* fundo da página – cinza muito claro */
+  --bg-page: #f9fafb;        /* fundo da página – cinza muito claro */
   --bg-card: #ffffff;         /* cards – branco puro */
-  --text-primary: #0f172a;    /* texto principal – azul escuro suave */
-  --text-secondary: #475569;  /* texto secundário – cinza médio */
-  --border: #cbd5e1;          /* bordas – cinza claro */
+  --text-primary: #111827;    /* texto principal – azul escuro suave */
+  --text-secondary: #4b5563;  /* texto secundário – cinza médio */
+  --border: #e5e7eb;          /* bordas – cinza claro */
   --button-bg: #e2e8f0;       /* botões neutros */
   --input-bg: #ffffff;        /* inputs – branco */
 }
