@@ -13,17 +13,18 @@ import {
   LogOut,
   Menu,
   X,
+  BarChart3,
 } from 'lucide-react';
 import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
+import { useFeatureFlag } from '../contexts/FeatureFlagsContext';
 
-const links = [
+const linksBase = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/app/analytics', label: 'Analytics', icon: TrendingUp },
   { to: '/app/financeiro', label: 'Financeiro', icon: DollarSign },
   { to: '/app/vendas', label: 'Vendas', icon: ShoppingBag },
   { to: '/app/precificacao', label: 'Precificação', icon: ChefHat },
-  { to: '/app/relatorios', label: 'Relatórios', icon: FileText },
   { to: '/app/clientes', label: 'Clientes', icon: Users },
   { to: '/app/configuracoes', label: 'Configurações', icon: Settings },
 ];
@@ -34,6 +35,16 @@ export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [logo, setLogo] = useState(localStorage.getItem('logo') || '');
+
+  const relatorioAvancadoEnabled = useFeatureFlag('novo_relatorio');
+
+  // Constrói a lista de links dinamicamente
+  const links = [
+    ...linksBase,
+    relatorioAvancadoEnabled
+      ? { to: '/app/relatorios-avancados', label: 'Relatórios', icon: BarChart3 }
+      : { to: '/app/relatorios', label: 'Relatórios', icon: FileText },
+  ];
 
   useEffect(() => {
     const token = localStorage.getItem('token');

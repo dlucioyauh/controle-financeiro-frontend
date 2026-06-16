@@ -1,52 +1,63 @@
 @import "tailwindcss";
 
-/* Tema escuro (padrão) – NADA MUDOU */
+/* Tema escuro (padrão) – mantido como está */
 :root {
   --bg-page: #020617;
   --bg-card: #0f172a;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --border: #1e293b;
+  --button-bg: #0f172a;
+  --input-bg: #1e293b;
 }
 
-/* Tema claro – apenas redefine as cores que usamos em classes fixas */
+/* Tema claro – cores suaves e legíveis */
 html.light {
-  --bg-page: #f1f5f9;
-  --bg-card: #ffffff;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --border: #cbd5e1;
+  --bg-page: #f9fafb;        /* fundo da página – cinza muito claro */
+  --bg-card: #ffffff;         /* cards – branco puro */
+  --text-primary: #111827;    /* texto principal – azul escuro suave */
+  --text-secondary: #4b5563;  /* texto secundário – cinza médio */
+  --border: #e5e7eb;          /* bordas – cinza claro */
+  --button-bg: #e2e8f0;       /* botões neutros */
+  --input-bg: #ffffff;        /* inputs – branco */
 }
 
-/* Aplica as variáveis em elementos base (body, etc.) */
+/* Aplicação global das variáveis (sem !important, apenas nas classes base) */
 body {
   background-color: var(--bg-page);
   color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Sobrescreve classes fixas quando em modo claro (sem !important sempre) */
+/* Classes utilitárias para uso em componentes (caso ainda usem bg-slate-*, text-slate-*) */
+html.light .bg-slate-800,
 html.light .bg-\[\#0f172a\] {
-  background-color: var(--bg-card);
+  background-color: var(--bg-card) !important;
 }
+html.light .bg-slate-900,
 html.light .bg-\[\#020617\] {
-  background-color: var(--bg-page);
+  background-color: var(--bg-page) !important;
 }
-html.light .text-slate-400 {
-  color: var(--text-secondary);
-}
-html.light .border-slate-800 {
-  border-color: var(--border);
-}
-html.light .text-slate-200 {
-  color: var(--text-primary);
-}
+html.light .text-slate-200,
 html.light .text-white {
+  color: var(--text-primary) !important;
+}
+html.light .text-slate-400,
+html.light .text-slate-500 {
+  color: var(--text-secondary) !important;
+}
+html.light .border-slate-800,
+html.light .border-slate-700 {
+  border-color: var(--border) !important;
+}
+html.light input,
+html.light select,
+html.light textarea {
+  background-color: var(--input-bg);
+  border-color: var(--border);
   color: var(--text-primary);
 }
-
-/* Preserva gradientes e ícones */
-html.light .bg-gradient-to-br,
-html.light .shadow-lg,
-html.light .shadow-cyan-500\/20 {
-  background-image: none; /* ou mantenha, depende */
+html.light button.bg-slate-700 {
+  background-color: var(--button-bg);
+  color: var(--text-primary);
 }

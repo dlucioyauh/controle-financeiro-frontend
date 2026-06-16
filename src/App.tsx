@@ -14,6 +14,7 @@ import Landing from './pages/Landing';
 import Login from './Login';
 import Register from './pages/Register';
 import Admin from './pages/Admin';
+import RelatoriosAvancados from './pages/RelatoriosAvancados';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token');
@@ -49,6 +50,7 @@ export default function App() {
             <Route path="vendas" element={<Vendas />} />
             <Route path="precificacao" element={<Precificacao />} />
             <Route path="relatorios" element={<Relatorios />} />
+            <Route path="relatorios-avancados" element={<RelatoriosAvancados />} />
             <Route path="clientes" element={<Clientes />} />
             <Route path="configuracoes" element={<Configuracoes />} />
             <Route path="admin" element={<Admin />} />
