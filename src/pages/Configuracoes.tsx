@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Save, Key, User, MapPin, Building, Crown, Check } from 'lucide-react';
+import { Save, Key, User, MapPin, Building, Crown, Check, X } from 'lucide-react';
 import api from '../api';
 
 interface PlanoCard {
   nome: string;
   preco: string;
+  periodo: string;
   descricao: string;
   limites: { label: string; value: string }[];
   recursos: string[];
@@ -20,12 +21,12 @@ export default function Configuracoes() {
   const [uploading, setUploading] = useState(false);
   const [assinarLoading, setAssinarLoading] = useState<string | null>(null);
 
-  // Dados dos planos (corrigidos)
   const planos: PlanoCard[] = [
     {
       nome: 'Free',
       preco: 'R$ 0',
-      descricao: 'Para testar o sistema',
+      periodo: 'sempre grátis',
+      descricao: 'Para experimentar o sistema',
       limites: [
         { label: 'Vendas/mês', value: '10' },
         { label: 'Clientes', value: '5' },
@@ -36,6 +37,7 @@ export default function Configuracoes() {
     {
       nome: 'Basic',
       preco: 'R$ 29,90',
+      periodo: '/mês',
       descricao: 'Para pequenos negócios',
       limites: [
         { label: 'Vendas/mês', value: '100' },
@@ -47,18 +49,20 @@ export default function Configuracoes() {
     {
       nome: 'Pro',
       preco: 'R$ 79,90',
+      periodo: '/mês',
       descricao: 'Para negócios em crescimento',
       limites: [
         { label: 'Vendas/mês', value: 'Ilimitado' },
         { label: 'Clientes', value: 'Ilimitado' },
         { label: 'Receitas', value: 'Ilimitado' },
       ],
-      recursos: ['Tudo do Basic', 'Relatórios avançados (gráficos, filtros)', 'Mapa de clientes', 'Cálculo de frete', 'Suporte prioritário'],
+      recursos: ['Tudo do Basic', 'Relatórios avançados', 'Mapa de clientes', 'Cálculo de frete', 'Suporte prioritário'],
       destaque: true,
     },
     {
       nome: 'Premium',
       preco: 'R$ 199,90',
+      periodo: '/mês',
       descricao: 'Para empresas consolidadas',
       limites: [
         { label: 'Vendas/mês', value: 'Ilimitado' },
@@ -109,17 +113,13 @@ export default function Configuracoes() {
             payload.latitudeOrigem = parseFloat(dados[0].lat);
             payload.longitudeOrigem = parseFloat(dados[0].lon);
           }
-        } catch (err) {
-          console.error('Erro na geocodificação:', err);
-        }
+        } catch (err) {}
       }
-
       await api.patch('/users/perfil', payload);
       if (payload.logo) localStorage.setItem('logo', payload.logo);
       else localStorage.removeItem('logo');
       window.location.reload();
     } catch (err) {
-      console.error(err);
       setMensagem('Erro ao salvar perfil.');
     }
   };
@@ -190,13 +190,13 @@ export default function Configuracoes() {
   const pricePremium = import.meta.env.VITE_STRIPE_PRICE_PREMIUM || 'price_1TgB3yRxnn8X2fAMtVdqzTJ4';
 
   return (
-    <div className="space-y-8 text-slate-200 max-w-6xl mx-auto px-4 lg:px-6 py-6">
-      {/* Header */}
-      <div className="border-b border-slate-800 pb-4">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+      {/* Cabeçalho */}
+      <div>
+        <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
           <User size={24} className="text-cyan-400" /> Configurações
         </h1>
-        <p className="text-sm text-slate-400 mt-1">Gerencie seu perfil, endereço de origem e plano de assinatura.</p>
+        <p className="text-slate-400 text-sm mt-1">Gerencie seus dados e planos de assinatura</p>
       </div>
 
       {mensagem && (
@@ -207,18 +207,17 @@ export default function Configuracoes() {
         </div>
       )}
 
-      {/* Grid de duas colunas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Coluna esquerda: Perfil + Empresa + Endereço */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Coluna esquerda – Formulários */}
         <div className="space-y-6">
-          {/* Dados do Perfil */}
+          {/* Perfil */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
-            <h2 className="text-md font-semibold text-white flex items-center gap-2 mb-4">
-              <User size={18} className="text-cyan-400" /> Perfil
+            <h2 className="text-white font-medium flex items-center gap-2 mb-4">
+              <User size={16} className="text-cyan-400" /> Perfil
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input name="nome" placeholder="Nome completo" value={perfil.nome || ''} onChange={handleChange}
-                className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
+                className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" />
               <input name="email" placeholder="E-mail" value={perfil.email || ''} onChange={handleChange}
                 className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" />
               <input name="nomeNegocio" placeholder="Nome do negócio" value={perfil.nomeNegocio || ''} onChange={handleChange}
@@ -228,10 +227,10 @@ export default function Configuracoes() {
             </div>
           </div>
 
-          {/* Dados da Empresa + Logo */}
+          {/* Empresa + Logo */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
-            <h2 className="text-md font-semibold text-white flex items-center gap-2 mb-4">
-              <Building size={18} className="text-cyan-400" /> Empresa
+            <h2 className="text-white font-medium flex items-center gap-2 mb-4">
+              <Building size={16} className="text-cyan-400" /> Empresa
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <input name="cnpj" placeholder="CNPJ" value={perfil.cnpj || ''} onChange={handleChange}
@@ -240,7 +239,7 @@ export default function Configuracoes() {
                 className="bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm" />
             </div>
             <div className="flex items-center gap-3">
-              <label className="bg-slate-700 hover:bg-slate-600 text-white text-xs px-3 py-2 rounded-lg cursor-pointer transition">
+              <label className="bg-slate-700 hover:bg-slate-600 text-white text-xs px-3 py-2 rounded-lg cursor-pointer">
                 📁 Enviar logo
                 <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
               </label>
@@ -248,7 +247,7 @@ export default function Configuracoes() {
             </div>
             {perfil.logo && (
               <div className="flex items-center gap-3 mt-3 p-2 bg-slate-800 rounded-lg">
-                <img src={perfil.logo} alt="Logo" className="h-10 w-10 rounded object-cover" />
+                <img src={perfil.logo} alt="Logo" className="h-8 w-8 rounded object-cover" />
                 <button onClick={() => setPerfil({ ...perfil, logo: '' })} className="text-red-400 text-xs hover:underline">Remover</button>
               </div>
             )}
@@ -256,8 +255,8 @@ export default function Configuracoes() {
 
           {/* Endereço de Origem */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
-            <h2 className="text-md font-semibold text-white flex items-center gap-2 mb-4">
-              <MapPin size={18} className="text-cyan-400" /> Endereço de Origem (entregas)
+            <h2 className="text-white font-medium flex items-center gap-2 mb-4">
+              <MapPin size={16} className="text-cyan-400" /> Endereço de Origem (entregas)
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input name="enderecoOrigem" placeholder="Rua, número" value={perfil.enderecoOrigem || ''} onChange={handleChange}
@@ -276,108 +275,107 @@ export default function Configuracoes() {
                 <span className="absolute right-3 top-2 text-slate-400 text-xs">R$/km</span>
               </div>
             </div>
-            <button onClick={salvarPerfil} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1 transition">
+            <button onClick={salvarPerfil} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1">
               <Save size={14} /> Salvar alterações
             </button>
           </div>
         </div>
 
-        {/* Coluna direita: Planos e Segurança */}
+        {/* Coluna direita – Planos e Segurança */}
         <div className="space-y-6">
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex justify-between items-center mb-4">
               <div>
-                <h2 className="text-md font-semibold text-white flex items-center gap-2">
-                  <Crown size={18} className="text-yellow-400" /> Planos e Assinatura
+                <h2 className="text-white font-medium flex items-center gap-2">
+                  <Crown size={16} className="text-yellow-400" /> Planos e Assinatura
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">Escolha o plano ideal para o seu negócio</p>
+                <p className="text-xs text-slate-400">Escolha o plano ideal para o seu negócio</p>
               </div>
               {perfil.stripeSubscriptionStatus === 'active' && (
-                <button onClick={abrirPortal} className="text-xs text-cyan-400 hover:underline">Gerenciar assinatura</button>
+                <button onClick={abrirPortal} className="text-xs text-cyan-400 hover:underline">Gerenciar</button>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {planos.map((plano) => {
                 const isCurrentPlan = perfil.plano === plano.nome.toLowerCase();
                 const priceId = plano.nome === 'Basic' ? priceBasic : plano.nome === 'Pro' ? pricePro : plano.nome === 'Premium' ? pricePremium : null;
+
                 return (
                   <div
                     key={plano.nome}
-                    className={`relative rounded-xl border transition-all duration-200 ${
+                    className={`relative rounded-xl border transition-all ${
                       plano.destaque ? 'border-cyan-500/50 shadow-lg shadow-cyan-500/10' : 'border-slate-700'
-                    } ${isCurrentPlan ? 'bg-slate-800/50 ring-1 ring-cyan-500' : 'bg-slate-800/30 hover:bg-slate-800/50'}`}
+                    } ${isCurrentPlan ? 'bg-slate-800/50 ring-1 ring-cyan-500' : 'bg-slate-800/30'} p-4`}
                   >
                     {plano.destaque && (
-                      <div className="absolute -top-2 left-4 bg-cyan-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      <div className="absolute -top-2 left-3 bg-cyan-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                         MAIS POPULAR
                       </div>
                     )}
-                    <div className="p-5">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-lg font-bold text-white">{plano.nome}</h3>
-                          <p className="text-xs text-slate-400 mt-0.5">{plano.descricao}</p>
-                        </div>
-                        {isCurrentPlan && <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Atual</span>}
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-bold text-white">{plano.nome}</h3>
+                        <p className="text-xs text-slate-400">{plano.descricao}</p>
                       </div>
-                      <div className="mt-3">
-                        <span className="text-2xl font-bold text-white">{plano.preco}</span>
-                        {plano.nome !== 'Free' && <span className="text-slate-400 text-sm">/mês</span>}
-                      </div>
-
-                      <div className="mt-4 space-y-2">
-                        <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Limites</p>
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                          {plano.limites.map((limite) => (
-                            <div key={limite.label} className="bg-slate-900 rounded-lg p-2">
-                              <p className="text-[10px] text-slate-400">{limite.label}</p>
-                              <p className="text-sm font-semibold text-white">{limite.value}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="mt-4 space-y-1">
-                        <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Recursos</p>
-                        <ul className="space-y-1 text-xs">
-                          {plano.recursos.slice(0, 3).map((recurso, idx) => (
-                            <li key={idx} className="flex items-start gap-1.5 text-slate-300">
-                              <Check size={12} className="text-emerald-400 shrink-0 mt-0.5" /> {recurso}
-                            </li>
-                          ))}
-                          {plano.recursos.length > 3 && (
-                            <li className="text-slate-500 text-[11px] mt-1">+ {plano.recursos.length - 3} outros benefícios</li>
-                          )}
-                        </ul>
-                      </div>
-
-                      {priceId && perfil.plano !== plano.nome.toLowerCase() && (
-                        <button
-                          onClick={() => assinarPlano(priceId)}
-                          disabled={assinarLoading === priceId}
-                          className="mt-5 w-full bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white font-medium py-2 rounded-lg text-sm transition"
-                        >
-                          {assinarLoading === priceId ? 'Redirecionando...' : `Assinar ${plano.nome}`}
-                        </button>
-                      )}
+                      {isCurrentPlan && <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Atual</span>}
                     </div>
+                    <div className="mt-2">
+                      <span className="text-2xl font-bold text-white">{plano.preco}</span>
+                      {plano.periodo !== 'sempre grátis' && <span className="text-slate-400 text-sm">{plano.periodo}</span>}
+                    </div>
+
+                    <div className="mt-3">
+                      <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Limites</p>
+                      <div className="grid grid-cols-3 gap-1 text-center">
+                        {plano.limites.map((lim) => (
+                          <div key={lim.label} className="bg-slate-900 rounded-md p-1.5">
+                            <div className="text-[10px] text-slate-400">{lim.label}</div>
+                            <div className="text-sm font-semibold text-white">{lim.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-3">
+                      <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Recursos</p>
+                      <ul className="space-y-0.5 text-xs">
+                        {plano.recursos.slice(0, 3).map((recurso, idx) => (
+                          <li key={idx} className="flex items-center gap-1 text-slate-300">
+                            <Check size={12} className="text-emerald-400" /> {recurso}
+                          </li>
+                        ))}
+                        {plano.recursos.length > 3 && (
+                          <li className="text-slate-500 text-[11px] mt-1">+ {plano.recursos.length - 3} outros benefícios</li>
+                        )}
+                      </ul>
+                    </div>
+
+                    {priceId && perfil.plano !== plano.nome.toLowerCase() && (
+                      <button
+                        onClick={() => assinarPlano(priceId)}
+                        disabled={assinarLoading === priceId}
+                        className="mt-4 w-full bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white py-1.5 rounded-lg text-sm font-medium transition"
+                      >
+                        {assinarLoading === priceId ? 'Redirecionando...' : `Assinar ${plano.nome}`}
+                      </button>
+                    )}
                   </div>
                 );
               })}
             </div>
 
             {perfil.plano === 'free' && perfil.trialEndsAt && (
-              <div className="mt-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-xs text-yellow-400">
-                ⏳ Teste grátis termina em {new Date(perfil.trialEndsAt).toLocaleDateString('pt-BR')}. Escolha um plano para continuar.
+              <div className="mt-4 text-xs bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 text-yellow-400">
+                ⏳ Teste grátis termina em {new Date(perfil.trialEndsAt).toLocaleDateString('pt-BR')}. Escolha um plano.
               </div>
             )}
           </div>
 
-          {/* Alterar Senha */}
+          {/* Segurança – Alterar Senha */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
-            <h2 className="text-md font-semibold text-white flex items-center gap-2 mb-4">
-              <Key size={18} className="text-yellow-400" /> Segurança
+            <h2 className="text-white font-medium flex items-center gap-2 mb-4">
+              <Key size={16} className="text-yellow-400" /> Segurança
             </h2>
             <div className="space-y-3">
               <input type="password" placeholder="Senha atual" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)}
@@ -386,7 +384,7 @@ export default function Configuracoes() {
                 className="w-full bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm" />
               <input type="password" placeholder="Confirmar nova senha" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)}
                 className="w-full bg-[#1e293b] border border-slate-700 rounded-lg px-3 py-2 text-sm" />
-              <button onClick={alterarSenha} className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1 transition">
+              <button onClick={alterarSenha} className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1">
                 <Key size={14} /> Alterar senha
               </button>
             </div>
