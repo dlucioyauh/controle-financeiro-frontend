@@ -7,6 +7,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar
 } from 'recharts';
+import { AlertTriangle, Crown } from 'lucide-react';
 
 export default function RelatoriosAvancados() {
   const [filtros, setFiltros] = useState({
@@ -17,32 +18,35 @@ export default function RelatoriosAvancados() {
   });
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [erroPermissao, setErroPermissao] = useState(false);
 
   const handleBuscar = async () => {
     setLoading(true);
+    setErroPermissao(false);
     try {
       const response = await api.get('/relatorios-avancados/resumo', { params: filtros });
       setData(response.data);
     } catch (error: any) {
       if (error.response?.status === 403) {
-        alert('Seu plano não permite acesso a relatórios avançados. Faça upgrade para Pro ou Premium.');
+        setErroPermissao(true);
       } else {
         alert('Erro ao carregar dados. Verifique se a flag "novo_relatorio" está ativa.');
       }
       console.error(error);
+      setData(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // --- Export CSV ---
-  const exportarCSV = () => {
+  // --- Export CSV/Excel ---
+  const exportarExcel = () => {
     if (!data) return;
     const vendas = data.vendas || [];
     const despesas = data.despesas || [];
     const linhas = [
       ['Tipo', 'Data', 'Descrição/Produto', 'Valor', 'Categoria/Cliente'],
-      ...vendas.map((v: any) => ['Venda', new Date(v.dataVenda).toLocaleDateString('pt-BR'), v.produto + (v.cliente ? ` (${v.cliente.nome})` : ''), v.valorTotal, v.canalVenda || '']),
+      ...vendas.map((v: any) => ['Venda', new Date(v.dataVenda).toLocaleDateString('pt-BR'), v.produto + (v.clienteNome ? ` (${v.clienteNome})` : ''), v.valorTotal, v.canalVenda || '']),
       ...despesas.map((d: any) => ['Despesa', new Date(d.data).toLocaleDateString('pt-BR'), d.descricao, d.valor, d.categoria])
     ];
     const ws = XLSX.utils.aoa_to_sheet(linhas);
@@ -50,8 +54,6 @@ export default function RelatoriosAvancados() {
     XLSX.utils.book_append_sheet(wb, ws, 'Relatorio');
     XLSX.writeFile(wb, `relatorio_${new Date().toISOString().slice(0,19)}.xlsx`);
   };
-
-  // --- Export Excel (XLSX) usando a mesma biblioteca - já está funcionando ---
 
   // --- Export PDF ---
   const exportarPDF = () => {
@@ -66,12 +68,11 @@ export default function RelatoriosAvancados() {
     doc.text(`Lucro: R$ ${data.lucro?.toFixed(2)}`, 14, 56);
     doc.text(`Ticket Médio: R$ ${data.ticketMedio?.toFixed(2)}`, 14, 64);
 
-    // Tabela de vendas
     const vendas = data.vendas || [];
     const vendasTable = vendas.map((v: any) => [
       new Date(v.dataVenda).toLocaleDateString('pt-BR'),
       v.produto,
-      v.cliente?.nome || '',
+      v.clienteNome || '',
       `R$ ${Number(v.valorTotal).toFixed(2)}`
     ]);
     autoTable(doc, {
@@ -81,7 +82,6 @@ export default function RelatoriosAvancados() {
       theme: 'striped',
     });
 
-    // Tabela de despesas
     const despesas = data.despesas || [];
     if (despesas.length) {
       const despesasTable = despesas.map((d: any) => [
@@ -102,6 +102,37 @@ export default function RelatoriosAvancados() {
 
   if (loading) return <div className="text-center py-10">Carregando...</div>;
 
+  if (erroPermissao) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
+        <div className="bg-red-500/10 p-6 rounded-full">
+          <AlertTriangle size={48} className="text-red-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-white">Acesso não autorizado</h2>
+        <p className="text-slate-300 max-w-md">
+          O recurso de <strong>Relatórios Avançados</strong> está disponível apenas para os planos <strong>Pro</strong> e <strong>Premium</strong>.
+        </p>
+        <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-6 max-w-md text-left space-y-2">
+          <div className="flex items-center gap-2 text-emerald-400">
+            <Crown size={18} /> <span className="font-semibold">Plano Pro</span>
+          </div>
+          <div className="flex items-center gap-2 text-purple-400">
+            <Crown size={18} /> <span className="font-semibold">Plano Premium</span>
+          </div>
+          <p className="text-xs text-slate-400 mt-2">
+            Faça o upgrade nas suas Configurações para desbloquear relatórios completos, gráficos avançados e exportação de dados.
+          </p>
+        </div>
+        <button
+          onClick={() => window.location.href = '/app/configuracoes'}
+          className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
+        >
+          Ir para Configurações
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 text-slate-200">
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
@@ -109,7 +140,6 @@ export default function RelatoriosAvancados() {
         <p className="text-xs text-slate-400">Filtros personalizados, gráficos e exportação</p>
       </div>
 
-      {/* Filtros */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 grid grid-cols-1 md:grid-cols-4 gap-4">
         <input type="date" value={filtros.dataInicio} onChange={e => setFiltros({ ...filtros, dataInicio: e.target.value })} className="bg-[#020617] border border-slate-700 rounded p-2 text-sm" />
         <input type="date" value={filtros.dataFim} onChange={e => setFiltros({ ...filtros, dataFim: e.target.value })} className="bg-[#020617] border border-slate-700 rounded p-2 text-sm" />
@@ -124,13 +154,12 @@ export default function RelatoriosAvancados() {
 
       {data && (
         <>
-          {/* Botões de exportação */}
           <div className="flex gap-2 justify-end">
-            <button onClick={exportarCSV} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-sm">Exportar Excel</button>
+            <button onClick={exportarExcel} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-sm">Exportar Excel</button>
             <button onClick={exportarPDF} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">Exportar PDF</button>
           </div>
 
-          {/* Cards de resumo */}
+          {/* Cards e gráficos (mantidos do código anterior) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <p className="text-xs uppercase text-slate-400">Total Vendas</p>
@@ -150,7 +179,6 @@ export default function RelatoriosAvancados() {
             </div>
           </div>
 
-          {/* Gráficos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <h3 className="text-sm font-bold mb-2">Evolução Diária (Vendas)</h3>
@@ -178,7 +206,6 @@ export default function RelatoriosAvancados() {
             </div>
           </div>
 
-          {/* Tabela de transações */}
           <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
             <h3 className="text-sm font-bold mb-2">Últimas Transações</h3>
             <div className="overflow-x-auto">
@@ -196,7 +223,7 @@ export default function RelatoriosAvancados() {
                     <tr key={v.id} className="border-b border-slate-800">
                       <td className="py-1">{new Date(v.dataVenda).toLocaleDateString('pt-BR')}</td>
                       <td className="py-1">Venda</td>
-                      <td className="py-1">{v.produto} {v.cliente && `- ${v.cliente.nome}`}</td>
+                      <td className="py-1">{v.produto} {v.clienteNome && `- ${v.clienteNome}`}</td>
                       <td className="py-1 text-right text-emerald-400">R$ {Number(v.valorTotal).toFixed(2)}</td>
                     </tr>
                   ))}
