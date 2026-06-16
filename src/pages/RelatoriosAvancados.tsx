@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import api from '../api';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar
@@ -20,12 +23,81 @@ export default function RelatoriosAvancados() {
     try {
       const response = await api.get('/relatorios-avancados/resumo', { params: filtros });
       setData(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar relatório:', error);
-      alert('Erro ao carregar dados. Verifique se a flag "novo_relatorio" está ativa.');
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+        alert('Seu plano não permite acesso a relatórios avançados. Faça upgrade para Pro ou Premium.');
+      } else {
+        alert('Erro ao carregar dados. Verifique se a flag "novo_relatorio" está ativa.');
+      }
+      console.error(error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // --- Export CSV ---
+  const exportarCSV = () => {
+    if (!data) return;
+    const vendas = data.vendas || [];
+    const despesas = data.despesas || [];
+    const linhas = [
+      ['Tipo', 'Data', 'Descrição/Produto', 'Valor', 'Categoria/Cliente'],
+      ...vendas.map((v: any) => ['Venda', new Date(v.dataVenda).toLocaleDateString('pt-BR'), v.produto + (v.cliente ? ` (${v.cliente.nome})` : ''), v.valorTotal, v.canalVenda || '']),
+      ...despesas.map((d: any) => ['Despesa', new Date(d.data).toLocaleDateString('pt-BR'), d.descricao, d.valor, d.categoria])
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(linhas);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Relatorio');
+    XLSX.writeFile(wb, `relatorio_${new Date().toISOString().slice(0,19)}.xlsx`);
+  };
+
+  // --- Export Excel (XLSX) usando a mesma biblioteca - já está funcionando ---
+
+  // --- Export PDF ---
+  const exportarPDF = () => {
+    if (!data) return;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('Relatório Avançado', 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Período: ${filtros.dataInicio || 'início'} a ${filtros.dataFim || 'hoje'}`, 14, 30);
+    doc.text(`Total Vendas: R$ ${data.totalVendas?.toFixed(2)}`, 14, 40);
+    doc.text(`Total Despesas: R$ ${data.totalDespesas?.toFixed(2)}`, 14, 48);
+    doc.text(`Lucro: R$ ${data.lucro?.toFixed(2)}`, 14, 56);
+    doc.text(`Ticket Médio: R$ ${data.ticketMedio?.toFixed(2)}`, 14, 64);
+
+    // Tabela de vendas
+    const vendas = data.vendas || [];
+    const vendasTable = vendas.map((v: any) => [
+      new Date(v.dataVenda).toLocaleDateString('pt-BR'),
+      v.produto,
+      v.cliente?.nome || '',
+      `R$ ${Number(v.valorTotal).toFixed(2)}`
+    ]);
+    autoTable(doc, {
+      startY: 74,
+      head: [['Data', 'Produto', 'Cliente', 'Valor']],
+      body: vendasTable,
+      theme: 'striped',
+    });
+
+    // Tabela de despesas
+    const despesas = data.despesas || [];
+    if (despesas.length) {
+      const despesasTable = despesas.map((d: any) => [
+        new Date(d.data).toLocaleDateString('pt-BR'),
+        d.descricao,
+        d.categoria,
+        `R$ ${Number(d.valor).toFixed(2)}`
+      ]);
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 10,
+        head: [['Data', 'Descrição', 'Categoria', 'Valor']],
+        body: despesasTable,
+        theme: 'striped',
+      });
+    }
+    doc.save(`relatorio_${new Date().toISOString().slice(0,19)}.pdf`);
   };
 
   if (loading) return <div className="text-center py-10">Carregando...</div>;
@@ -52,6 +124,13 @@ export default function RelatoriosAvancados() {
 
       {data && (
         <>
+          {/* Botões de exportação */}
+          <div className="flex gap-2 justify-end">
+            <button onClick={exportarCSV} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-sm">Exportar Excel</button>
+            <button onClick={exportarPDF} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">Exportar PDF</button>
+          </div>
+
+          {/* Cards de resumo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <p className="text-xs uppercase text-slate-400">Total Vendas</p>
@@ -71,6 +150,7 @@ export default function RelatoriosAvancados() {
             </div>
           </div>
 
+          {/* Gráficos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <h3 className="text-sm font-bold mb-2">Evolução Diária (Vendas)</h3>
@@ -84,7 +164,6 @@ export default function RelatoriosAvancados() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <h3 className="text-sm font-bold mb-2">Top 5 Produtos (Receita)</h3>
               <ResponsiveContainer width="100%" height={300}>
@@ -99,6 +178,7 @@ export default function RelatoriosAvancados() {
             </div>
           </div>
 
+          {/* Tabela de transações */}
           <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
             <h3 className="text-sm font-bold mb-2">Últimas Transações</h3>
             <div className="overflow-x-auto">
