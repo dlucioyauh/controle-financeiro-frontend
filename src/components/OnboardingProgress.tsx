@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { CheckCircle, Circle } from 'lucide-react';
 import { useOnboarding } from '../contexts/OnboardingContext';
 
@@ -11,7 +12,12 @@ const STEPS = [
 ];
 
 export default function OnboardingProgress() {
-  const { stepsCompleted, loading } = useOnboarding();
+  const { stepsCompleted, loading, refreshStatus } = useOnboarding();
+
+  // Recarrega o status quando o componente monta (ex: navegação)
+  useEffect(() => {
+    refreshStatus();
+  }, []);
 
   if (loading || stepsCompleted.length >= STEPS.length) return null;
 

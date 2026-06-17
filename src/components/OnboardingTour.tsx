@@ -5,16 +5,16 @@ import { useOnboarding } from '../contexts/OnboardingContext';
 const JoyrideComponent = Joyride as any;
 
 const steps: any[] = [
-  { target: 'body', content: '👋 Bem-vindo ao IonFinance! Vamos te guiar pelos primeiros passos.', placement: 'center' },
-  { target: '[data-tour="clientes"]', content: '📇 Cadastre seus clientes aqui.', placement: 'bottom' },
-  { target: '[data-tour="precificacao"]', content: '🧑‍🍳 Crie seus produtos com ingredientes.', placement: 'bottom' },
+  { target: 'body', content: '👋 Bem-vindo ao IonFinance!', placement: 'center' },
+  { target: '[data-tour="clientes"]', content: '📇 Cadastre seus clientes.', placement: 'bottom' },
+  { target: '[data-tour="precificacao"]', content: '🧑‍🍳 Crie seus produtos.', placement: 'bottom' },
   { target: '[data-tour="vendas"]', content: '💰 Registre suas vendas.', placement: 'bottom' },
-  { target: '[data-tour="analytics"]', content: '📊 Acompanhe seus resultados.', placement: 'bottom' },
+  { target: '[data-tour="analytics"]', content: '📊 Analise seus resultados.', placement: 'bottom' },
   { target: '[data-tour="relatorios"]', content: '📄 Exporte relatórios.', placement: 'bottom' },
 ];
 
 export default function OnboardingTour() {
-  const { stepsCompleted, markStepCompleted, loading } = useOnboarding();
+  const { stepsCompleted, markStepCompleted, loading, refreshStatus } = useOnboarding();
   const [run, setRun] = useState(false);
 
   useEffect(() => {
@@ -44,6 +44,8 @@ export default function OnboardingTour() {
       if (!stepsCompleted.includes(lastKey)) {
         markStepCompleted(lastKey);
       }
+      // Recarrega o status para garantir sincronia
+      refreshStatus();
     }
   };
 

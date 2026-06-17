@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import api from '../api';
 
@@ -22,6 +22,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       const res = await api.get('/users/onboarding-status');
       const data = res.data;
       const completed = Object.keys(data).filter(key => data[key] === true);
+      console.log('📊 Status recarregado:', completed);
       setStepsCompleted(completed);
     } catch (error) {
       console.error('Erro ao carregar onboarding:', error);
@@ -31,12 +32,16 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   };
 
   const markStepCompleted = async (stepKey: string) => {
-    if (stepsCompleted.includes(stepKey)) return;
+    if (stepsCompleted.includes(stepKey)) {
+      console.log('⏭️ Passo já salvo:', stepKey);
+      return;
+    }
+    console.log('📤 Salvando passo:', stepKey);
     try {
       await api.patch('/users/onboarding-status', { step: stepKey, completed: true });
       await refreshStatus();
     } catch (error) {
-      console.error('Erro ao salvar passo:', error);
+      console.error('❌ Erro ao salvar passo:', error);
     }
   };
 
@@ -44,8 +49,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     refreshStatus();
   }, []);
 
+  const value = useMemo(
+    () => ({ stepsCompleted, totalSteps, loading, refreshStatus, markStepCompleted }),
+    [stepsCompleted, loading, totalSteps]
+  );
+
   return (
-    <OnboardingContext.Provider value={{ stepsCompleted, totalSteps, loading, refreshStatus, markStepCompleted }}>
+    <OnboardingContext.Provider value={value}>
       {children}
     </OnboardingContext.Provider>
   );

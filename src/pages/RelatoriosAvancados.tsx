@@ -75,20 +75,43 @@ export default function RelatoriosAvancados() {
     XLSX.writeFile(wb, `relatorio_${new Date().toISOString().slice(0,19)}.xlsx`);
   };
 
-  // --- Export PDF com tabela de distribuição por canal ---
-  const exportarPDF = () => {
+  // --- Export PDF com logo e tabela de canais ---
+  const exportarPDF = async () => {
     if (!data) return;
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text('Relatório Avançado', 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Período: ${filtros.dataInicio || 'início'} a ${filtros.dataFim || 'hoje'}`, 14, 30);
-    doc.text(`Total Vendas: R$ ${data.totalVendas?.toFixed(2)}`, 14, 40);
-    doc.text(`Total Despesas: R$ ${data.totalDespesas?.toFixed(2)}`, 14, 48);
-    doc.text(`Lucro: R$ ${data.lucro?.toFixed(2)}`, 14, 56);
-    doc.text(`Ticket Médio: R$ ${data.ticketMedio?.toFixed(2)}`, 14, 64);
+    let y = 20;
 
-    // --- Tabela de distribuição por canal (gráfico de pizza em texto) ---
+    // Logo
+    const logo = localStorage.getItem('logo');
+    if (logo) {
+      try {
+        doc.addImage(logo, 'JPEG', 14, y, 30, 30);
+        y += 35;
+      } catch (e) {
+        doc.text('IonFinance', 14, y);
+        y += 10;
+      }
+    } else {
+      doc.text('IonFinance', 14, y);
+      y += 10;
+    }
+
+    doc.setFontSize(16);
+    doc.text('Relatório Avançado', 14, y);
+    y += 10;
+    doc.setFontSize(10);
+    doc.text(`Período: ${filtros.dataInicio || 'início'} a ${filtros.dataFim || 'hoje'}`, 14, y);
+    y += 8;
+    doc.text(`Total Vendas: R$ ${data.totalVendas?.toFixed(2)}`, 14, y);
+    y += 7;
+    doc.text(`Total Despesas: R$ ${data.totalDespesas?.toFixed(2)}`, 14, y);
+    y += 7;
+    doc.text(`Lucro: R$ ${data.lucro?.toFixed(2)}`, 14, y);
+    y += 7;
+    doc.text(`Ticket Médio: R$ ${data.ticketMedio?.toFixed(2)}`, 14, y);
+    y += 10;
+
+    // Tabela de distribuição por canal
     const pizzaData = getPizzaData();
     if (pizzaData.length > 0) {
       const total = pizzaData.reduce((sum, item) => sum + item.value, 0);
@@ -98,15 +121,16 @@ export default function RelatoriosAvancados() {
         `${((item.value / total) * 100).toFixed(1)}%`
       ]);
       autoTable(doc, {
-        startY: 74,
+        startY: y,
         head: [['Canal', 'Valor', 'Percentual']],
         body: canalRows,
         theme: 'striped',
         styles: { fontSize: 8 },
       });
+      y = (doc as any).lastAutoTable.finalY + 10;
     }
 
-    // --- Tabela de vendas ---
+    // Tabela de vendas
     const vendas = data.vendas || [];
     const vendasTable = vendas.map((v: any) => [
       new Date(v.dataVenda).toLocaleDateString('pt-BR'),
@@ -115,13 +139,14 @@ export default function RelatoriosAvancados() {
       `R$ ${Number(v.valorTotal).toFixed(2)}`
     ]);
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 10 : 74,
+      startY: y,
       head: [['Data', 'Produto', 'Cliente', 'Valor']],
       body: vendasTable,
       theme: 'striped',
     });
+    y = (doc as any).lastAutoTable.finalY + 10;
 
-    // --- Tabela de despesas ---
+    // Tabela de despesas
     const despesas = data.despesas || [];
     if (despesas.length) {
       const despesasTable = despesas.map((d: any) => [
@@ -131,12 +156,13 @@ export default function RelatoriosAvancados() {
         `R$ ${Number(d.valor).toFixed(2)}`
       ]);
       autoTable(doc, {
-        startY: (doc as any).lastAutoTable.finalY + 10,
+        startY: y,
         head: [['Data', 'Descrição', 'Categoria', 'Valor']],
         body: despesasTable,
         theme: 'striped',
       });
     }
+
     doc.save(`relatorio_${new Date().toISOString().slice(0,19)}.pdf`);
   };
 
@@ -153,6 +179,7 @@ export default function RelatoriosAvancados() {
 
   const pizzaData = getPizzaData();
 
+  // --- Renderização condicional ---
   if (loading) return <div className="text-center py-10">Carregando...</div>;
 
   if (erroPermissao) {
@@ -240,6 +267,7 @@ export default function RelatoriosAvancados() {
 
       {data && (
         <>
+          {/* Botões de exportação */}
           <div className="flex gap-2 justify-end">
             <button onClick={exportarExcel} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-sm">
               Exportar Excel
