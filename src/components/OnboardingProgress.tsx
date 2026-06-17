@@ -14,9 +14,20 @@ const STEPS = [
 export default function OnboardingProgress() {
   const { stepsCompleted, loading, refreshStatus } = useOnboarding();
 
-  // Recarrega o status quando o componente monta (ex: navegação)
+  // Recarrega o status quando o componente monta e a cada 5 segundos (fallback)
   useEffect(() => {
     refreshStatus();
+    const interval = setInterval(() => {
+      refreshStatus();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Recarrega sempre que o componente recebe foco (ex: voltar de outra aba)
+  useEffect(() => {
+    const handleFocus = () => refreshStatus();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   if (loading || stepsCompleted.length >= STEPS.length) return null;

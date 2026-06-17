@@ -29,11 +29,15 @@ export default function OnboardingTour() {
     console.log('🔥 CALLBACK EXECUTADO!', data);
     const { status, type, step, action } = data;
 
+    // Salva o passo atual quando o usuário avança
     if (type === 'step:after' || action === 'next' || action === 'close') {
       const stepIndex = step?.index;
       if (stepIndex !== undefined && stepIndex >= 0) {
         const stepKey = `step_${stepIndex}`;
-        markStepCompleted(stepKey);
+        // Marca como concluído e recarrega o status
+        markStepCompleted(stepKey).then(() => {
+          refreshStatus(); // Força recarga após salvar
+        });
       }
     }
 
@@ -42,10 +46,10 @@ export default function OnboardingTour() {
       setRun(false);
       const lastKey = `step_${steps.length - 1}`;
       if (!stepsCompleted.includes(lastKey)) {
-        markStepCompleted(lastKey);
+        markStepCompleted(lastKey).then(() => {
+          refreshStatus();
+        });
       }
-      // Recarrega o status para garantir sincronia
-      refreshStatus();
     }
   };
 
