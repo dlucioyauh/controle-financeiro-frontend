@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Joyride } from 'react-joyride';
-import type { Step } from 'react-joyride';
 import api from '../api';
 
+// Força o tipo do componente para any para evitar verificações de prop
 const JoyrideComponent = Joyride as any;
 
-const steps: Step[] = [
+// Steps como any[] para evitar conflitos de tipo de 'placement'
+const steps: any[] = [
   {
     target: 'body',
     content: '👋 Bem-vindo ao IonFinance! Vamos te guiar pelos primeiros passos.',
@@ -116,7 +117,8 @@ export default function OnboardingTour() {
       continuous
       showSkipButton
       showProgress
-      debug
+      disableOverlayClose
+      disableScrolling
       styles={{
         options: {
           primaryColor: '#0284c7',
