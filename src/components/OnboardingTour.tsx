@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Joyride } from 'react-joyride';
-import type { Step } from 'react-joyride';
 import api from '../api';
 
-const steps: Step[] = [
+// Wrapper que elimina a verificação de tipos
+const JoyrideComponent = Joyride as any;
+
+const steps = [
   {
     target: 'body',
     content: '👋 Bem-vindo ao IonFinance! Vamos te guiar pelos primeiros passos.',
@@ -35,8 +37,6 @@ const steps: Step[] = [
     placement: 'bottom',
   },
 ];
-
-const JoyrideComponent = Joyride as any;
 
 export default function OnboardingTour() {
   const [run, setRun] = useState(false);
@@ -76,32 +76,28 @@ export default function OnboardingTour() {
       });
       console.log('✅ Resposta do backend:', response.data);
       setStepsCompleted(prev => [...prev, stepKey]);
-      await loadStatus(); // recarrega do backend
+      await loadStatus();
     } catch (error) {
       console.error('❌ Erro ao salvar passo:', error);
     }
   };
 
   const handleJoyrideCallback = (data: any) => {
-    console.log('🔄 Evento Joyride:', data);
+    console.log('🔥 CALLBACK EXECUTADO!', data);
 
     const { status, type, step, action } = data;
 
-    // Quando um passo é concluído (próximo ou finalizado)
     if (type === 'step:after' || action === 'next' || action === 'close') {
       const stepIndex = step?.index;
       if (stepIndex !== undefined && stepIndex >= 0) {
         const stepKey = `step_${stepIndex}`;
-        // Salva o passo atual
         saveStep(stepKey);
       }
     }
 
-    // Quando o tour termina ou é pulado, finaliza
     if (status === 'finished' || status === 'skipped') {
-      console.log('🏁 Tour finalizado.');
+      console.log('🏁 Tour finalizado ou pulado.');
       setRun(false);
-      // Salva o último passo (se não foi salvo)
       const lastIndex = steps.length - 1;
       const lastKey = `step_${lastIndex}`;
       if (!stepsCompleted.includes(lastKey)) {
@@ -120,7 +116,7 @@ export default function OnboardingTour() {
       continuous
       showSkipButton
       showProgress
-      debug // <- ATIVA LOGS DETALHADOS DO JOYRIDE
+      debug
       styles={{
         options: {
           primaryColor: '#0284c7',
