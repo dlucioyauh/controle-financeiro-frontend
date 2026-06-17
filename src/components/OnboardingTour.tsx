@@ -36,39 +36,73 @@ const steps: Step[] = [
   },
 ];
 
-// Força o tipo do componente para any, ignorando erros de tipagem
 const JoyrideComponent = Joyride as any;
 
 export default function OnboardingTour() {
   const [run, setRun] = useState(false);
   const [stepsCompleted, setStepsCompleted] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    api.get('/users/onboarding-status')
-      .then(res => {
-        const data = res.data;
-        const completed = Object.keys(data).filter(key => data[key] === true);
-        setStepsCompleted(completed);
-        if (completed.length < steps.length) {
-          setRun(true);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const handleJoyrideCallback = (data: any) => {
-    const { status, type, step } = data;
-    if (type === 'step:after') {
-      const stepKey = `step_${step?.index}`;
-      if (!stepsCompleted.includes(stepKey)) {
-        api.patch('/users/onboarding-status', { step: stepKey, completed: true });
-        setStepsCompleted(prev => [...prev, stepKey]);
-      }
-    }
-    if (status === 'finished' || status === 'skipped') {
-      setRun(false);
+  // Função para carregar o status do onboarding
+  const loadOnboardingStatus = async () => {
+    try {
+      const res = await api.get('/users/onboarding-status');
+      const data = res.data;
+      const completed = Object.keys(data).filter(key => data[key] === true);
+      setStepsCompleted(completed);
+      setRun(completed.length < steps.length);
+      console.log('📊 Status carregado:', completed);
+    } catch (error) {
+      console.error('Erro ao carregar onboarding status:', error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadOnboardingStatus();
+  }, []);
+
+  const handleJoyrideCallback = async (data: any) => {
+    const { status, type, step } = data;
+    console.log('🔄 Evento do tour:', { status, type, stepIndex: step?.index });
+
+    if (type === 'step:after') {
+      const stepKey = `step_${step?.index}`;
+      console.log('✅ Salvando passo:', stepKey);
+
+      // Se o passo já foi salvo, não envia novamente
+      if (stepsCompleted.includes(stepKey)) {
+        console.log('⏭️ Passo já concluído, ignorando.');
+        return;
+      }
+
+      try {
+        const response = await api.patch('/users/onboarding-status', {
+          step: stepKey,
+          completed: true,
+        });
+        console.log('📥 Resposta do backend:', response.data);
+
+        // Atualiza o estado local com os passos completos
+        setStepsCompleted(prev => [...prev, stepKey]);
+
+        // Recarrega o status do backend para sincronizar
+        await loadOnboardingStatus();
+      } catch (error) {
+        console.error('❌ Erro ao salvar passo:', error);
+      }
+    }
+
+    if (status === 'finished' || status === 'skipped') {
+      console.log('🏁 Tour finalizado ou pulado.');
+      setRun(false);
+      // Recarrega o status para garantir que tudo foi salvo
+      loadOnboardingStatus();
+    }
+  };
+
+  if (loading) return null;
 
   return (
     <JoyrideComponent
