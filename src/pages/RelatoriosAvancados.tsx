@@ -9,7 +9,6 @@ import {
 } from 'recharts';
 import { AlertTriangle, Crown } from 'lucide-react';
 
-// Cores para o gráfico de pizza
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF6B6B', '#4ECDC4', '#45B7D1'];
 
 export default function RelatoriosAvancados() {
@@ -30,10 +29,9 @@ export default function RelatoriosAvancados() {
     setErroGenerico(null);
     try {
       const response = await api.get('/relatorios-avancados/resumo', { params: filtros });
-      console.log('Resposta do backend:', response.data);
       setData(response.data);
     } catch (error: any) {
-      console.error('Erro na requisição:', error);
+      console.error(error);
       if (error.response?.status === 403) {
         setErroPermissao(true);
       } else if (error.response?.status === 500) {
@@ -77,7 +75,7 @@ export default function RelatoriosAvancados() {
     XLSX.writeFile(wb, `relatorio_${new Date().toISOString().slice(0,19)}.xlsx`);
   };
 
-  // --- Export PDF ---
+  // --- Export PDF com tabela de distribuição por canal ---
   const exportarPDF = () => {
     if (!data) return;
     const doc = new jsPDF();
@@ -90,6 +88,25 @@ export default function RelatoriosAvancados() {
     doc.text(`Lucro: R$ ${data.lucro?.toFixed(2)}`, 14, 56);
     doc.text(`Ticket Médio: R$ ${data.ticketMedio?.toFixed(2)}`, 14, 64);
 
+    // --- Tabela de distribuição por canal (gráfico de pizza em texto) ---
+    const pizzaData = getPizzaData();
+    if (pizzaData.length > 0) {
+      const total = pizzaData.reduce((sum, item) => sum + item.value, 0);
+      const canalRows = pizzaData.map(item => [
+        item.name,
+        `R$ ${item.value.toFixed(2)}`,
+        `${((item.value / total) * 100).toFixed(1)}%`
+      ]);
+      autoTable(doc, {
+        startY: 74,
+        head: [['Canal', 'Valor', 'Percentual']],
+        body: canalRows,
+        theme: 'striped',
+        styles: { fontSize: 8 },
+      });
+    }
+
+    // --- Tabela de vendas ---
     const vendas = data.vendas || [];
     const vendasTable = vendas.map((v: any) => [
       new Date(v.dataVenda).toLocaleDateString('pt-BR'),
@@ -98,12 +115,13 @@ export default function RelatoriosAvancados() {
       `R$ ${Number(v.valorTotal).toFixed(2)}`
     ]);
     autoTable(doc, {
-      startY: 74,
+      startY: (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 10 : 74,
       head: [['Data', 'Produto', 'Cliente', 'Valor']],
       body: vendasTable,
       theme: 'striped',
     });
 
+    // --- Tabela de despesas ---
     const despesas = data.despesas || [];
     if (despesas.length) {
       const despesasTable = despesas.map((d: any) => [
@@ -122,7 +140,7 @@ export default function RelatoriosAvancados() {
     doc.save(`relatorio_${new Date().toISOString().slice(0,19)}.pdf`);
   };
 
-  // --- Dados para o gráfico de pizza (distribuição por canal) ---
+  // --- Dados para o gráfico de pizza ---
   const getPizzaData = () => {
     if (!data || !data.vendas || data.vendas.length === 0) return [];
     const canalMap: Record<string, number> = {};
@@ -222,7 +240,6 @@ export default function RelatoriosAvancados() {
 
       {data && (
         <>
-          {/* Botões de exportação */}
           <div className="flex gap-2 justify-end">
             <button onClick={exportarExcel} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-sm">
               Exportar Excel
@@ -232,7 +249,7 @@ export default function RelatoriosAvancados() {
             </button>
           </div>
 
-          {/* Cards de resumo */}
+          {/* Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <p className="text-xs uppercase text-slate-400">Total Vendas</p>
@@ -252,7 +269,7 @@ export default function RelatoriosAvancados() {
             </div>
           </div>
 
-          {/* Gráficos: evolução + pizza */}
+          {/* Gráficos */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 lg:col-span-2">
               <h3 className="text-sm font-bold mb-2">Evolução Diária (Vendas)</h3>
@@ -267,7 +284,6 @@ export default function RelatoriosAvancados() {
               </ResponsiveContainer>
             </div>
 
-            {/* Gráfico de pizza */}
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <h3 className="text-sm font-bold mb-2">Distribuição por Canal</h3>
               {pizzaData.length > 0 ? (
@@ -297,7 +313,7 @@ export default function RelatoriosAvancados() {
             </div>
           </div>
 
-          {/* Top produtos (barras) */}
+          {/* Top produtos */}
           <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
             <h3 className="text-sm font-bold mb-2">Top 5 Produtos (Receita)</h3>
             <ResponsiveContainer width="100%" height={250}>
