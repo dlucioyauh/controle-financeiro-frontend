@@ -39,7 +39,6 @@ const steps = [
 
 export default function OnboardingTour() {
   const [run, setRun] = useState(false);
-  const [stepIndex, setStepIndex] = useState(0);
   const [stepsCompleted, setStepsCompleted] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,12 +48,9 @@ export default function OnboardingTour() {
       const data = res.data;
       const completed = Object.keys(data).filter(key => data[key] === true);
       setStepsCompleted(completed);
-      if (completed.length >= steps.length) {
-        setRun(false);
-      } else {
+      // Se todos os passos já foram concluídos, não inicia o tour
+      if (completed.length < steps.length) {
         setRun(true);
-        const firstIncomplete = steps.findIndex((_, i) => !completed.includes(`step_${i}`));
-        setStepIndex(firstIncomplete >= 0 ? firstIncomplete : 0);
       }
     } catch (error) {
       console.error('Erro ao carregar status:', error);
@@ -85,34 +81,27 @@ export default function OnboardingTour() {
     }
   };
 
-  // Salva o passo anterior sempre que o índice muda (exceto no início)
-  useEffect(() => {
-    if (!run) return;
-    if (stepIndex > 0) {
-      const prevKey = `step_${stepIndex - 1}`;
-      if (!stepsCompleted.includes(prevKey)) {
-        saveStep(prevKey);
-      }
-    }
-  }, [stepIndex, run]);
-
   const handleJoyrideCallback = (data: any) => {
     console.log('🔥 CALLBACK EXECUTADO!', data);
-    const { status, type, index } = data;
 
-    // Quando o usuário avança para o próximo passo, atualiza o stepIndex
-    if (type === 'step:after') {
-      const newIndex = index !== undefined ? index : stepIndex + 1;
-      if (newIndex !== stepIndex) {
-        setStepIndex(newIndex);
+    const { status, type, step, action } = data;
+
+    // Quando um passo é concluído (próximo ou finalizado)
+    if (type === 'step:after' || action === 'next' || action === 'close') {
+      const stepIndex = step?.index;
+      if (stepIndex !== undefined && stepIndex >= 0) {
+        const stepKey = `step_${stepIndex}`;
+        saveStep(stepKey);
       }
     }
 
-    // Quando o tour termina ou é pulado, finaliza e salva o último passo
+    // Quando o tour termina ou é pulado
     if (status === 'finished' || status === 'skipped') {
       console.log('🏁 Tour finalizado ou pulado.');
       setRun(false);
-      const lastKey = `step_${steps.length - 1}`;
+      // Salva o último passo se não foi salvo
+      const lastIndex = steps.length - 1;
+      const lastKey = `step_${lastIndex}`;
       if (!stepsCompleted.includes(lastKey)) {
         saveStep(lastKey);
       }
@@ -120,18 +109,21 @@ export default function OnboardingTour() {
   };
 
   if (loading) return null;
+
+  // Se todos os passos foram concluídos, não renderiza nada
   if (stepsCompleted.length >= steps.length) return null;
 
   return (
     <JoyrideComponent
       steps={steps}
       run={run}
-      stepIndex={stepIndex}
       callback={handleJoyrideCallback}
       continuous
       showSkipButton
       showProgress
       debug
+      disableOverlayClose
+      disableScrolling
       styles={{
         options: {
           primaryColor: '#0284c7',
