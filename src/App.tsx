@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
+import { OnboardingProvider } from './contexts/OnboardingContext';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
@@ -32,30 +33,32 @@ export default function App() {
   return (
     <BrowserRouter>
       <FeatureFlagsProvider>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route
-            path="/app"
-            element={
-              <ProtectedRoute>
-                <MainLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Dashboard />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="financeiro" element={<Financeiro />} />
-            <Route path="vendas" element={<Vendas />} />
-            <Route path="precificacao" element={<Precificacao />} />
-            <Route path="relatorios" element={<Relatorios />} />
-            <Route path="relatorios-avancados" element={<RelatoriosAvancados />} />
-            <Route path="clientes" element={<Clientes />} />
-            <Route path="configuracoes" element={<Configuracoes />} />
-            <Route path="admin" element={<Admin />} />
-          </Route>
-        </Routes>
+        <OnboardingProvider>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/app"
+              element={
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="financeiro" element={<Financeiro />} />
+              <Route path="vendas" element={<Vendas />} />
+              <Route path="precificacao" element={<Precificacao />} />
+              <Route path="relatorios" element={<Relatorios />} />
+              <Route path="relatorios-avancados" element={<RelatoriosAvancados />} />
+              <Route path="clientes" element={<Clientes />} />
+              <Route path="configuracoes" element={<Configuracoes />} />
+              <Route path="admin" element={<Admin />} />
+            </Route>
+          </Routes>
+        </OnboardingProvider>
       </FeatureFlagsProvider>
     </BrowserRouter>
   );

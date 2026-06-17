@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
 import { CheckCircle, Circle } from 'lucide-react';
-import api from '../api';
+import { useOnboarding } from '../contexts/OnboardingContext';
 
 const STEPS = [
   { key: 'step_0', label: 'Boas-vindas' },
@@ -12,32 +11,24 @@ const STEPS = [
 ];
 
 export default function OnboardingProgress() {
-  const [completed, setCompleted] = useState<string[]>([]);
+  const { stepsCompleted, loading } = useOnboarding();
 
-  useEffect(() => {
-    api.get('/users/onboarding-status').then(res => {
-      const data = res.data;
-      const done = Object.keys(data).filter(key => data[key] === true);
-      setCompleted(done);
-    }).catch(() => {});
-  }, []);
+  if (loading || stepsCompleted.length >= STEPS.length) return null;
 
-  const progress = Math.min((completed.length / STEPS.length) * 100, 100);
-
-  if (completed.length >= STEPS.length) return null;
+  const progress = Math.min((stepsCompleted.length / STEPS.length) * 100, 100);
 
   return (
     <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-4 mb-6">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium text-white">Seu progresso no onboarding</span>
-        <span className="text-xs text-slate-400">{completed.length} / {STEPS.length}</span>
+        <span className="text-xs text-slate-400">{stepsCompleted.length} / {STEPS.length}</span>
       </div>
       <div className="w-full bg-slate-800 rounded-full h-2 mb-3">
         <div className="bg-cyan-500 h-2 rounded-full transition-all" style={{ width: `${progress}%` }} />
       </div>
       <div className="flex flex-wrap gap-2">
         {STEPS.map((step) => {
-          const done = completed.includes(step.key);
+          const done = stepsCompleted.includes(step.key);
           return (
             <div key={step.key} className="flex items-center gap-1 text-xs">
               {done ? (
