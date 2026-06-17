@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Joyride } from 'react-joyride';
+import type { Step } from 'react-joyride';
 import api from '../api';
 
 const JoyrideComponent = Joyride as any;
 
-const steps = [
+const steps: Step[] = [
   {
     target: 'body',
     content: '👋 Bem-vindo ao IonFinance! Vamos te guiar pelos primeiros passos.',
@@ -48,7 +49,6 @@ export default function OnboardingTour() {
       const data = res.data;
       const completed = Object.keys(data).filter(key => data[key] === true);
       setStepsCompleted(completed);
-      // Se todos os passos já foram concluídos, não inicia o tour
       if (completed.length < steps.length) {
         setRun(true);
       }
@@ -86,7 +86,6 @@ export default function OnboardingTour() {
 
     const { status, type, step, action } = data;
 
-    // Quando um passo é concluído (próximo ou finalizado)
     if (type === 'step:after' || action === 'next' || action === 'close') {
       const stepIndex = step?.index;
       if (stepIndex !== undefined && stepIndex >= 0) {
@@ -95,11 +94,9 @@ export default function OnboardingTour() {
       }
     }
 
-    // Quando o tour termina ou é pulado
     if (status === 'finished' || status === 'skipped') {
       console.log('🏁 Tour finalizado ou pulado.');
       setRun(false);
-      // Salva o último passo se não foi salvo
       const lastIndex = steps.length - 1;
       const lastKey = `step_${lastIndex}`;
       if (!stepsCompleted.includes(lastKey)) {
@@ -109,8 +106,6 @@ export default function OnboardingTour() {
   };
 
   if (loading) return null;
-
-  // Se todos os passos foram concluídos, não renderiza nada
   if (stepsCompleted.length >= steps.length) return null;
 
   return (
@@ -122,8 +117,6 @@ export default function OnboardingTour() {
       showSkipButton
       showProgress
       debug
-      disableOverlayClose
-      disableScrolling
       styles={{
         options: {
           primaryColor: '#0284c7',
