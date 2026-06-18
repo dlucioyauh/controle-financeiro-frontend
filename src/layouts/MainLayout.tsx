@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   BarChart3,
+  Activity,
 } from 'lucide-react';
 import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
@@ -38,7 +39,6 @@ export default function MainLayout() {
 
   const relatorioAvancadoEnabled = useFeatureFlag('novo_relatorio');
 
-  // Constrói a lista de links dinamicamente
   const links = [
     ...linksBase,
     relatorioAvancadoEnabled
@@ -89,7 +89,6 @@ export default function MainLayout() {
 
   return (
     <div className="min-h-screen flex bg-[#020617]">
-      {/* Sidebar para desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-[#0f172a] border-r border-slate-800 p-4">
         <div className="flex items-center gap-2 mb-8">
           <LogoComponent />
@@ -111,17 +110,30 @@ export default function MainLayout() {
             </Link>
           ))}
           {user?.username === 'dlucio' && (
-            <Link
-              to="/app/admin"
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                location.pathname === '/app/admin'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-yellow-400 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <Shield size={18} />
-              Admin
-            </Link>
+            <>
+              <Link
+                to="/app/admin"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  location.pathname === '/app/admin'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-yellow-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <Shield size={18} />
+                Admin
+              </Link>
+              <Link
+                to="/app/admin/metrics"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  location.pathname === '/app/admin/metrics'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-cyan-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <Activity size={18} />
+                Métricas
+              </Link>
+            </>
           )}
         </nav>
         <div className="mt-4 flex flex-col gap-2">
@@ -136,7 +148,6 @@ export default function MainLayout() {
         </div>
       </aside>
 
-      {/* Mobile header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#0f172a] border-b border-slate-800 px-4 py-2 flex items-center justify-between">
         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-white">
           {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
@@ -153,7 +164,6 @@ export default function MainLayout() {
         </div>
       </div>
 
-      {/* Mobile sidebar */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-40 flex">
           <div className="absolute inset-0 bg-black/60" onClick={() => setSidebarOpen(false)} />
@@ -175,25 +185,38 @@ export default function MainLayout() {
                 </Link>
               ))}
               {user?.username === 'dlucio' && (
-                <Link
-                  to="/app/admin"
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                    location.pathname === '/app/admin'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-yellow-400 hover:text-white hover:bg-slate-800'
-                  }`}
-                >
-                  <Shield size={18} />
-                  Admin
-                </Link>
+                <>
+                  <Link
+                    to="/app/admin"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      location.pathname === '/app/admin'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-yellow-400 hover:text-white hover:bg-slate-800'
+                    }`}
+                  >
+                    <Shield size={18} />
+                    Admin
+                  </Link>
+                  <Link
+                    to="/app/admin/metrics"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      location.pathname === '/app/admin/metrics'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-cyan-400 hover:text-white hover:bg-slate-800'
+                    }`}
+                  >
+                    <Activity size={18} />
+                    Métricas
+                  </Link>
+                </>
               )}
             </nav>
           </div>
         </div>
       )}
 
-      {/* Main content */}
       <main className="flex-1 p-4 lg:p-6 mt-12 lg:mt-0 overflow-auto">
         <Outlet />
       </main>

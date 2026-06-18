@@ -15,6 +15,7 @@ import Login from './Login';
 import Register from './pages/Register';
 import Admin from './pages/Admin';
 import RelatoriosAvancados from './pages/RelatoriosAvancados';
+import AdminMetrics from './pages/AdminMetrics';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token');
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="clientes" element={<Clientes />} />
             <Route path="configuracoes" element={<Configuracoes />} />
             <Route path="admin" element={<Admin />} />
+            <Route path="admin/metrics" element={<AdminMetrics />} />
           </Route>
         </Routes>
       </FeatureFlagsProvider>
