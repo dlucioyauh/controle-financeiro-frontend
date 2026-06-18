@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import { CardSkeleton, ChartSkeleton, Skeleton } from '../components/Skeleton';
 import { useFeatureFlag } from '../contexts/FeatureFlagsContext';
-import OnboardingProgress from '../components/OnboardingProgress'; // ← NOVO
+//import OnboardingProgress from '../components/OnboardingProgress'; // ← NOVO
 
 export default function Dashboard() {
   const dashboardPessoalEnabled = useFeatureFlag('dashboard_pessoal');
@@ -197,7 +197,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 text-slate-200">
       {/* Barra de progresso do onboarding (só aparece se não estiver completo) */}
-      <OnboardingProgress />
+      
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
         <div>
