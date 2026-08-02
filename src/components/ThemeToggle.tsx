@@ -6,8 +6,10 @@ export default function ThemeToggle() {
   const darkModeEnabled = useFeatureFlag('dark_mode');
   const [isDark, setIsDark] = useState(false);
 
+  // Log para ver se a flag está sendo carregada
+  console.log('🌓 darkModeEnabled:', darkModeEnabled);
+
   useEffect(() => {
-    // Sincroniza com o tema atual do localStorage ao montar
     const tema = localStorage.getItem('tema') || 'dark';
     const isDarkMode = tema === 'dark';
     setIsDark(isDarkMode);
@@ -24,7 +26,7 @@ export default function ThemeToggle() {
     document.documentElement.classList.toggle('light', !newIsDark);
   };
 
-  if (!darkModeEnabled) return null; // só exibe se a flag estiver ativa
+  if (!darkModeEnabled) return null;
 
   return (
     <button
