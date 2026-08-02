@@ -20,7 +20,7 @@ import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useFeatureFlag } from '../contexts/FeatureFlagsContext';
 
-const ADMIN_USERNAMES = ['dlucio', 'admin']; // ← LISTA DE ADMINS
+const ADMIN_USERNAMES = ['dlucio', 'admin'];
 
 const linksBase = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
