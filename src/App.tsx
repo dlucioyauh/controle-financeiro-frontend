@@ -7,14 +7,13 @@ import Analytics from './pages/Analytics';
 import Financeiro from './pages/Financeiro';
 import Vendas from './pages/Vendas';
 import Precificacao from './pages/Precificacao';
-import Relatorios from './pages/Relatorios';
+import RelatoriosAvancados from './pages/RelatoriosAvancados';
 import Clientes from './pages/Clientes';
 import Configuracoes from './pages/Configuracoes';
 import Landing from './pages/Landing';
 import Login from './Login';
 import Register from './pages/Register';
 import Admin from './pages/Admin';
-import RelatoriosAvancados from './pages/RelatoriosAvancados';
 import AdminMetrics from './pages/AdminMetrics';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -50,7 +49,8 @@ export default function App() {
             <Route path="financeiro" element={<Financeiro />} />
             <Route path="vendas" element={<Vendas />} />
             <Route path="precificacao" element={<Precificacao />} />
-            <Route path="relatorios" element={<Relatorios />} />
+            {/* Redireciona a rota antiga para a nova */}
+            <Route path="relatorios" element={<Navigate to="/app/relatorios-avancados" replace />} />
             <Route path="relatorios-avancados" element={<RelatoriosAvancados />} />
             <Route path="clientes" element={<Clientes />} />
             <Route path="configuracoes" element={<Configuracoes />} />

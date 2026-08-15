@@ -20,6 +20,8 @@ import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useFeatureFlag } from '../contexts/FeatureFlagsContext';
 
+const ADMIN_USERNAMES = ['dlucio', 'admin'];
+
 const linksBase = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/app/analytics', label: 'Analytics', icon: TrendingUp },
@@ -87,6 +89,8 @@ export default function MainLayout() {
     )
   );
 
+  const isAdmin = user?.username && ADMIN_USERNAMES.includes(user.username);
+
   return (
     <div className="min-h-screen flex bg-[#020617]">
       <aside className="hidden lg:flex flex-col w-64 bg-[#0f172a] border-r border-slate-800 p-4">
@@ -109,7 +113,7 @@ export default function MainLayout() {
               {label}
             </Link>
           ))}
-          {user?.username === 'dlucio' && (
+          {isAdmin && (
             <>
               <Link
                 to="/app/admin"
@@ -184,7 +188,7 @@ export default function MainLayout() {
                   {label}
                 </Link>
               ))}
-              {user?.username === 'dlucio' && (
+              {isAdmin && (
                 <>
                   <Link
                     to="/app/admin"
