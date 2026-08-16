@@ -207,10 +207,13 @@ export default function Configuracoes() {
     }
   };
 
+  // 🆕 CORREÇÃO: usa variável de ambiente para o priceId do setup
   const handleSetupCheckout = async () => {
     setSetupLoading(true);
     try {
-      const url = await createSetupCheckout('price_setup_150'); // substitua pelo ID real
+      // Obtém o ID do preço de setup a partir da variável de ambiente
+      const priceId = import.meta.env.VITE_STRIPE_PRICE_SETUP || 'COLOQUE_AQUI_SEU_ID_REAL_DO_STRIPE';
+      const url = await createSetupCheckout(priceId);
       window.location.href = url;
     } catch (err) {
       console.error('Erro ao iniciar checkout de setup:', err);
