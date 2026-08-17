@@ -187,10 +187,11 @@ export default function Configuracoes() {
     setPerfil({ ...perfil, [e.target.name]: e.target.value });
   };
 
+  // ✅ CORREÇÃO: usa /stripe/checkout (rota existente no backend)
   const assinarPlano = async (priceId: string) => {
     setAssinarLoading(priceId);
     try {
-      const res = await api.post('/stripe/create-checkout-session', { priceId });
+      const res = await api.post('/stripe/checkout', { priceId });
       window.location.href = res.data.url;
     } catch (err) {
       setMensagem('Erro ao iniciar pagamento.');
@@ -207,11 +208,10 @@ export default function Configuracoes() {
     }
   };
 
-  // 🆕 CORREÇÃO: usa variável de ambiente para o priceId do setup
+  // 🆕 Setup checkout continua usando a variável de ambiente
   const handleSetupCheckout = async () => {
     setSetupLoading(true);
     try {
-      // Obtém o ID do preço de setup a partir da variável de ambiente
       const priceId = import.meta.env.VITE_STRIPE_PRICE_SETUP || 'COLOQUE_AQUI_SEU_ID_REAL_DO_STRIPE';
       const url = await createSetupCheckout(priceId);
       window.location.href = url;
