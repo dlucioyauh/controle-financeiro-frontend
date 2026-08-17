@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Save, Key, User, MapPin, Building, Crown, Check, Bell } from 'lucide-react';
-import api from '../api';
+import { Save, Key, User, MapPin, Building, Crown, Check, Bell, Rocket } from 'lucide-react';
+import api, { createSetupCheckout } from '../api';
 
 interface PlanoCard {
   nome: string;
@@ -19,6 +19,7 @@ export default function Configuracoes() {
   const [mensagem, setMensagem] = useState('');
   const [uploading, setUploading] = useState(false);
   const [assinarLoading, setAssinarLoading] = useState<string | null>(null);
+  const [setupLoading, setSetupLoading] = useState(false);
   const [prefs, setPrefs] = useState({ trialRemindersEnabled: true, reportFrequency: 'monthly' });
 
   const planos: PlanoCard[] = [
@@ -35,7 +36,7 @@ export default function Configuracoes() {
     },
     {
       nome: 'Basic',
-      preco: 'R$ 29,90',
+      preco: 'R$ 49,90',
       descricao: 'Para pequenos negócios',
       limites: [
         { label: 'Vendas/mês', value: '100' },
@@ -46,14 +47,14 @@ export default function Configuracoes() {
     },
     {
       nome: 'Pro',
-      preco: 'R$ 79,90',
+      preco: 'R$ 99,90',
       descricao: 'Para negócios em crescimento',
       limites: [
         { label: 'Vendas/mês', value: 'Ilimitado' },
         { label: 'Clientes', value: 'Ilimitado' },
         { label: 'Receitas', value: 'Ilimitado' },
       ],
-      recursos: ['Tudo do Basic', 'Relatórios avançados (gráficos, filtros)', 'Mapa de clientes', 'Cálculo de frete', 'Suporte prioritário'],
+      recursos: ['Tudo do Basic', 'Relatórios avançados (gráficos, filtros)', 'Mapa de clientes', 'Cálculo de frete', 'Suporte prioritário', 'WhatsApp integrado'],
       destaque: true,
     },
     {
@@ -206,6 +207,22 @@ export default function Configuracoes() {
     }
   };
 
+  // 🆕 CORREÇÃO: usa variável de ambiente para o priceId do setup
+  const handleSetupCheckout = async () => {
+    setSetupLoading(true);
+    try {
+      // Obtém o ID do preço de setup a partir da variável de ambiente
+      const priceId = import.meta.env.VITE_STRIPE_PRICE_SETUP || 'COLOQUE_AQUI_SEU_ID_REAL_DO_STRIPE';
+      const url = await createSetupCheckout(priceId);
+      window.location.href = url;
+    } catch (err) {
+      console.error('Erro ao iniciar checkout de setup:', err);
+      setMensagem('Erro ao iniciar checkout de setup.');
+    } finally {
+      setSetupLoading(false);
+    }
+  };
+
   const priceBasic = import.meta.env.VITE_STRIPE_PRICE_BASIC || 'price_1TgB1WRxnn8X2fAM5pL8MCG8';
   const pricePro = import.meta.env.VITE_STRIPE_PRICE_PRO || 'price_1TgB2sRxnn8X2fAMGozAIlMr';
   const pricePremium = import.meta.env.VITE_STRIPE_PRICE_PREMIUM || 'price_1TgB3yRxnn8X2fAMtVdqzTJ4';
@@ -301,7 +318,7 @@ export default function Configuracoes() {
           </div>
         </div>
 
-        {/* Coluna direita – Planos, Notificações, Segurança */}
+        {/* Coluna direita – Planos, Setup, Notificações, Segurança */}
         <div className="space-y-6">
           {/* Planos */}
           <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
@@ -389,6 +406,30 @@ export default function Configuracoes() {
               <div className="mt-4 text-xs bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 text-yellow-400">
                 ⏳ Teste grátis termina em {new Date(perfil.trialEndsAt).toLocaleDateString('pt-BR')}. Escolha um plano.
               </div>
+            )}
+          </div>
+
+          {/* Setup Inicial */}
+          <div className="bg-[#0f172a] rounded-xl border border-slate-800 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Rocket size={18} className="text-purple-400" />
+              <h2 className="text-white font-medium">Setup Inicial</h2>
+            </div>
+            <p className="text-sm text-slate-400 mb-3">
+              Configuramos produtos, receitas e clientes + 1h de treinamento para você começar com o pé direito.
+            </p>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-white">R$ 150,00</span>
+              <button
+                onClick={handleSetupCheckout}
+                disabled={setupLoading}
+                className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+              >
+                {setupLoading ? 'Redirecionando...' : 'Contratar Setup'}
+              </button>
+            </div>
+            {perfil.setupPaid && (
+              <p className="text-xs text-emerald-400 mt-2">✓ Setup já contratado</p>
             )}
           </div>
 
