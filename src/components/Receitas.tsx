@@ -23,7 +23,6 @@ export default function Receitas() {
 
   const [pesoFatiaSimulada, setPesoFatiaSimulada] = useState('150');
 
-  // Margens sugeridas (editáveis)
   const [margemSugeridaCliente, setMargemSugeridaCliente] = useState('100');
   const [margemSugeridaParceiro, setMargemSugeridaParceiro] = useState('50');
 
@@ -85,11 +84,8 @@ export default function Receitas() {
   const isPesoGramas = unidadeRendimento === 'gramas';
   const custoFatiaPersonalizada = isPesoGramas ? (custoTotal / Number(rendimento || 1)) * Number(pesoFatiaSimulada) : 0;
 
-  // Preços sugeridos para a receita INTEIRA
   const precoSugeridoClienteInteiro = custoTotal * (1 + Number(margemSugeridaCliente) / 100);
   const precoSugeridoParceiroInteiro = custoTotal * (1 + Number(margemSugeridaParceiro) / 100);
-
-  // Preços sugeridos por UNIDADE
   const precoSugeridoClienteUnitario = custoPorUnidade * (1 + Number(margemSugeridaCliente) / 100);
   const precoSugeridoParceiroUnitario = custoPorUnidade * (1 + Number(margemSugeridaParceiro) / 100);
 
@@ -171,7 +167,6 @@ export default function Receitas() {
       };
     });
     setIngredientesReceita(ingsMapeados);
-
     setEditandoId(r.id);
     setShowForm(true);
   }
@@ -189,8 +184,7 @@ export default function Receitas() {
     'bg-gray-800 border border-gray-700 text-white placeholder-gray-500 p-3 rounded-xl w-full focus:outline-none focus:border-cyan-500 transition-colors text-sm';
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* ========== FORMULÁRIO ========== */}
+    <div className="space-y-8 w-full"> {/* ALTERADO: Removido max-w-7xl mx-auto para alinhar ao menu */}
       {!showForm && (
         <button
           onClick={() => setShowForm(true)}
@@ -213,12 +207,9 @@ export default function Receitas() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <input type="text" placeholder="Nome da receita" value={nome}
-              onChange={(e) => setNome(e.target.value)} className={inputClass} />
-            <input type="text" placeholder="Descrição (opcional)" value={descricao}
-              onChange={(e) => setDescricao(e.target.value)} className={inputClass} />
-            <input type="number" placeholder="Rendimento (ex: 10)" value={rendimento}
-              onChange={(e) => setRendimento(e.target.value)} className={inputClass} />
+            <input type="text" placeholder="Nome da receita" value={nome} onChange={(e) => setNome(e.target.value)} className={inputClass} />
+            <input type="text" placeholder="Descrição (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} className={inputClass} />
+            <input type="number" placeholder="Rendimento (ex: 10)" value={rendimento} onChange={(e) => setRendimento(e.target.value)} className={inputClass} />
             <select value={unidadeRendimento} onChange={(e) => setUnidadeRendimento(e.target.value)} className={inputClass}>
               <option value="unidades">Unidades</option>
               <option value="gramas">Gramas</option>
@@ -227,23 +218,19 @@ export default function Receitas() {
               <option value="Bolo G">Bolo G</option>
               <option value="fatias">Fatias</option>
             </select>
-            <input type="number" placeholder="Mão de obra R$" value={maoDeObra}
-              onChange={(e) => setMaoDeObra(e.target.value)} className={inputClass} />
+            <input type="number" placeholder="Mão de obra R$" value={maoDeObra} onChange={(e) => setMaoDeObra(e.target.value)} className={inputClass} />
             <div className="relative">
-              <input type="number" placeholder="% Custos fixos" value={custosFixosPorcentagem}
-                onChange={(e) => setCustosFixosPorcentagem(e.target.value)} className={inputClass} />
+              <input type="number" placeholder="% Custos fixos" value={custosFixosPorcentagem} onChange={(e) => setCustosFixosPorcentagem(e.target.value)} className={inputClass} />
               <span className="absolute right-3 top-3.5 text-gray-400">%</span>
             </div>
           </div>
 
-          {/* Ingredientes */}
           <div className="bg-gray-800/30 p-4 rounded-xl border border-gray-700/50">
             <h4 className="text-white font-medium mb-3 flex items-center gap-2">
               <Package size={16} className="text-cyan-400" /> Ingredientes da Receita
             </h4>
             <div className="flex flex-col sm:flex-row gap-2 mb-4">
-              <select value={ingSelecionado} onChange={(e) => setIngSelecionado(e.target.value)}
-                className="flex-1 bg-gray-800 border border-gray-700 text-white p-3 rounded-xl text-sm focus:border-cyan-500 focus:outline-none">
+              <select value={ingSelecionado} onChange={(e) => setIngSelecionado(e.target.value)} className="flex-1 bg-gray-800 border border-gray-700 text-white p-3 rounded-xl text-sm focus:border-cyan-500 focus:outline-none">
                 <option value="">Selecione o ingrediente</option>
                 {ingredientes.map((i) => (
                   <option key={i.id} value={i.id}>
@@ -251,11 +238,8 @@ export default function Receitas() {
                   </option>
                 ))}
               </select>
-              <input type="text" placeholder="Qtd" value={ingQuantidade}
-                onChange={(e) => setIngQuantidade(e.target.value)}
-                className="w-full sm:w-28 bg-gray-800 border border-gray-700 text-white p-3 rounded-xl text-sm focus:border-cyan-500 focus:outline-none" />
-              <button onClick={adicionarIngrediente}
-                className="bg-cyan-600 hover:bg-cyan-500 text-white px-4 rounded-xl transition-colors flex items-center justify-center">
+              <input type="text" placeholder="Qtd" value={ingQuantidade} onChange={(e) => setIngQuantidade(e.target.value)} className="w-full sm:w-28 bg-gray-800 border border-gray-700 text-white p-3 rounded-xl text-sm focus:border-cyan-500 focus:outline-none" />
+              <button onClick={adicionarIngrediente} className="bg-cyan-600 hover:bg-cyan-500 text-white px-4 rounded-xl transition-colors flex items-center justify-center">
                 <Plus size={18} />
               </button>
             </div>
@@ -280,7 +264,6 @@ export default function Receitas() {
             </div>
           </div>
 
-          {/* Resumo de custos + Preços sugeridos */}
           {custoIngredientes > 0 && (
             <div className="bg-gray-800/30 rounded-xl p-5 border border-gray-700/50 space-y-4">
               <h4 className="text-white font-medium flex items-center gap-2">
@@ -300,8 +283,7 @@ export default function Receitas() {
                         <div className="flex justify-between text-sky-400"><span>Custo 100g</span><span>R$ {((custoTotal / Number(rendimento)) * 100).toFixed(2)}</span></div>
                         <div className="flex justify-between items-center gap-4 text-blue-400 font-bold bg-[#0f172a] p-3 rounded-lg border border-gray-700">
                           <span>Fatia de</span>
-                          <input type="number" value={pesoFatiaSimulada} onChange={(e) => setPesoFatiaSimulada(e.target.value)}
-                            className="w-16 bg-gray-800 border border-gray-600 rounded text-center text-white text-sm p-1 focus:border-cyan-500 focus:outline-none" />
+                          <input type="number" value={pesoFatiaSimulada} onChange={(e) => setPesoFatiaSimulada(e.target.value)} className="w-16 bg-gray-800 border border-gray-600 rounded text-center text-white text-sm p-1 focus:border-cyan-500 focus:outline-none" />
                           <span>g</span>
                           <span className="text-lg">R$ {custoFatiaPersonalizada.toFixed(2)}</span>
                         </div>
@@ -316,62 +298,46 @@ export default function Receitas() {
                 )}
               </div>
 
-              {/* Precificação Sugerida */}
               <div className="border-t border-gray-700 pt-4 mt-4 space-y-4">
                 <h4 className="text-white font-medium flex items-center gap-2">
                   <Lightbulb size={16} className="text-yellow-400" /> Precificação Sugerida
                 </h4>
-
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div className="flex items-center gap-2 bg-[#0f172a] p-2.5 rounded-lg border border-gray-700">
                     <span className="text-gray-400">Margem Cliente:</span>
-                    <input type="number" value={margemSugeridaCliente}
-                      onChange={(e) => setMargemSugeridaCliente(e.target.value)}
-                      className="w-14 bg-gray-800 border border-gray-600 rounded text-center text-white p-1 focus:border-cyan-500 focus:outline-none" />
+                    <input type="number" value={margemSugeridaCliente} onChange={(e) => setMargemSugeridaCliente(e.target.value)} className="w-14 bg-gray-800 border border-gray-600 rounded text-center text-white p-1 focus:border-cyan-500 focus:outline-none" />
                     <span className="text-gray-400">%</span>
                   </div>
                   <div className="flex items-center gap-2 bg-[#0f172a] p-2.5 rounded-lg border border-gray-700">
                     <span className="text-gray-400">Margem Parceiro:</span>
-                    <input type="number" value={margemSugeridaParceiro}
-                      onChange={(e) => setMargemSugeridaParceiro(e.target.value)}
-                      className="w-14 bg-gray-800 border border-gray-600 rounded text-center text-white p-1 focus:border-cyan-500 focus:outline-none" />
+                    <input type="number" value={margemSugeridaParceiro} onChange={(e) => setMargemSugeridaParceiro(e.target.value)} className="w-14 bg-gray-800 border border-gray-600 rounded text-center text-white p-1 focus:border-cyan-500 focus:outline-none" />
                     <span className="text-gray-400">%</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Cliente Final */}
                   <div className="bg-emerald-500/5 p-4 rounded-lg border border-emerald-500/20 space-y-2">
                     <p className="text-[11px] uppercase tracking-wide text-emerald-400 font-bold">Cliente Final</p>
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-gray-400">Receita Inteira:</span>
-                      <span className="text-base font-bold text-emerald-400">
-                        R$ {precoSugeridoClienteInteiro.toFixed(2)}
-                      </span>
+                      <span className="text-base font-bold text-emerald-400">R$ {precoSugeridoClienteInteiro.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-400">
-                        {isPesoGramas ? `p/ Fatia (${pesoFatiaSimulada}g):` : 'p/ Unidade:'}
-                      </span>
+                      <span className="text-xs text-gray-400">{isPesoGramas ? `p/ Fatia (${pesoFatiaSimulada}g):` : 'p/ Unidade:'}</span>
                       <span className="text-base font-bold text-emerald-400">
                         R$ {isPesoGramas ? ((custoTotal / Number(rendimento)) * Number(pesoFatiaSimulada) * (1 + Number(margemSugeridaCliente) / 100)).toFixed(2) : precoSugeridoClienteUnitario.toFixed(2)}
                       </span>
                     </div>
                   </div>
 
-                  {/* Parceiro */}
                   <div className="bg-blue-500/5 p-4 rounded-lg border border-blue-500/20 space-y-2">
                     <p className="text-[11px] uppercase tracking-wide text-blue-400 font-bold">Parceiro / Café</p>
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-gray-400">Receita Inteira:</span>
-                      <span className="text-base font-bold text-blue-400">
-                        R$ {precoSugeridoParceiroInteiro.toFixed(2)}
-                      </span>
+                      <span className="text-base font-bold text-blue-400">R$ {precoSugeridoParceiroInteiro.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-400">
-                        {isPesoGramas ? `p/ Fatia (${pesoFatiaSimulada}g):` : 'p/ Unidade:'}
-                      </span>
+                      <span className="text-xs text-gray-400">{isPesoGramas ? `p/ Fatia (${pesoFatiaSimulada}g):` : 'p/ Unidade:'}</span>
                       <span className="text-base font-bold text-blue-400">
                         R$ {isPesoGramas ? ((custoTotal / Number(rendimento)) * Number(pesoFatiaSimulada) * (1 + Number(margemSugeridaParceiro) / 100)).toFixed(2) : precoSugeridoParceiroUnitario.toFixed(2)}
                       </span>
@@ -385,12 +351,10 @@ export default function Receitas() {
             </div>
           )}
 
-          {/* Preços de venda manuais */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-gray-400 text-sm mb-1.5 block font-medium">Preço Comercial Cliente Final (R$)</label>
-              <input type="number" value={precoVendaFinal}
-                onChange={(e) => setPrecoVendaFinal(e.target.value)} className={inputClass} />
+              <input type="number" value={precoVendaFinal} onChange={(e) => setPrecoVendaFinal(e.target.value)} className={inputClass} />
               {precoVendaFinal && (
                 <p className={`text-xs mt-1.5 font-medium ${margemFinal > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                   Margem sobre custo: {margemFinal.toFixed(1)}%
@@ -399,8 +363,7 @@ export default function Receitas() {
             </div>
             <div>
               <label className="text-gray-400 text-sm mb-1.5 block font-medium">Preço Comercial Parceiro/Café (R$)</label>
-              <input type="number" value={precoVendaParceiro}
-                onChange={(e) => setPrecoVendaParceiro(e.target.value)} className={inputClass} />
+              <input type="number" value={precoVendaParceiro} onChange={(e) => setPrecoVendaParceiro(e.target.value)} className={inputClass} />
               {precoVendaParceiro && (
                 <p className={`text-xs mt-1.5 font-medium ${margemParceiro > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                   Margem sobre custo: {margemParceiro.toFixed(1)}%
@@ -420,7 +383,6 @@ export default function Receitas() {
         </div>
       )}
 
-      {/* ========== LISTA DE RECEITAS (REFATORADA PARA GRID PROFISSIONAL) ========== */}
       <div className="bg-[#0f172a] rounded-2xl p-6 border border-white/10 shadow-xl">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -447,30 +409,20 @@ export default function Receitas() {
 
               return (
                 <div key={r.id} className="bg-gray-800/40 hover:bg-gray-800 border border-gray-700/50 hover:border-cyan-500/40 rounded-xl p-4 transition-all duration-200 group flex flex-col">
-                  {/* Header: Nome + Ações */}
                   <div className="flex justify-between items-start mb-4">
                     <h4 className="font-semibold text-white text-sm truncate pr-2 flex-1" title={r.nome}>
                       {r.nome}
                     </h4>
                     <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={() => editar(r)} 
-                        className="p-1.5 hover:bg-yellow-500/20 text-yellow-400 rounded-lg transition-colors" 
-                        title="Editar"
-                      >
+                      <button onClick={() => editar(r)} className="p-1.5 hover:bg-yellow-500/20 text-yellow-400 rounded-lg transition-colors" title="Editar">
                         <Pencil size={14} />
                       </button>
-                      <button 
-                        onClick={() => deletar(r.id)} 
-                        className="p-1.5 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors" 
-                        title="Excluir"
-                      >
+                      <button onClick={() => deletar(r.id)} className="p-1.5 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors" title="Excluir">
                         <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
 
-                  {/* Métricas Principais (Grid Compacto) */}
                   <div className="grid grid-cols-2 gap-2 mb-4">
                     <div className="bg-[#0f172a] p-2.5 rounded-lg border border-gray-700/50">
                       <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Custo Total</p>
@@ -482,7 +434,6 @@ export default function Receitas() {
                     </div>
                   </div>
 
-                  {/* Rodapé do Card: Rendimento e Parceiro */}
                   <div className="mt-auto pt-3 border-t border-gray-700/50 flex justify-between items-center text-xs">
                     <span className="flex items-center gap-1.5 text-gray-400 bg-gray-800 px-2 py-1 rounded-md">
                       <Package size={12} />

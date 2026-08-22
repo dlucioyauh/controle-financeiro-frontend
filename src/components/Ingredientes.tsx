@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package } from 'lucide-react';
 import api from '../api';
 
-// Adicionado 'unidades' para manter compatibilidade perfeita com a tela de receitas
 const unidades = ['kg', 'g', 'litro', 'ml', 'un', 'unidades'];
 
 export default function Ingredientes() {
   const [ingredientes, setIngredientes] = useState<any[]>([]);
   const [nome, setNome] = useState('');
   const [precoCompra, setPrecoCompra] = useState('');
-  const [quantidadeCompra, setQuantidadeCompra] = useState('1'); // Padrão 1
+  const [quantidadeCompra, setQuantidadeCompra] = useState('1');
   const [unidadeMedida, setUnidadeMedida] = useState('kg');
   const [editandoId, setEditandoId] = useState<number | null>(null);
 
@@ -22,7 +21,6 @@ export default function Ingredientes() {
     }
   }
 
-  // Função essencial que estava faltando para limpar os campos após salvar/editar
   function resetForm() {
     setNome('');
     setPrecoCompra('');
@@ -37,8 +35,6 @@ export default function Ingredientes() {
       return;
     }
 
-    // Monta o payload garantindo que os números sejam convertidos corretamente
-    // e remove espaços em branco acidentais
     const payload = {
       nome: nome.trim(),
       precoCompra: Number(String(precoCompra).replace(',', '.')),
@@ -53,9 +49,8 @@ export default function Ingredientes() {
       } else {
         await api.post('/ingredientes', payload);
       }
-      
-      resetForm(); // Agora vai funcionar perfeitamente!
-      carregar();  // Recarrega a lista de ingredientes
+      resetForm();
+      carregar();
       alert('Ingrediente salvo com sucesso!');
     } catch (error: any) {
       console.error("Erro detalhado ao salvar ingrediente:", error.response?.data || error);
@@ -80,111 +75,141 @@ export default function Ingredientes() {
 
   useEffect(() => { carregar(); }, []);
 
-  const inputClass = "bg-gray-800 border border-gray-700 text-white placeholder-gray-500 p-3 rounded-xl w-full focus:outline-none focus:border-blue-500 transition-colors text-xs";
+  const inputClass = "bg-gray-800 border border-gray-700 text-white placeholder-gray-500 p-3 rounded-xl w-full focus:outline-none focus:border-cyan-500 transition-colors text-sm";
 
   return (
-    <div className="space-y-6">
-
+    <div className="space-y-8 w-full">
       {/* Formulário */}
-      <div className="bg-[#0f172a] rounded-2xl p-6 border border-white/10">
-        <h3 className="text-lg font-semibold text-white mb-4">
-          {editandoId ? '✏️ Editar Ingrediente' : '➕ Novo Ingrediente'}
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="bg-[#0f172a] rounded-2xl p-6 border border-white/10 shadow-xl">
+        <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-6">
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            <Package size={20} className="text-cyan-400" />
+            {editandoId ? 'Editar Ingrediente' : 'Novo Ingrediente'}
+          </h3>
+          {editandoId && (
+            <button onClick={resetForm} className="text-sm text-gray-400 hover:text-white transition-colors">
+              Cancelar edição
+            </button>
+          )}
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-[11px] font-medium text-gray-400 uppercase mb-1 tracking-wide">Nome</label>
+            <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">Nome</label>
             <input type="text" placeholder="Ex: Chocolate, Farinha"
               value={nome} onChange={(e) => setNome(e.target.value)}
               className={inputClass} />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-gray-400 uppercase mb-1 tracking-wide">Preço de Compra (R$)</label>
+            <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">Preço de Compra (R$)</label>
             <input type="text" placeholder="0.00"
               value={precoCompra} onChange={(e) => setPrecoCompra(e.target.value)}
               className={inputClass} />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-gray-400 uppercase mb-1 tracking-wide">Qtd. Embalagem</label>
+            <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">Qtd. Embalagem</label>
             <input type="text" placeholder="Ex: 1, 500"
               value={quantidadeCompra} onChange={(e) => setQuantidadeCompra(e.target.value)}
               className={inputClass} />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-gray-400 uppercase mb-1 tracking-wide">Unidade Medida</label>
-            <select value={unidadeMedida} onChange={(e) => setUnidadeMedida(e.target.value)}
-              className={inputClass}>
+            <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">Unidade de Medida</label>
+            <select value={unidadeMedida} onChange={(e) => setUnidadeMedida(e.target.value)} className={inputClass}>
               {unidades.map((u) => (
                 <option key={u} value={u}>{u}</option>
               ))}
             </select>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={salvar} disabled={!nome || !precoCompra || !quantidadeCompra}
-            className="mt-4 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-medium text-sm transition-colors">
+        
+        <div className="flex gap-3 mt-6 pt-4 border-t border-gray-800">
+          <button 
+            onClick={salvar} 
+            disabled={!nome || !precoCompra || !quantidadeCompra}
+            className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-medium text-sm transition-all active:scale-95"
+          >
             <Plus size={16} />
-            {editandoId ? 'Atualizar' : 'Salvar Ingrediente'}
+            {editandoId ? 'Atualizar Ingrediente' : 'Salvar Ingrediente'}
           </button>
           {editandoId && (
-            <button onClick={resetForm}
-              className="mt-4 px-6 py-3 rounded-xl font-medium text-sm text-gray-400 hover:text-white border border-gray-700 hover:border-gray-600 transition-colors">
-              Cancelar Edição
+            <button 
+              onClick={resetForm}
+              className="px-6 py-3 rounded-xl font-medium text-sm text-gray-400 hover:text-white border border-gray-700 hover:bg-gray-800 transition-colors"
+            >
+              Cancelar
             </button>
           )}
         </div>
       </div>
 
       {/* Lista */}
-      <div className="bg-[#0f172a] rounded-2xl p-6 border border-white/10">
-        <h3 className="text-lg font-semibold text-white mb-4">
-          Ingredientes Cadastrados ({ingredientes.length})
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-gray-300">
-            <thead className="text-[10px] text-gray-400 uppercase border-b border-gray-800 bg-gray-950/40">
-              <tr>
-                <th className="py-2.5 px-3">Nome</th>
-                <th className="py-2.5 px-3">Preço Compra</th>
-                <th className="py-2.5 px-3">Qtd. Embalagem</th>
-                <th className="py-2.5 px-3">Unidade</th>
-                <th className="py-2.5 px-3 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800/40">
-              {ingredientes.map((i) => (
-                <tr key={i.id} className="hover:bg-gray-800/40 transition-colors">
-                  <td className="py-2.5 px-3 font-medium text-white">{i.nome}</td>
-                  <td className="py-2.5 px-3 text-emerald-400 font-bold">
-                    R$ {Number(i.precoCompra ?? 0).toFixed(2)}
-                  </td>
-                  <td className="py-2.5 px-3">{i.quantidadeCompra ?? 1}</td>
-                  <td className="py-2.5 px-3">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">
-                      {i.unidadeMedida}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 text-right">
-                    <div className="flex gap-2 justify-end">
-                      <button onClick={() => editar(i)}
-                        className="flex items-center gap-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 px-2 py-1 rounded-lg text-[10px] transition-colors">
-                        <Pencil size={10} /> Editar
-                      </button>
-                      <button onClick={() => deletar(i.id)}
-                        className="flex items-center gap-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 px-2 py-1 rounded-lg text-[10px] transition-colors">
-                        <Trash2 size={10} /> Excluir
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {ingredientes.length === 0 && (
-            <p className="text-center text-gray-500 text-xs py-10">Nenhum ingrediente cadastrado.</p>
-          )}
+      <div className="bg-[#0f172a] rounded-2xl p-6 border border-white/10 shadow-xl">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            <Package size={20} className="text-cyan-400" />
+            Ingredientes Cadastrados
+            <span className="bg-cyan-500/20 text-cyan-400 text-xs px-2.5 py-0.5 rounded-full font-bold">
+              {ingredientes.length}
+            </span>
+          </h3>
         </div>
-      </div>
 
+        {ingredientes.length === 0 ? (
+          <div className="text-center py-16 border-2 border-dashed border-gray-700 rounded-xl bg-gray-800/20">
+            <Package size={40} className="mx-auto text-gray-600 mb-3" />
+            <p className="text-gray-400 font-medium">Nenhum ingrediente cadastrado ainda.</p>
+            <p className="text-gray-500 text-sm mt-1">Preencha o formulário acima para adicionar.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-gray-800">
+            <table className="w-full text-left text-sm text-gray-300">
+              <thead className="text-xs text-gray-400 uppercase bg-gray-900/50 border-b border-gray-800">
+                <tr>
+                  <th className="py-3 px-4 font-semibold">Nome</th>
+                  <th className="py-3 px-4 font-semibold">Preço de Compra</th>
+                  <th className="py-3 px-4 font-semibold">Qtd. Embalagem</th>
+                  <th className="py-3 px-4 font-semibold">Unidade</th>
+                  <th className="py-3 px-4 text-right font-semibold">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800/50 bg-[#0f172a]">
+                {ingredientes.map((i) => (
+                  <tr key={i.id} className="hover:bg-gray-800/40 transition-colors group">
+                    <td className="py-3 px-4 font-medium text-white">{i.nome}</td>
+                    <td className="py-3 px-4 text-emerald-400 font-bold">
+                      R$ {Number(i.precoCompra ?? 0).toFixed(2)}
+                    </td>
+                    <td className="py-3 px-4 text-gray-300">{i.quantidadeCompra ?? 1}</td>
+                    <td className="py-3 px-4">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        {i.unidadeMedida}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex gap-1 justify-end opacity-60 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => editar(i)}
+                          className="p-1.5 hover:bg-yellow-500/20 text-yellow-400 rounded-lg transition-colors" 
+                          title="Editar"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button 
+                          onClick={() => deletar(i.id)}
+                          className="p-1.5 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors" 
+                          title="Excluir"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
