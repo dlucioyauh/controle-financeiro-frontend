@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { ShoppingBag, Trash2, Calendar, DollarSign, Plus, RefreshCw, User, Truck, AlertTriangle } from 'lucide-react';
+import { ShoppingBag, Trash2, Calendar, DollarSign, Plus, RefreshCw, User, Truck, AlertTriangle, MessageCircle } from 'lucide-react';
 
 interface Venda {
   id: string;
@@ -22,6 +22,7 @@ interface Receita {
 interface Cliente {
   id: string;
   nome: string;
+  telefone?: string;
   latitude?: number;
   longitude?: number;
 }
@@ -38,7 +39,9 @@ export default function Vendas() {
   const [vendas, setVendas] = useState<Venda[]>([]);
   const [receitas, setReceitas] = useState<Receita[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [usuarioPerfil, setUsuarioPerfil] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  
   const [produto, setProduto] = useState('');
   const [quantidade, setQuantidade] = useState(1);
   const [precoUnitario, setPrecoUnitario] = useState('');
@@ -49,7 +52,7 @@ export default function Vendas() {
 
   const [frete, setFrete] = useState<FreteResult | null>(null);
   const [calculandoFrete, setCalculandoFrete] = useState(false);
-  const [plano, setPlano] = useState<string>('free'); // ← estado do plano
+  const [plano, setPlano] = useState<string>('free');
   const [planoCarregado, setPlanoCarregado] = useState(false);
 
   const carregarDados = async () => {
@@ -59,11 +62,12 @@ export default function Vendas() {
         api.get('/vendas'),
         api.get('/receitas'),
         api.get('/clientes'),
-        api.get('/users/perfil'), // obtém o plano do usuário
+        api.get('/users/perfil'),
       ]);
       setVendas(vendasRes.data);
       setReceitas(receitasRes.data);
       setClientes(clientesRes.data);
+      setUsuarioPerfil(perfilRes.data);
       setPlano(perfilRes.data.plano || 'free');
       setPlanoCarregado(true);
     } catch (error) {
@@ -75,11 +79,49 @@ export default function Vendas() {
 
   useEffect(() => { carregarDados(); }, []);
 
+  // Função para gerar e abrir o WhatsApp com o comprovante
+  const compartilharComprovante = (venda: Venda, clienteIdParam: string | undefined, clienteNomeParam: string | undefined) => {
+    if (!clienteIdParam) {
+      alert('Esta venda não está vinculada a um cliente. O comprovante só pode ser enviado para clientes cadastrados com telefone.');
+      return;
+    }
+
+    const cliente = clientes.find(c => c.id === clienteIdParam);
+    const telefone = cliente?.telefone;
+
+    if (!telefone) {
+      alert('Este cliente não possui um número de telefone cadastrado. Atualize o cadastro do cliente para enviar o comprovante.');
+      return;
+    }
+
+    const dataFormatada = new Date(venda.dataVenda).toLocaleDateString('pt-BR');
+    const nomeNegocio = usuarioPerfil?.nomeNegocio || 'Minha Empresa';
+    const cnpjFormatado = usuarioPerfil?.cnpj ? `\n🏢 CNPJ: ${usuarioPerfil.cnpj}` : '';
+
+    const mensagem = `🧾 *Comprovante de Venda* 🧾
+📅 Data: ${dataFormatada}
+👤 Cliente: ${clienteNomeParam || 'Cliente'}
+🛒 Produto(s): ${venda.produto}
+💰 Valor Total: R$ ${Number(venda.valorTotal).toFixed(2)}
+📦 Canal: ${venda.canalVenda}
+🏢 Empresa: ${nomeNegocio}${cnpjFormatado}
+
+🎉 *Obrigado pela sua compra!*`;
+
+    const telefoneLimpo = String(telefone).replace(/\D/g, '');
+    const telefoneCompleto = telefoneLimpo.startsWith('55') ? telefoneLimpo : `55${telefoneLimpo}`;
+
+    const url = `https://wa.me/${telefoneCompleto}?text=${encodeURIComponent(mensagem)}`;
+    window.open(url, '_blank');
+  };
+
   const handleCriarVenda = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!produto) return alert('Selecione um produto.');
+    
     const pUnitario = parseFloat(precoUnitario) || 0;
-    const vTotal = pUnitario * quantidade;
+    let vTotal = pUnitario * quantidade;
+
     try {
       const payload: any = {
         produto,
@@ -97,12 +139,31 @@ export default function Vendas() {
       }
 
       await api.post('/vendas', payload);
+      
+      // Resetar formulário
       setProduto(''); setQuantidade(1); setPrecoUnitario('');
       setCanalVenda('Balcão'); setDataVenda(hoje);
       setClienteId(''); setClienteNome(''); setFrete(null);
-      carregarDados();
+      
+      // Recarregar dados
+      await carregarDados();
+
+      // Se havia um cliente com telefone, oferecer o envio do comprovante
+      if (clienteId) {
+        // Pequeno timeout para garantir que a UI não trave antes do window.open
+        setTimeout(() => {
+          const confirmarEnvio = window.confirm('Venda registrada com sucesso! Deseja enviar o comprovante para o cliente no WhatsApp agora?');
+          if (confirmarEnvio) {
+            compartilharComprovante(payload, clienteId, clienteNome);
+          }
+        }, 300);
+      } else {
+        alert('Venda registrada com sucesso!');
+      }
+
     } catch (error) {
       console.error('Erro ao salvar venda:', error);
+      alert('Erro ao registrar venda. Verifique os dados.');
     }
   };
 
@@ -166,7 +227,7 @@ export default function Vendas() {
             <div>
               <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Produto / Item</label>
               <select value={produto} onChange={e => setProduto(e.target.value)}
-                className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10 transition-colors pr-8 appearance-none"
+                className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-cyan-500/50 h-10 transition-colors pr-8 appearance-none"
                 style={selectStyle} required>
                 <option value="" className="bg-[#0f172a]">-- Selecione o Produto --</option>
                 {receitas.map(rec => (
@@ -186,7 +247,7 @@ export default function Vendas() {
                 setClienteNome(c ? c.nome : '');
                 setFrete(null);
               }}
-                className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10 transition-colors pr-8 appearance-none"
+                className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-cyan-500/50 h-10 transition-colors pr-8 appearance-none"
                 style={selectStyle}>
                 <option value="" className="bg-[#0f172a]">-- Sem cliente --</option>
                 {clientes.map(c => (
@@ -226,12 +287,12 @@ export default function Vendas() {
               <div>
                 <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Quantidade</label>
                 <input type="number" min="1" value={quantidade} onChange={e => setQuantidade(parseInt(e.target.value) || 1)}
-                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10" required />
+                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-cyan-500/50 h-10" required />
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Preço Unitário (R$)</label>
                 <input type="number" step="0.01" placeholder="0.00" value={precoUnitario} onChange={e => setPrecoUnitario(e.target.value)}
-                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10" required />
+                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-cyan-500/50 h-10" required />
               </div>
             </div>
 
@@ -239,7 +300,7 @@ export default function Vendas() {
               <div>
                 <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Canal de Venda</label>
                 <select value={canalVenda} onChange={e => setCanalVenda(e.target.value)}
-                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10 transition-colors pr-8 appearance-none"
+                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-cyan-500/50 h-10 transition-colors pr-8 appearance-none"
                   style={selectStyle}>
                   <option value="Balcão" className="bg-[#0f172a]">Balcão</option>
                   <option value="Encomenda" className="bg-[#0f172a]">Encomenda</option>
@@ -251,7 +312,7 @@ export default function Vendas() {
               <div>
                 <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Data da Venda</label>
                 <input type="date" value={dataVenda} onChange={e => setDataVenda(e.target.value)}
-                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-blue-500/50 h-10" required />
+                  className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-cyan-500/50 h-10" required />
               </div>
             </div>
 
@@ -263,7 +324,7 @@ export default function Vendas() {
             </div>
 
             <button type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors">
+              className="w-full bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors">
               <Plus className="h-3.5 w-3.5" /> Registrar Venda
             </button>
           </form>
@@ -291,7 +352,7 @@ export default function Vendas() {
               </thead>
               <tbody className="divide-y divide-slate-800 text-slate-300">
                 {vendas.length > 0 ? vendas.map(v => (
-                  <tr key={v.id} className="hover:bg-slate-900/40 transition-colors">
+                  <tr key={v.id} className="hover:bg-slate-900/40 transition-colors group">
                     <td className="py-2.5 whitespace-nowrap flex items-center gap-1 text-slate-400">
                       <Calendar className="h-3 w-3 text-slate-500" />
                       {new Date(v.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
@@ -315,10 +376,24 @@ export default function Vendas() {
                       </span>
                     </td>
                     <td className="py-2.5 text-right">
-                      <button onClick={() => handleRemoverVenda(v.id)}
-                        className="p-1 text-slate-500 hover:text-red-400 rounded hover:bg-red-500/10 transition">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="flex justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                        {v.clienteId && (
+                          <button 
+                            onClick={() => compartilharComprovante(v, v.clienteId, v.clienteNome)}
+                            className="p-1.5 text-slate-500 hover:text-green-400 rounded hover:bg-green-500/10 transition"
+                            title="Enviar Comprovante no WhatsApp"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => handleRemoverVenda(v.id)}
+                          className="p-1.5 text-slate-500 hover:text-red-400 rounded hover:bg-red-500/10 transition"
+                          title="Remover Venda"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )) : (
