@@ -272,9 +272,9 @@ export default function Dashboard() {
               {modo === 'empresa' ? 'Faturamento — Últimos 7 dias' : 'Receitas Pessoais — Últimos 7 dias'}
             </h2>
           </div>
-          <div className="h-56 text-xs flex items-center justify-center">
+           <div className="h-56 text-xs flex items-center justify-center">
             {temDadosGrafico ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}> {/* ✅ CORREÇÃO AQUI */}
                 <LineChart data={dadosGrafico}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                   <XAxis dataKey="data" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
