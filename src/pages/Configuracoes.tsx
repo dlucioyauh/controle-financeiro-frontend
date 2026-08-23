@@ -187,7 +187,6 @@ export default function Configuracoes() {
     setPerfil({ ...perfil, [e.target.name]: e.target.value });
   };
 
-  // ✅ CORREÇÃO: usa /stripe/checkout (rota existente no backend)
   const assinarPlano = async (priceId: string) => {
     setAssinarLoading(priceId);
     try {
@@ -199,16 +198,21 @@ export default function Configuracoes() {
     }
   };
 
+  // ✅ CORREÇÃO APLICADA AQUI: api.get alterado para api.post e melhor tratamento de erro
   const abrirPortal = async () => {
     try {
-      const res = await api.get('/stripe/portal');
-      window.location.href = res.data.url;
-    } catch (err) {
-      setMensagem('Erro ao abrir portal.');
+      const res = await api.post('/stripe/portal');
+      if (res.data.url) {
+        window.location.href = res.data.url;
+      } else {
+        setMensagem('Nenhuma assinatura ativa para gerenciar no momento.');
+      }
+    } catch (err: any) {
+      console.error('Erro ao abrir portal:', err);
+      setMensagem(err.response?.data?.message || 'Erro ao abrir portal do cliente.');
     }
   };
 
-  // 🆕 Setup checkout continua usando a variável de ambiente
   const handleSetupCheckout = async () => {
     setSetupLoading(true);
     try {
