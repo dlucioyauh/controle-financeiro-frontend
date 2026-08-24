@@ -1,4 +1,5 @@
 import React from 'react';
+import { Check, Star } from 'lucide-react';
 
 const planos = [
   {
@@ -8,7 +9,7 @@ const planos = [
     destaque: false,
     recursos: [
       '3 clientes',
-      '5 produtos',
+      'Até 5 produtos',
       '1 usuário',
       'Relatórios básicos',
     ],
@@ -31,7 +32,7 @@ const planos = [
     periodo: '/mês',
     destaque: true,
     recursos: [
-      'Tudo do Basic',
+      'Tudo do plano Basic',
       'WhatsApp integrado',
       'Relatórios avançados',
       'Suporte prioritário',
@@ -43,10 +44,10 @@ const planos = [
     periodo: '/mês',
     destaque: false,
     recursos: [
-      'Tudo do Pro',
-      'Consultoria personalizada',
+      'Tudo do plano Pro',
+      'Setup/Consultoria inicial (1h)',
       'API de integração',
-      'Gerente de conta',
+      'Gerente de conta dedicado',
     ],
   },
 ];
@@ -55,29 +56,47 @@ const PlanosDisplay: React.FC<{ onSelect?: (plano: string) => void }> = ({
   onSelect,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {planos.map((plano) => (
         <div
           key={plano.nome}
-          className={`border rounded-lg p-4 ${
+          className={`relative flex flex-col rounded-xl p-6 transition-all duration-300 ${
             plano.destaque
-              ? 'border-blue-500 shadow-lg'
-              : 'border-gray-200'
+              ? 'bg-[#0f172a] border-2 border-cyan-500 shadow-lg shadow-cyan-500/10 scale-105 z-10'
+              : 'bg-[#0f172a] border border-slate-800 hover:border-slate-700'
           }`}
         >
-          <h3 className="text-lg font-bold">{plano.nome}</h3>
-          <p className="text-2xl font-bold my-2">
-            {plano.preco}
-            <span className="text-sm font-normal">{plano.periodo}</span>
-          </p>
-          <ul className="text-sm space-y-1">
-            {plano.recursos.map((recurso) => (
-              <li key={recurso}>✓ {recurso}</li>
+          {plano.destaque && (
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-md">
+              <Star size={12} fill="white" />
+              MAIS POPULAR
+            </div>
+          )}
+
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-white">{plano.nome}</h3>
+            <div className="flex items-baseline mt-2">
+              <span className="text-3xl font-extrabold text-white">{plano.preco}</span>
+              <span className="text-sm text-slate-400 ml-1">{plano.periodo}</span>
+            </div>
+          </div>
+
+          <ul className="flex-1 space-y-3 mb-6">
+            {plano.recursos.map((recurso, index) => (
+              <li key={index} className="flex items-start gap-2 text-sm text-slate-300">
+                <Check className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                <span>{recurso}</span>
+              </li>
             ))}
           </ul>
+
           {onSelect && (
             <button
-              className="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+              className={`w-full py-2.5 rounded-lg font-semibold transition-all duration-200 ${
+                plano.destaque
+                  ? 'bg-cyan-600 text-white hover:bg-cyan-500 shadow-md shadow-cyan-500/20'
+                  : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'
+              }`}
               onClick={() => onSelect(plano.nome.toLowerCase())}
             >
               Escolher {plano.nome}
