@@ -16,6 +16,10 @@ import Register from './pages/Register';
 import Admin from './pages/Admin';
 import AdminMetrics from './pages/AdminMetrics';
 
+// ✅ NOVOS IMPORTS PARA RECUPERAÇÃO DE SENHA
+import EsqueciSenha from './pages/EsqueciSenha';
+import RedefinirSenha from './pages/RedefinirSenha';
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token');
   if (!token) return <Navigate to="/login" replace />;
@@ -36,6 +40,11 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          
+          {/* ✅ NOVAS ROTAS PÚBLICAS DE RECUPERAÇÃO DE SENHA */}
+          <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+          <Route path="/resetar-senha" element={<RedefinirSenha />} />
+          
           <Route
             path="/app"
             element={
@@ -49,7 +58,6 @@ export default function App() {
             <Route path="financeiro" element={<Financeiro />} />
             <Route path="vendas" element={<Vendas />} />
             <Route path="precificacao" element={<Precificacao />} />
-            {/* Redireciona a rota antiga para a nova */}
             <Route path="relatorios" element={<Navigate to="/app/relatorios-avancados" replace />} />
             <Route path="relatorios-avancados" element={<RelatoriosAvancados />} />
             <Route path="clientes" element={<Clientes />} />

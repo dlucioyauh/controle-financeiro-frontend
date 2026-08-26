@@ -13,7 +13,7 @@ function Login() {
     try {
       const response = await api.post('/auth/login', { username, password });
       localStorage.setItem('token', response.data.access_token);
-      navigate('/app'); // <- Dashboard protegido
+      navigate('/app');
     } catch {
       setErro('Usuário ou senha incorretos');
     }
@@ -21,7 +21,7 @@ function Login() {
 
   return (
     <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4">
-      <div className="bg-[#0f172a] border border-slate-800 rounded-xl p-8 w-full max-w-sm">
+      <div className="bg-[#0f172a] border border-slate-800 rounded-xl p-8 w-full max-w-sm shadow-2xl">
         <h1 className="text-2xl font-bold text-white text-center mb-6">Entrar</h1>
 
         {erro && (
@@ -37,7 +37,7 @@ function Login() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-[#020617] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+              className="w-full bg-[#020617] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-cyan-500 transition-colors"
               autoFocus
             />
           </div>
@@ -47,21 +47,31 @@ function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#020617] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+              className="w-full bg-[#020617] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-cyan-500 transition-colors"
             />
+            {/* ✅ NOVO LINK DE RECUPERAÇÃO DE SENHA */}
+            <div className="flex justify-end mt-1">
+              <Link 
+                to="/esqueci-senha" 
+                className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
+              >
+                Esqueceu sua senha?
+              </Link>
+            </div>
           </div>
+          
           <button
             onClick={handleLogin}
             disabled={!username || !password}
-            className="bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-sm transition-colors"
+            className="bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-lg text-sm transition-colors mt-2"
           >
             Entrar
           </button>
         </div>
 
-        <p className="text-xs text-slate-500 text-center mt-4">
+        <p className="text-xs text-slate-500 text-center mt-6">
           Não tem conta?{' '}
-          <Link to="/register" className="text-cyan-400 hover:underline">
+          <Link to="/register" className="text-cyan-400 hover:text-cyan-300 hover:underline transition-colors">
             Criar conta grátis
           </Link>
         </p>
