@@ -8,7 +8,7 @@ const planos = [
     periodo: '/mês',
     destaque: false,
     recursos: [
-      '3 clientes',
+      '5 clientes', // ✅ ALTERADO PARA 5 PARA COMBINAR COM O BACKEND
       'Até 5 produtos',
       '1 usuário',
       'Relatórios básicos',
