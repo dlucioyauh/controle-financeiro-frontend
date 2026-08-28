@@ -20,6 +20,10 @@ import AdminMetrics from './pages/AdminMetrics';
 import EsqueciSenha from './pages/EsqueciSenha';
 import RedefinirSenha from './pages/RedefinirSenha';
 
+// ✅ NOVOS IMPORTS PARA PÁGINAS JURÍDICAS (LGPD)
+import Termos from './pages/Termos';
+import Privacidade from './pages/Privacidade';
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token');
   if (!token) return <Navigate to="/login" replace />;
@@ -41,9 +45,13 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
-          {/* ✅ NOVAS ROTAS PÚBLICAS DE RECUPERAÇÃO DE SENHA */}
+          {/* ✅ ROTAS PÚBLICAS DE RECUPERAÇÃO DE SENHA */}
           <Route path="/esqueci-senha" element={<EsqueciSenha />} />
           <Route path="/resetar-senha" element={<RedefinirSenha />} />
+          
+          {/* ✅ ROTAS PÚBLICAS JURÍDICAS (LGPD) */}
+          <Route path="/termos" element={<Termos />} />
+          <Route path="/privacidade" element={<Privacidade />} />
           
           <Route
             path="/app"

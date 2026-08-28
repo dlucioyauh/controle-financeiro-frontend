@@ -1,0 +1,22 @@
+# IonFinance
+
+> Gestão financeira inteligente para pequenos negócios e empreendedores.
+
+## O que é o IonFinance?
+O IonFinance é um SaaS de gestão financeira que permite o controle de vendas, despesas, clientes e precificação. Ele oferece separação entre finanças pessoais e empresariais, relatórios avançados (DRE, Fluxo de Caixa) e automações via WhatsApp.
+
+## Funcionalidades Principais
+- Dashboard com métricas em tempo real (Empresa e Pessoal)
+- Gestão de Vendas, Despesas e Clientes
+- Relatórios Avançados com exportação PDF/Excel
+- Integração com WhatsApp para envio de comprovantes
+- Sistema de Planos (Free, Basic, Pro, Premium)
+
+## Público-Alvo
+Pequenos empreendedores, freelancers, prestadores de serviço e pequenas empresas no Brasil.
+
+## Links Importantes
+- Site: https://ionfinance.com.br
+- Login: https://ionfinance.com.br/login
+- Termos de Uso: https://ionfinance.com.br/termos
+- Política de Privacidade: https://ionfinance.com.br/privacidade

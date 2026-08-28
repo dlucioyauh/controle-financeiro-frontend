@@ -1,6 +1,6 @@
 // src/pages/Landing.tsx
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // ✅ Link adicionado aqui
 import {
   Calculator,
   TrendingUp,
@@ -493,8 +493,9 @@ export default function Landing() {
               &copy; {new Date().getFullYear()} IonKod. Todos os direitos reservados.
             </p>
             <div className="flex gap-4 text-xs text-slate-600">
-              <a href="#" className="hover:text-slate-400 transition-colors">Termos de Uso</a>
-              <a href="#" className="hover:text-slate-400 transition-colors">Política de Privacidade (LGPD)</a>
+              {/* ✅ LINKS ATUALIZADOS PARA AS PÁGINAS JURÍDICAS */}
+              <Link to="/termos" className="hover:text-slate-400 transition-colors">Termos de Uso</Link>
+              <Link to="/privacidade" className="hover:text-slate-400 transition-colors">Política de Privacidade (LGPD)</Link>
             </div>
           </div>
         </div>
