@@ -4,9 +4,9 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, PieChart, Pie, Cell, Legend
+  PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { AlertTriangle, Crown, FileSpreadsheet, FileText, RefreshCw } from 'lucide-react';
+import { AlertTriangle, FileSpreadsheet, FileText, RefreshCw } from 'lucide-react';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF6B6B', '#4ECDC4', '#45B7D1'];
 
@@ -22,12 +22,10 @@ export default function RelatoriosAvancados() {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [erroPermissao, setErroPermissao] = useState(false);
-  const [erroGenerico, setErroGenerico] = useState<string | null>(null);
 
   const handleBuscar = async () => {
     setLoading(true);
     setErroPermissao(false);
-    setErroGenerico(null);
     try {
       const response = await api.get('/relatorios-avancados/resumo', { params: filtros });
       setData(response.data);
@@ -35,10 +33,8 @@ export default function RelatoriosAvancados() {
       console.error(error);
       if (error.response?.status === 403) {
         setErroPermissao(true);
-      } else if (error.response?.status === 500) {
-        setErroGenerico('Erro interno do servidor. Tente novamente mais tarde.');
       } else {
-        setErroGenerico('Falha ao carregar dados. Verifique sua conexão.');
+        console.error('Falha ao carregar dados do relatório.');
       }
       setData(null);
     } finally {
@@ -46,7 +42,6 @@ export default function RelatoriosAvancados() {
     }
   };
 
-  // ✅ NOVA LÓGICA: Exportação robusta via Backend
   const exportarExcel = async () => {
     if (!data) return;
     setExporting(true);
@@ -56,7 +51,7 @@ export default function RelatoriosAvancados() {
           startDate: filtros.dataInicio || undefined,
           endDate: filtros.dataFim || undefined,
         },
-        responseType: 'blob', // ⚠️ CRUCIAL para receber o arquivo binário
+        responseType: 'blob',
       });
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -74,7 +69,6 @@ export default function RelatoriosAvancados() {
     }
   };
 
-  // --- Export PDF (Mantido do seu código original) ---
   const exportarPDF = async () => {
     if (!data) return;
     const doc = new jsPDF();
@@ -86,6 +80,7 @@ export default function RelatoriosAvancados() {
         doc.addImage(logo, 'JPEG', 14, y, 30, 30);
         y += 35;
       } catch (e) {
+        doc.setFontSize(16);
         doc.text('IonFinance', 14, y);
         y += 10;
       }
@@ -133,6 +128,7 @@ export default function RelatoriosAvancados() {
       v.clienteNome || '-',
       `R$ ${Number(v.valorTotal).toFixed(2)}`
     ]);
+    
     autoTable(doc, {
       startY: y,
       head: [['Data', 'Produto', 'Cliente', 'Valor']],
@@ -155,15 +151,28 @@ export default function RelatoriosAvancados() {
 
   const pizzaData = getPizzaData();
 
-  if (loading) return <div className="flex justify-center py-20"><RefreshCw className="animate-spin text-cyan-400" size={32} /></div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <RefreshCw className="animate-spin text-cyan-400" size={32} />
+      </div>
+    );
+  }
 
   if (erroPermissao) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
-        <div className="bg-red-500/10 p-6 rounded-full"><AlertTriangle size={48} className="text-red-500" /></div>
+        <div className="bg-red-500/10 p-6 rounded-full">
+          <AlertTriangle size={48} className="text-red-500" />
+        </div>
         <h2 className="text-2xl font-bold text-white">Acesso não autorizado</h2>
-        <p className="text-slate-300 max-w-md">O recurso de Relatórios Avançados está disponível apenas para os planos <strong>Pro</strong> e <strong>Premium</strong>.</p>
-        <button onClick={() => window.location.href = '/app/configuracoes'} className="mt-4 bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2 rounded-lg transition">
+        <p className="text-slate-300 max-w-md">
+          O recurso de Relatórios Avançados está disponível apenas para os planos <strong>Pro</strong> e <strong>Premium</strong>.
+        </p>
+        <button 
+          onClick={() => window.location.href = '/app/configuracoes'} 
+          className="mt-4 bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2 rounded-lg transition"
+        >
           Ir para Configurações
         </button>
       </div>
@@ -180,25 +189,57 @@ export default function RelatoriosAvancados() {
       </div>
 
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 grid grid-cols-1 md:grid-cols-5 gap-4">
-        <input type="date" value={filtros.dataInicio} onChange={e => setFiltros({ ...filtros, dataInicio: e.target.value })} className="bg-[#020617] border border-slate-700 rounded p-2 text-sm text-slate-200" />
-        <input type="date" value={filtros.dataFim} onChange={e => setFiltros({ ...filtros, dataFim: e.target.value })} className="bg-[#020617] border border-slate-700 rounded p-2 text-sm text-slate-200" />
-        <select value={filtros.tipo} onChange={e => setFiltros({ ...filtros, tipo: e.target.value })} className="bg-[#020617] border border-slate-700 rounded p-2 text-sm text-slate-200">
+        <input 
+          type="date" 
+          value={filtros.dataInicio} 
+          onChange={e => setFiltros({ ...filtros, dataInicio: e.target.value })} 
+          className="bg-[#020617] border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500" 
+        />
+        <input 
+          type="date" 
+          value={filtros.dataFim} 
+          onChange={e => setFiltros({ ...filtros, dataFim: e.target.value })} 
+          className="bg-[#020617] border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500" 
+        />
+        <select 
+          value={filtros.tipo} 
+          onChange={e => setFiltros({ ...filtros, tipo: e.target.value })} 
+          className="bg-[#020617] border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
+        >
           <option value="ambos">Vendas + Despesas</option>
           <option value="venda">Apenas Vendas</option>
           <option value="despesa">Apenas Despesas</option>
         </select>
-        <input type="text" placeholder="Produto (opcional)" value={filtros.produto} onChange={e => setFiltros({ ...filtros, produto: e.target.value })} className="bg-[#020617] border border-slate-700 rounded p-2 text-sm text-slate-200" />
-        <button onClick={handleBuscar} className="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded text-sm font-semibold transition-colors">Buscar Dados</button>
+        <input 
+          type="text" 
+          placeholder="Produto (opcional)" 
+          value={filtros.produto} 
+          onChange={e => setFiltros({ ...filtros, produto: e.target.value })} 
+          className="bg-[#020617] border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500" 
+        />
+        <button 
+          onClick={handleBuscar} 
+          className="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded text-sm font-semibold transition-colors"
+        >
+          Buscar Dados
+        </button>
       </div>
 
       {data && (
         <>
           <div className="flex gap-2 justify-end">
-            <button onClick={exportarExcel} disabled={exporting} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-4 py-2 rounded text-sm font-semibold transition-colors">
+            <button 
+              onClick={exportarExcel} 
+              disabled={exporting} 
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded text-sm font-semibold transition-colors"
+            >
               {exporting ? <RefreshCw className="animate-spin h-4 w-4" /> : <FileSpreadsheet className="h-4 w-4" />}
               {exporting ? 'Gerando Excel...' : 'Exportar Excel'}
             </button>
-            <button onClick={exportarPDF} className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded text-sm font-semibold transition-colors">
+            <button 
+              onClick={exportarPDF} 
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded text-sm font-semibold transition-colors"
+            >
               <FileText className="h-4 w-4" /> Exportar PDF
             </button>
           </div>
@@ -241,8 +282,19 @@ export default function RelatoriosAvancados() {
               {pizzaData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
-                    <Pie data={pizzaData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }: any) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
-                      {pizzaData.map((_: any, index: number) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
+                    <Pie 
+                      data={pizzaData} 
+                      cx="50%" 
+                      cy="50%" 
+                      labelLine={false} 
+                      label={({ name, percent }: any) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`} 
+                      outerRadius={80} 
+                      fill="#8884d8" 
+                      dataKey="value"
+                    >
+                      {pizzaData.map((_: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
                     </Pie>
                     <Tooltip formatter={(value: any) => `R$ ${value.toFixed(2)}`} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#e2e8f0' }} />
                     <Legend />
