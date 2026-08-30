@@ -15,14 +15,11 @@ import Login from './Login';
 import Register from './pages/Register';
 import Admin from './pages/Admin';
 import AdminMetrics from './pages/AdminMetrics';
-
-// ✅ NOVOS IMPORTS PARA RECUPERAÇÃO DE SENHA
 import EsqueciSenha from './pages/EsqueciSenha';
 import RedefinirSenha from './pages/RedefinirSenha';
-
-// ✅ NOVOS IMPORTS PARA PÁGINAS JURÍDICAS (LGPD)
 import Termos from './pages/Termos';
 import Privacidade from './pages/Privacidade';
+import Recorrencias from './pages/Recorrencias';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token');
@@ -72,6 +69,7 @@ export default function App() {
             <Route path="configuracoes" element={<Configuracoes />} />
             <Route path="admin" element={<Admin />} />
             <Route path="admin/metrics" element={<AdminMetrics />} />
+            <Route path="recorrencias" element={<Recorrencias />} />
           </Route>
         </Routes>
       </FeatureFlagsProvider>
