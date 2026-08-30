@@ -15,6 +15,7 @@ import {
   X,
   BarChart3,
   Activity,
+  Repeat, // ✅ Ícone adicionado para Recorrências
 } from 'lucide-react';
 import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
@@ -26,6 +27,7 @@ const linksBase = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/app/analytics', label: 'Analytics', icon: TrendingUp },
   { to: '/app/financeiro', label: 'Financeiro', icon: DollarSign },
+  { to: '/app/recorrencias', label: 'Recorrências', icon: Repeat }, // ✅ LINK ADICIONADO AQUI
   { to: '/app/vendas', label: 'Vendas', icon: ShoppingBag },
   { to: '/app/precificacao', label: 'Precificação', icon: ChefHat },
   { to: '/app/clientes', label: 'Clientes', icon: Users },
@@ -93,6 +95,7 @@ export default function MainLayout() {
 
   return (
     <div className="min-h-screen flex bg-[#020617]">
+      {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-[#0f172a] border-r border-slate-800 p-4">
         <div className="flex items-center gap-2 mb-8">
           <LogoComponent />
@@ -105,7 +108,7 @@ export default function MainLayout() {
               to={to}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                 location.pathname === to
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-cyan-600 text-white' // ✅ Ajustado para Cyan (cor do IonFinance) em vez de blue
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
@@ -119,7 +122,7 @@ export default function MainLayout() {
                 to="/app/admin"
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                   location.pathname === '/app/admin'
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-cyan-600 text-white'
                     : 'text-yellow-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
@@ -130,7 +133,7 @@ export default function MainLayout() {
                 to="/app/admin/metrics"
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                   location.pathname === '/app/admin/metrics'
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-cyan-600 text-white'
                     : 'text-cyan-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
@@ -144,7 +147,7 @@ export default function MainLayout() {
           <ThemeToggle />
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
           >
             <LogOut size={18} />
             Sair
@@ -152,6 +155,7 @@ export default function MainLayout() {
         </div>
       </aside>
 
+      {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#0f172a] border-b border-slate-800 px-4 py-2 flex items-center justify-between">
         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-white">
           {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
@@ -168,6 +172,7 @@ export default function MainLayout() {
         </div>
       </div>
 
+      {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-40 flex">
           <div className="absolute inset-0 bg-black/60" onClick={() => setSidebarOpen(false)} />
@@ -180,7 +185,7 @@ export default function MainLayout() {
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                     location.pathname === to
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-cyan-600 text-white'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800'
                   }`}
                 >
@@ -195,7 +200,7 @@ export default function MainLayout() {
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                       location.pathname === '/app/admin'
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-cyan-600 text-white'
                         : 'text-yellow-400 hover:text-white hover:bg-slate-800'
                     }`}
                   >
@@ -207,7 +212,7 @@ export default function MainLayout() {
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                       location.pathname === '/app/admin/metrics'
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-cyan-600 text-white'
                         : 'text-cyan-400 hover:text-white hover:bg-slate-800'
                     }`}
                   >
@@ -221,6 +226,7 @@ export default function MainLayout() {
         </div>
       )}
 
+      {/* Main Content */}
       <main className="flex-1 p-4 lg:p-6 mt-12 lg:mt-0 overflow-auto">
         <Outlet />
       </main>
