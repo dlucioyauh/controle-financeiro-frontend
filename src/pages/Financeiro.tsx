@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom'; // ✅ Import adicionado para o link de recorrências
 import {
   DollarSign, TrendingDown, TrendingUp, Loader2, Calendar, ArrowUpRight, ArrowDownRight,
 } from 'lucide-react';
@@ -36,7 +37,6 @@ export default function Financeiro() {
   const carregarDados = async () => {
     setCarregando(true);
     try {
-      // Buscar dados de acordo com o modo
       const isPessoal = modoExibicao === 'pessoal';
 
       const [vendasRes, despesasRes, receitasPessoaisRes] = await Promise.all([
@@ -48,7 +48,6 @@ export default function Financeiro() {
       const vendasData = vendasRes.data;
       let receita = vendasData?.totalReceita || 0;
 
-      // Filtrar por data
       const filtraPorData = (lista: any[]) => lista.filter((d: any) => {
         if (!d.data) return false;
         const dataFormatada = d.data.slice(0, 10);
@@ -67,12 +66,12 @@ export default function Financeiro() {
 
       setTotais({ receita, despesas: totalDespesas, saldo });
 
-      // Evolução do saldo
       const mapaDespesasDia: Record<string, number> = {};
       despesasFiltradas.forEach((d: any) => {
         const dia = d.data.slice(0, 10);
         mapaDespesasDia[dia] = (mapaDespesasDia[dia] || 0) + Number(d.valor || 0);
       });
+      
       const mapaReceitasDia: Record<string, number> = {};
       receitasPessoaisFiltradas.forEach((d: any) => {
         const dia = d.data.slice(0, 10);
@@ -97,7 +96,6 @@ export default function Financeiro() {
 
       setEvolucaoSaldo(evo);
 
-      // Despesas por categoria
       const mapaCat: Record<string, number> = {};
       despesasFiltradas.forEach((d: any) => {
         const cat = d.categoria || 'Outros';
@@ -109,7 +107,6 @@ export default function Financeiro() {
       }));
       setDespesasPorCategoria(pizzaData);
 
-      // Transações unificadas
       const vendasDetalhadasRes = await api.get('/vendas');
       const vendasDetalhadas = (vendasDetalhadasRes.data || [])
         .filter((v: any) => {
@@ -164,6 +161,7 @@ export default function Financeiro() {
 
   return (
     <div className="space-y-6 text-slate-200 pb-10">
+      {/* CABEÇALHO E FILTROS */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
         <div className="flex items-center gap-3">
           <div>
@@ -190,6 +188,21 @@ export default function Financeiro() {
             <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)}
               className="bg-transparent text-slate-200 focus:outline-none" />
           </div>
+        </div>
+      </div>
+
+      {/* ✅ CARD DE DICA DE AUTOMAÇÃO (NOVO) */}
+      <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-4 flex items-start gap-3">
+        <Calendar className="h-5 w-5 text-cyan-400 mt-0.5 flex-shrink-0" />
+        <div>
+          <h3 className="text-sm font-semibold text-cyan-300">Dica de Automação</h3>
+          <p className="text-xs text-slate-300 mt-1">
+            Possui contas fixas mensais (Aluguel, Assinaturas, Salários)? 
+            <Link to="/app/recorrencias" className="text-cyan-400 hover:text-cyan-300 underline ml-1 font-medium transition-colors">
+              Automatize-as em Recorrências
+            </Link> 
+            e elas serão lançadas automaticamente todo mês, separadas por Empresa ou Pessoal.
+          </p>
         </div>
       </div>
 

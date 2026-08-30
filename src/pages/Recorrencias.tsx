@@ -43,19 +43,29 @@ export default function Recorrencias() {
 
   useEffect(() => { carregarRecorrencias(); }, []);
 
+  // ✅ CORREÇÃO: Função para calcular a próxima data baseada na frequência
+  const calcularProximaExecucao = (frequencia: string) => {
+    const data = new Date();
+    switch (frequencia) {
+      case 'DIARIA': data.setDate(data.getDate() + 1); break;
+      case 'SEMANAL': data.setDate(data.getDate() + 7); break;
+      case 'MENSAL': data.setMonth(data.getMonth() + 1); break;
+      case 'ANUAL': data.setFullYear(data.getFullYear() + 1); break;
+      default: data.setMonth(data.getMonth() + 1);
+    }
+    return data.toISOString();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.descricao || !formData.valor) return;
 
     setSubmitting(true);
     try {
-      const hoje = new Date();
-      hoje.setDate(hoje.getDate() + 1); 
-
       await api.post('/recorrencias', {
         ...formData,
         valor: parseFloat(formData.valor),
-        proximaExecucao: hoje.toISOString(),
+        proximaExecucao: calcularProximaExecucao(formData.frequencia), // ✅ Usa a função correta
       });
       
       setFormData({ descricao: '', tipo: 'DESPESA', ambito: 'EMPRESA', valor: '', frequencia: 'MENSAL', categoria: '' });
@@ -68,10 +78,10 @@ export default function Recorrencias() {
   };
 
   const handleCancelar = async (id: string) => {
-    if (!confirm('Tem certeza que deseja cancelar esta recorrência?')) return;
+    if (!confirm('Tem certeza que deseja cancelar esta recorrência? Ela não será mais processada.')) return;
     try {
       await api.patch(`/recorrencias/${id}/cancelar`);
-      await carregarRecorrencias();
+      await carregarRecorrencias(); // ✅ Garante que a lista seja recarregada após o cancelamento
     } catch (error) {
       alert('Erro ao cancelar recorrência.');
     }
@@ -104,7 +114,6 @@ export default function Recorrencias() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-            {/* Seletor de Tipo */}
             <div>
               <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Tipo</label>
               <div className="grid grid-cols-2 gap-2">
@@ -117,7 +126,6 @@ export default function Recorrencias() {
               </div>
             </div>
 
-            {/* ✅ SELETOR DE ÂMBITO (EMPRESA / PESSOAL) */}
             <div>
               <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Âmbito</label>
               <div className="grid grid-cols-2 gap-2">
