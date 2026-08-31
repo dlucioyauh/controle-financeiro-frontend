@@ -42,8 +42,8 @@ export default function Dre() {
     setLoading(true);
     setErro(null);
     try {
-      const params: any = { dataInicio, dataFim };
-      if (ambito !== 'TODOS') params.ambito = ambito;
+      // ✅ CORREÇÃO: Sempre envia o âmbito selecionado (incluindo 'TODOS')
+      const params: any = { dataInicio, dataFim, ambito };
 
       const res = await api.get('/relatorios-avancados/dre', { params });
       setData(res.data);
@@ -55,7 +55,6 @@ export default function Dre() {
     }
   };
 
-  // Dados para o gráfico de cascata
   const getCascataData = () => {
     if (!data) return [];
     return [
@@ -82,7 +81,6 @@ export default function Dre() {
 
   return (
     <div className="space-y-6 text-slate-200">
-      {/* Cabeçalho */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-cyan-500/10 rounded-lg">
@@ -95,7 +93,6 @@ export default function Dre() {
         </div>
       </div>
 
-      {/* Filtros */}
       <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800 grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label className="block text-[11px] font-bold text-slate-400 mb-1 uppercase tracking-wide">Data Início</label>
@@ -150,17 +147,14 @@ export default function Dre() {
         </div>
       </div>
 
-      {/* Erro */}
       {erro && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-400">
           {erro}
         </div>
       )}
 
-      {/* Resultados */}
       {data && (
         <>
-          {/* Cards de Resumo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <p className="text-[11px] uppercase tracking-wide text-slate-400 font-medium">Receita Bruta</p>
@@ -189,7 +183,6 @@ export default function Dre() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Tabela Escalonada Contábil */}
             <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800">
               <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                 <DollarSign className="h-4 w-4 text-cyan-400" />
@@ -200,41 +193,26 @@ export default function Dre() {
               </p>
 
               <div className="space-y-1 text-sm">
-                {/* Receita Bruta */}
                 <div className="flex justify-between items-center py-2 border-b border-slate-800">
                   <span className="font-bold text-emerald-400">Receita Bruta</span>
                   <span className="font-bold text-emerald-400">{formatarMoeda(data.receitaBruta)}</span>
                 </div>
-
-                {/* Deduções */}
                 <div className="flex justify-between items-center py-1.5 pl-4">
                   <span className="text-slate-400">(-) Deduções</span>
                   <span className="text-yellow-400">{formatarMoeda(data.deducoes)}</span>
                 </div>
-
-                {/* CPV */}
                 <div className="flex justify-between items-center py-1.5 pl-4">
                   <span className="text-slate-400">(-) CPV / CMV</span>
                   <span className="text-red-400">{formatarMoeda(data.cpv)}</span>
                 </div>
-
-                {/* Lucro Bruto */}
                 <div className={`flex justify-between items-center py-2 border-y border-slate-700 ${data.lucroBruto >= 0 ? 'bg-cyan-500/5' : 'bg-red-500/5'}`}>
-                  <span className={`font-bold ${data.lucroBruto >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>
-                    Lucro Bruto
-                  </span>
-                  <span className={`font-bold ${data.lucroBruto >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>
-                    {formatarMoeda(data.lucroBruto)}
-                  </span>
+                  <span className={`font-bold ${data.lucroBruto >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>Lucro Bruto</span>
+                  <span className={`font-bold ${data.lucroBruto >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>{formatarMoeda(data.lucroBruto)}</span>
                 </div>
-
-                {/* Despesas Operacionais */}
                 <div className="flex justify-between items-center py-1.5 pl-4">
                   <span className="text-slate-400">(-) Despesas Operacionais</span>
                   <span className="text-red-400">{formatarMoeda(data.despesasOperacionais)}</span>
                 </div>
-
-                {/* Lucro Líquido */}
                 <div className={`flex justify-between items-center py-3 border-t-2 border-slate-600 mt-2 ${data.lucroLiquido >= 0 ? 'bg-emerald-500/10' : 'bg-red-500/10'} rounded px-2`}>
                   <span className={`font-bold text-base ${data.lucroLiquido >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                     {data.lucroLiquido >= 0 ? '✓' : '✗'} Lucro Líquido
@@ -246,39 +224,20 @@ export default function Dre() {
               </div>
             </div>
 
-            {/* Gráfico de Cascata */}
             <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800">
               <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                 <TrendingDown className="h-4 w-4 text-cyan-400" />
                 Formação do Lucro (Cascata)
               </h3>
-
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={getCascataData()} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis
-                      dataKey="name"
-                      stroke="#64748b"
-                      fontSize={9}
-                      angle={-25}
-                      textAnchor="end"
-                      height={60}
-                    />
-                    <YAxis
-                      stroke="#64748b"
-                      fontSize={10}
-                      tickFormatter={(v: number) => `R$${(v / 1000).toFixed(1)}k`}
-                    />
+                    <XAxis dataKey="name" stroke="#64748b" fontSize={9} angle={-25} textAnchor="end" height={60} />
+                    <YAxis stroke="#64748b" fontSize={10} tickFormatter={(v: number) => `R$${(v / 1000).toFixed(1)}k`} />
                     <Tooltip
-                      /* ✅ CORREÇÃO: Tipagem 'any' para evitar conflito com ValueType do recharts */
                       formatter={(value: any) => formatarMoeda(Number(value))}
-                      contentStyle={{
-                        backgroundColor: '#0f172a',
-                        borderColor: '#334155',
-                        color: '#f8fafc',
-                        fontSize: '12px',
-                      }}
+                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', fontSize: '12px' }}
                     />
                     <Bar dataKey="valor" radius={[4, 4, 0, 0]}>
                       {getCascataData().map((entry, index) => (
@@ -291,7 +250,6 @@ export default function Dre() {
             </div>
           </div>
 
-          {/* Despesas por Categoria */}
           {Object.keys(data.despesasPorCategoria).length > 0 && (
             <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800">
               <h3 className="text-sm font-bold text-white mb-4">Despesas por Categoria</h3>
@@ -310,7 +268,6 @@ export default function Dre() {
         </>
       )}
 
-      {/* Estado vazio */}
       {!data && !loading && !erro && (
         <div className="bg-[#0f172a] p-10 rounded-lg border border-slate-800 text-center">
           <FileText className="h-12 w-12 text-slate-600 mx-auto mb-4" />
