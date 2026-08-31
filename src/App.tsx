@@ -20,6 +20,7 @@ import RedefinirSenha from './pages/RedefinirSenha';
 import Termos from './pages/Termos';
 import Privacidade from './pages/Privacidade';
 import Recorrencias from './pages/Recorrencias';
+import Dre from './pages/Dre'; // ✅ NOVO: Import do DRE
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token');
@@ -69,7 +70,8 @@ export default function App() {
             <Route path="configuracoes" element={<Configuracoes />} />
             <Route path="admin" element={<Admin />} />
             <Route path="admin/metrics" element={<AdminMetrics />} />
-            <Route path="recorrencias" element={<Recorrencias />} />
+            <Route path="recorrencias" element={<Recorrencias />} /> {/* ✅ MANTIDO */}
+            <Route path="dre" element={<Dre />} /> {/* ✅ NOVO: Rota do DRE */}
           </Route>
         </Routes>
       </FeatureFlagsProvider>

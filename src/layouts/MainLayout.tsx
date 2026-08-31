@@ -15,7 +15,8 @@ import {
   X,
   BarChart3,
   Activity,
-  Repeat, // ✅ Ícone adicionado para Recorrências
+  Repeat,
+  Calculator, // ✅ NOVO: Ícone para o DRE
 } from 'lucide-react';
 import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
@@ -27,10 +28,11 @@ const linksBase = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/app/analytics', label: 'Analytics', icon: TrendingUp },
   { to: '/app/financeiro', label: 'Financeiro', icon: DollarSign },
-  { to: '/app/recorrencias', label: 'Recorrências', icon: Repeat }, // ✅ LINK ADICIONADO AQUI
+  { to: '/app/recorrencias', label: 'Recorrências', icon: Repeat }, // ✅ MANTIDO
   { to: '/app/vendas', label: 'Vendas', icon: ShoppingBag },
   { to: '/app/precificacao', label: 'Precificação', icon: ChefHat },
   { to: '/app/clientes', label: 'Clientes', icon: Users },
+  { to: '/app/dre', label: 'DRE', icon: Calculator }, // ✅ NOVO: Link do DRE
   { to: '/app/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
@@ -108,7 +110,7 @@ export default function MainLayout() {
               to={to}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                 location.pathname === to
-                  ? 'bg-cyan-600 text-white' // ✅ Ajustado para Cyan (cor do IonFinance) em vez de blue
+                  ? 'bg-cyan-600 text-white'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
