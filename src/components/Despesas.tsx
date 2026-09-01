@@ -18,7 +18,7 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
   const [despesas, setDespesas] = useState<any[]>([]);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [filtroMes, setFiltroMes] = useState('');
-  const [tipoLancamento, setTipoLancamento] = useState<'despesa' | 'receita'>('despesa'); // ← novo estado
+  const [tipoLancamento, setTipoLancamento] = useState<'despesa' | 'receita'>('despesa');
 
   const podePessoal = plano === 'pro' || plano === 'premium';
   const tipo = modoAtivo;
@@ -41,15 +41,18 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
       alert('Preencha descrição, valor e data!');
       return;
     }
+    
+    // ✅ CORREÇÃO: Enviar 'ambito' e 'tipo' em maiúsculo, alinhado com o Backend
     const payload = {
       descricao,
       categoria,
       valor: Number(valor),
       formaPagamento,
       data,
-      pessoal: tipo === 'pessoal',
-      tipo: tipoLancamento,    // ← envia o tipo
+      ambito: tipo === 'pessoal' ? 'PESSOAL' : 'EMPRESA',
+      tipo: tipoLancamento === 'receita' ? 'RECEITA' : 'DESPESA',
     };
+
     try {
       if (editandoId !== null) {
         await api.patch(`/despesas/${editandoId}`, payload);
@@ -63,7 +66,7 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
       await carregarDespesas();
       if (onChange) onChange();
     } catch (error) {
-      alert('Erro ao salvar despesa.');
+      alert('Erro ao salvar lançamento.');
     }
   }
 
@@ -80,8 +83,10 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
     setData(despesa.data?.slice(0, 10) ?? '');
     setFormaPagamento(despesa.formaPagamento ?? 'Pix');
     setEditandoId(despesa.id);
-    if (despesa.pessoal) {
-      setTipoLancamento(despesa.tipo === 'receita' ? 'receita' : 'despesa');
+    
+    // ✅ CORREÇÃO: Ler 'ambito' e 'tipo' do objeto retornado pelo backend
+    if (despesa.ambito === 'PESSOAL') {
+      setTipoLancamento(despesa.tipo === 'RECEITA' ? 'receita' : 'despesa');
     }
   }
 
@@ -125,7 +130,7 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
               tipo === 'pessoal' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-gray-400 hover:text-white'
             } ${!podePessoal ? 'opacity-50 cursor-not-allowed' : ''}`}
-            title={!podePessoal ? 'Disponível nos planos Pro e Premium' : 'Despesas pessoais'}>
+            title={!podePessoal ? 'Disponível nos planos Pro e Premium' : 'Lançamentos pessoais'}>
             <User size={16} /> Pessoal
           </button>
         </div>
@@ -154,7 +159,7 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
       {/* Formulário */}
       <div className="bg-gray-900 rounded-xl p-3 border border-gray-800">
         <h3 className="text-sm font-semibold text-white mb-2">
-          {editandoId ? '✏ Editar' : `➕ Nova ${tipo === 'pessoal' ? (tipoLancamento === 'receita' ? 'Receita' : 'Despesa') + ' Pessoal' : 'Despesa Empresarial'}`}
+          {editandoId ? '✏ Editar' : `➕ Novo Lançamento ${tipo === 'pessoal' ? (tipoLancamento === 'receita' ? 'Receita' : 'Despesa') + ' Pessoal' : 'Empresarial'}`}
         </h3>
         <div className="flex flex-wrap items-end gap-2">
           <input type="text" placeholder="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)}
@@ -205,12 +210,14 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-xs font-semibold text-white truncate">{item.descricao}</p>
+                  
+                  {/* ✅ CORREÇÃO: Ler 'ambito' e 'tipo' para exibir a badge correta */}
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                    item.pessoal
-                      ? (item.tipo === 'receita' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-purple-500/20 text-purple-400')
+                    item.ambito === 'PESSOAL'
+                      ? (item.tipo === 'RECEITA' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-purple-500/20 text-purple-400')
                       : 'bg-blue-500/20 text-blue-400'
                   }`}>
-                    {item.pessoal ? (item.tipo === 'receita' ? 'Receita' : 'Pessoal') : 'Empresa'}
+                    {item.ambito === 'PESSOAL' ? (item.tipo === 'RECEITA' ? 'Receita' : 'Pessoal') : 'Empresa'}
                   </span>
                 </div>
                 <p className="text-[10px] text-gray-400 mt-0.5">
@@ -219,9 +226,9 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
               </div>
               <div className="flex items-center gap-2">
                 <p className={`text-xs font-bold whitespace-nowrap ${
-                  item.tipo === 'receita' ? 'text-emerald-400' : 'text-red-400'
+                  item.tipo === 'RECEITA' ? 'text-emerald-400' : 'text-red-400'
                 }`}>
-                  {item.tipo === 'receita' ? '+' : '-'} R$ {Number(item.valor).toFixed(2)}
+                  {item.tipo === 'RECEITA' ? '+' : '-'} R$ {Number(item.valor).toFixed(2)}
                 </p>
                 <button onClick={() => editarDespesa(item)}
                   className="p-1 rounded bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 transition-colors">
