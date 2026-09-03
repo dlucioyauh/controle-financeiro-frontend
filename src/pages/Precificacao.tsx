@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../api';
 import Tooltip from '../components/Tooltip';
 import { useUnitConverter } from '../hooks/useUnitConverter';
-import { ChefHat, Plus, Pencil, Trash2, HelpCircle } from 'lucide-react';
+import { ChefHat, Plus, Pencil, Trash2 } from 'lucide-react';
 
 interface Receita {
   id: string;
@@ -125,7 +125,7 @@ export default function Precificacao() {
       {/* Formulário */}
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <h2 className="text-lg font-semibold text-white mb-4">
-          {editandoId ? '️ Editar Receita' : ' Nova Receita'}
+          {editandoId ? '✏️ Editar Receita' : '➕ Nova Receita'}
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
