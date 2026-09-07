@@ -12,8 +12,8 @@ interface Receita {
   unidadeRendimento?: string;
   maoDeObra: number;
   custosFixosPorcentagem: number;
-  custoIngredientes: number;
-  precoVendaFinal: number;
+  custoIngredientes: number | null;
+  precoVendaFinal: number | null;
   ingredientes?: any[];
 }
 
@@ -78,6 +78,7 @@ export default function Precificacao() {
       
       await carregarReceitas();
     } catch (error) {
+      console.error('Erro ao salvar receita:', error);
       alert('Erro ao salvar receita');
     }
   }
@@ -99,6 +100,7 @@ export default function Precificacao() {
       await api.delete(`/receitas/${id}`);
       await carregarReceitas();
     } catch (error) {
+      console.error('Erro ao excluir receita:', error);
       alert('Erro ao excluir receita');
     }
   }
@@ -278,10 +280,10 @@ export default function Precificacao() {
                   Rendimento: <span className="text-white">{receita.rendimento} {receita.unidadeRendimento}</span>
                 </p>
                 <p className="text-gray-400">
-                  Custo Ingredientes: <span className="text-cyan-400">R$ {receita.custoIngredientes.toFixed(2)}</span>
+                  Custo Ingredientes: <span className="text-cyan-400">R$ {Number(receita.custoIngredientes || 0).toFixed(2)}</span>
                 </p>
                 <p className="text-gray-400">
-                  Preço Venda: <span className="text-green-400">R$ {receita.precoVendaFinal.toFixed(2)}</span>
+                  Preço Venda: <span className="text-green-400">R$ {Number(receita.precoVendaFinal || 0).toFixed(2)}</span>
                 </p>
               </div>
             </div>
