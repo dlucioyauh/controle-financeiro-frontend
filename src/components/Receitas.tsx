@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Calculator, Lightbulb, ChefHat, Package } from 'lucide-react';
 import api from '../api';
+import Tooltip from './Tooltip'; // ✅ CORREÇÃO: mesmo diretório
+import { useUnitConverter } from '../hooks/useUnitConverter';
 
 export default function Receitas() {
   const [receitas, setReceitas] = useState<any[]>([]);
@@ -9,7 +11,7 @@ export default function Receitas() {
 
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [rendimento, setRendimento] = useState('');
+  // ✅ REMOVIDO: rendimento (substituído pelo hook)
   const [unidadeRendimento, setUnidadeRendimento] = useState('unidades');
   const [maoDeObra, setMaoDeObra] = useState('');
   const [custosFixosPorcentagem, setCustosFixosPorcentagem] = useState('10');
@@ -25,6 +27,9 @@ export default function Receitas() {
 
   const [margemSugeridaCliente, setMargemSugeridaCliente] = useState('100');
   const [margemSugeridaParceiro, setMargemSugeridaParceiro] = useState('50');
+
+  // ✅ Hook de conversão de unidades para o campo de rendimento
+  const { rawValue: rendimentoRaw, normalizedValue: rendimentoNormalizado, handleChange: handleRendimentoChange } = useUnitConverter('');
 
   async function carregar() {
     try {
@@ -80,9 +85,9 @@ export default function Receitas() {
   const custoIngredientes = ingredientesReceita.reduce((acc, i) => acc + (i.custoTotal || 0), 0);
   const custoFixos = custoIngredientes * (Number(custosFixosPorcentagem) / 100);
   const custoTotal = custoIngredientes + custoFixos + Number(maoDeObra || 0);
-  const custoPorUnidade = rendimento ? custoTotal / Number(rendimento) : 0;
+  const custoPorUnidade = rendimentoNormalizado ? custoTotal / rendimentoNormalizado : 0;
   const isPesoGramas = unidadeRendimento === 'gramas';
-  const custoFatiaPersonalizada = isPesoGramas ? (custoTotal / Number(rendimento || 1)) * Number(pesoFatiaSimulada) : 0;
+  const custoFatiaPersonalizada = isPesoGramas ? (custoTotal / Number(rendimentoNormalizado || 1)) * Number(pesoFatiaSimulada) : 0;
 
   const precoSugeridoClienteInteiro = custoTotal * (1 + Number(margemSugeridaCliente) / 100);
   const precoSugeridoParceiroInteiro = custoTotal * (1 + Number(margemSugeridaParceiro) / 100);
@@ -93,7 +98,7 @@ export default function Receitas() {
   const margemParceiro = precoVendaParceiro ? ((Number(precoVendaParceiro) - custoPorUnidade) / Number(precoVendaParceiro)) * 100 : 0;
 
   async function salvar() {
-    if (!nome || !rendimento) {
+    if (!nome || !rendimentoNormalizado) {
       alert('Preencha nome e rendimento!');
       return;
     }
@@ -101,7 +106,7 @@ export default function Receitas() {
     const payload = {
       nome,
       descricao,
-      rendimento: Number(rendimento),
+      rendimento: rendimentoNormalizado,
       unidadeRendimento,
       maoDeObra: Number(maoDeObra || 0),
       custosFixosPorcentagem: Number(custosFixosPorcentagem),
@@ -135,7 +140,7 @@ export default function Receitas() {
   function resetForm() {
     setNome('');
     setDescricao('');
-    setRendimento('');
+    handleRendimentoChange('');
     setUnidadeRendimento('unidades');
     setMaoDeObra('');
     setCustosFixosPorcentagem('10');
@@ -149,7 +154,7 @@ export default function Receitas() {
   function editar(r: any) {
     setNome(r.nome);
     setDescricao(r.descricao || '');
-    setRendimento(String(r.rendimento));
+    handleRendimentoChange(String(r.rendimento));
     setUnidadeRendimento(r.unidadeRendimento || 'unidades');
     setMaoDeObra(String(r.maoDeObra || ''));
     setCustosFixosPorcentagem(String(r.custosFixosPorcentagem || 10));
@@ -184,7 +189,7 @@ export default function Receitas() {
     'bg-gray-800 border border-gray-700 text-white placeholder-gray-500 p-3 rounded-xl w-full focus:outline-none focus:border-cyan-500 transition-colors text-sm';
 
   return (
-    <div className="space-y-8 w-full"> {/* ALTERADO: Removido max-w-7xl mx-auto para alinhar ao menu */}
+    <div className="space-y-8 w-full">
       {!showForm && (
         <button
           onClick={() => setShowForm(true)}
@@ -207,27 +212,88 @@ export default function Receitas() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <input type="text" placeholder="Nome da receita" value={nome} onChange={(e) => setNome(e.target.value)} className={inputClass} />
-            <input type="text" placeholder="Descrição (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} className={inputClass} />
-            <input type="number" placeholder="Rendimento (ex: 10)" value={rendimento} onChange={(e) => setRendimento(e.target.value)} className={inputClass} />
-            <select value={unidadeRendimento} onChange={(e) => setUnidadeRendimento(e.target.value)} className={inputClass}>
-              <option value="unidades">Unidades</option>
-              <option value="gramas">Gramas</option>
-              <option value="Bolo P">Bolo P</option>
-              <option value="Bolo M">Bolo M</option>
-              <option value="Bolo G">Bolo G</option>
-              <option value="fatias">Fatias</option>
-            </select>
-            <input type="number" placeholder="Mão de obra R$" value={maoDeObra} onChange={(e) => setMaoDeObra(e.target.value)} className={inputClass} />
+            <div>
+              <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
+                Nome da Receita
+                <Tooltip 
+                  text="Nome identificador da receita"
+                  example="Bolo de Chocolate, Brigadeiro Gourmet"
+                />
+              </label>
+              <input type="text" placeholder="Nome da receita" value={nome} onChange={(e) => setNome(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
+                Descrição
+                <Tooltip 
+                  text="Descrição opcional da receita"
+                  example="Bolo de chocolate com cobertura de brigadeiro"
+                />
+              </label>
+              <input type="text" placeholder="Descrição (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
+                Rendimento
+                <Tooltip 
+                  text="Quantidade que esta receita produz. Aceita: 10un, 1kg, 500g"
+                  example="10un (rende 10 unidades), 1kg (rende 1 quilo)"
+                />
+              </label>
+              <input type="text" placeholder="Ex: 10un, 1kg, 500g" value={rendimentoRaw} onChange={(e) => handleRendimentoChange(e.target.value)} className={inputClass} />
+              {rendimentoNormalizado > 0 && (
+                <p className="text-xs text-cyan-400 mt-1">
+                  ✓ Convertido: {rendimentoNormalizado} {unidadeRendimento}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
+                Unidade de Rendimento
+                <Tooltip 
+                  text="Unidade de medida do produto final"
+                  example="unidades, gramas, fatias, bolo P/M/G"
+                />
+              </label>
+              <select value={unidadeRendimento} onChange={(e) => setUnidadeRendimento(e.target.value)} className={inputClass}>
+                <option value="unidades">Unidades</option>
+                <option value="gramas">Gramas</option>
+                <option value="Bolo P">Bolo P</option>
+                <option value="Bolo M">Bolo M</option>
+                <option value="Bolo G">Bolo G</option>
+                <option value="fatias">Fatias</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
+                Mão de Obra (R$)
+                <Tooltip 
+                  text="Custo do tempo gasto para produzir. Calcule: horas trabalhadas × valor da sua hora"
+                  example="Se levou 2h e sua hora vale R$ 25, coloque 50"
+                />
+              </label>
+              <input type="number" placeholder="Mão de obra R$" value={maoDeObra} onChange={(e) => setMaoDeObra(e.target.value)} className={inputClass} />
+            </div>
             <div className="relative">
+              <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
+                % Custos Fixos
+                <Tooltip 
+                  text="Percentual para cobrir custos fixos (água, luz, aluguel, equipamentos). Recomendado: 10% a 20%"
+                  example="10 (para 10%)"
+                />
+              </label>
               <input type="number" placeholder="% Custos fixos" value={custosFixosPorcentagem} onChange={(e) => setCustosFixosPorcentagem(e.target.value)} className={inputClass} />
-              <span className="absolute right-3 top-3.5 text-gray-400">%</span>
+              <span className="absolute right-3 top-9 text-gray-400">%</span>
             </div>
           </div>
 
           <div className="bg-gray-800/30 p-4 rounded-xl border border-gray-700/50">
             <h4 className="text-white font-medium mb-3 flex items-center gap-2">
               <Package size={16} className="text-cyan-400" /> Ingredientes da Receita
+              <Tooltip 
+                text="Adicione os ingredientes usados nesta receita"
+                example="Selecione o ingrediente e a quantidade usada"
+              />
             </h4>
             <div className="flex flex-col sm:flex-row gap-2 mb-4">
               <select value={ingSelecionado} onChange={(e) => setIngSelecionado(e.target.value)} className="flex-1 bg-gray-800 border border-gray-700 text-white p-3 rounded-xl text-sm focus:border-cyan-500 focus:outline-none">
@@ -276,11 +342,11 @@ export default function Receitas() {
                 <div className="flex justify-between text-white font-bold border-t border-gray-700 pt-3 mt-3 text-base">
                   <span>Custo Total da Receita</span><span className="text-amber-400">R$ {custoTotal.toFixed(2)}</span>
                 </div>
-                {rendimento && (
+                {rendimentoNormalizado && (
                   <div className="border-t border-gray-700/50 pt-3 mt-3 space-y-2">
                     {isPesoGramas ? (
                       <>
-                        <div className="flex justify-between text-sky-400"><span>Custo 100g</span><span>R$ {((custoTotal / Number(rendimento)) * 100).toFixed(2)}</span></div>
+                        <div className="flex justify-between text-sky-400"><span>Custo 100g</span><span>R$ {((custoTotal / Number(rendimentoNormalizado)) * 100).toFixed(2)}</span></div>
                         <div className="flex justify-between items-center gap-4 text-blue-400 font-bold bg-[#0f172a] p-3 rounded-lg border border-gray-700">
                           <span>Fatia de</span>
                           <input type="number" value={pesoFatiaSimulada} onChange={(e) => setPesoFatiaSimulada(e.target.value)} className="w-16 bg-gray-800 border border-gray-600 rounded text-center text-white text-sm p-1 focus:border-cyan-500 focus:outline-none" />
@@ -325,7 +391,7 @@ export default function Receitas() {
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-gray-400">{isPesoGramas ? `p/ Fatia (${pesoFatiaSimulada}g):` : 'p/ Unidade:'}</span>
                       <span className="text-base font-bold text-emerald-400">
-                        R$ {isPesoGramas ? ((custoTotal / Number(rendimento)) * Number(pesoFatiaSimulada) * (1 + Number(margemSugeridaCliente) / 100)).toFixed(2) : precoSugeridoClienteUnitario.toFixed(2)}
+                        R$ {isPesoGramas ? ((custoTotal / Number(rendimentoNormalizado)) * Number(pesoFatiaSimulada) * (1 + Number(margemSugeridaCliente) / 100)).toFixed(2) : precoSugeridoClienteUnitario.toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -339,7 +405,7 @@ export default function Receitas() {
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-gray-400">{isPesoGramas ? `p/ Fatia (${pesoFatiaSimulada}g):` : 'p/ Unidade:'}</span>
                       <span className="text-base font-bold text-blue-400">
-                        R$ {isPesoGramas ? ((custoTotal / Number(rendimento)) * Number(pesoFatiaSimulada) * (1 + Number(margemSugeridaParceiro) / 100)).toFixed(2) : precoSugeridoParceiroUnitario.toFixed(2)}
+                        R$ {isPesoGramas ? ((custoTotal / Number(rendimentoNormalizado)) * Number(pesoFatiaSimulada) * (1 + Number(margemSugeridaParceiro) / 100)).toFixed(2) : precoSugeridoParceiroUnitario.toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -353,7 +419,13 @@ export default function Receitas() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-gray-400 text-sm mb-1.5 block font-medium">Preço Comercial Cliente Final (R$)</label>
+              <label className="text-gray-400 text-sm mb-1.5 block font-medium">
+                Preço Comercial Cliente Final (R$)
+                <Tooltip 
+                  text="Preço de venda para o cliente final"
+                  example="Se o custo é R$ 10 e quer 100% de margem, coloque 20"
+                />
+              </label>
               <input type="number" value={precoVendaFinal} onChange={(e) => setPrecoVendaFinal(e.target.value)} className={inputClass} />
               {precoVendaFinal && (
                 <p className={`text-xs mt-1.5 font-medium ${margemFinal > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -362,7 +434,13 @@ export default function Receitas() {
               )}
             </div>
             <div>
-              <label className="text-gray-400 text-sm mb-1.5 block font-medium">Preço Comercial Parceiro/Café (R$)</label>
+              <label className="text-gray-400 text-sm mb-1.5 block font-medium">
+                Preço Comercial Parceiro/Café (R$)
+                <Tooltip 
+                  text="Preço de venda para parceiros ou cafés"
+                  example="Geralmente menor que o preço ao cliente final"
+                />
+              </label>
               <input type="number" value={precoVendaParceiro} onChange={(e) => setPrecoVendaParceiro(e.target.value)} className={inputClass} />
               {precoVendaParceiro && (
                 <p className={`text-xs mt-1.5 font-medium ${margemParceiro > 0 ? 'text-emerald-400' : 'text-red-400'}`}>

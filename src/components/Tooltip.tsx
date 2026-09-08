@@ -46,7 +46,7 @@ export default function Tooltip({
           <p className="text-xs text-gray-200 leading-relaxed">{text}</p>
           {example && (
             <p className="text-[10px] text-cyan-400 mt-2 italic border-t border-gray-700 pt-2">
-               Ex: {example}
+              Ex: {example}
             </p>
           )}
           <div className={`absolute w-2 h-2 bg-gray-800 border-gray-700 rotate-45 ${arrowClasses[position]}`}></div>

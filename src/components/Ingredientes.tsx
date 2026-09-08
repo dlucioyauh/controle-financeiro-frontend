@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Package } from 'lucide-react';
 import api from '../api';
+import Tooltip from './Tooltip'; // ✅ CORREÇÃO: mesmo diretório
+import { useUnitConverter } from '../hooks/useUnitConverter';
 
 const unidades = ['kg', 'g', 'litro', 'ml', 'un', 'unidades'];
 
@@ -8,9 +10,12 @@ export default function Ingredientes() {
   const [ingredientes, setIngredientes] = useState<any[]>([]);
   const [nome, setNome] = useState('');
   const [precoCompra, setPrecoCompra] = useState('');
-  const [quantidadeCompra, setQuantidadeCompra] = useState('1');
+  // ✅ REMOVIDO: quantidadeCompra (substituído pelo hook)
   const [unidadeMedida, setUnidadeMedida] = useState('kg');
   const [editandoId, setEditandoId] = useState<number | null>(null);
+
+  // ✅ Hook de conversão de unidades
+  const { rawValue: quantidadeRaw, normalizedValue: quantidadeNormalizada, handleChange: handleQuantidadeChange } = useUnitConverter('1');
 
   async function carregar() {
     try {
@@ -24,13 +29,13 @@ export default function Ingredientes() {
   function resetForm() {
     setNome('');
     setPrecoCompra('');
-    setQuantidadeCompra('1');
+    handleQuantidadeChange('1');
     setUnidadeMedida('kg');
     setEditandoId(null);
   }
 
   async function salvar() {
-    if (!nome || !precoCompra || !quantidadeCompra) {
+    if (!nome || !precoCompra || !quantidadeNormalizada) {
       alert('Preencha os campos obrigatórios (Nome, Preço e Quantidade)!');
       return;
     }
@@ -38,7 +43,7 @@ export default function Ingredientes() {
     const payload = {
       nome: nome.trim(),
       precoCompra: Number(String(precoCompra).replace(',', '.')),
-      quantidadeCompra: Number(String(quantidadeCompra).replace(',', '.')),
+      quantidadeCompra: quantidadeNormalizada,
       unidadeMedida: (unidadeMedida || 'kg').toLowerCase().trim(),
     };
 
@@ -68,7 +73,7 @@ export default function Ingredientes() {
   function editar(i: any) {
     setNome(i.nome);
     setPrecoCompra(String(i.precoCompra ?? i.preco ?? ''));
-    setQuantidadeCompra(String(i.quantidadeCompra ?? '1'));
+    handleQuantidadeChange(String(i.quantidadeCompra ?? '1'));
     setUnidadeMedida(i.unidadeMedida ?? i.unidade ?? 'kg');
     setEditandoId(i.id);
   }
@@ -95,25 +100,54 @@ export default function Ingredientes() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">Nome</label>
+            <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
+              Nome
+              <Tooltip 
+                text="Nome do ingrediente comprado"
+                example="Chocolate, Farinha, Leite"
+              />
+            </label>
             <input type="text" placeholder="Ex: Chocolate, Farinha"
               value={nome} onChange={(e) => setNome(e.target.value)}
               className={inputClass} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">Preço de Compra (R$)</label>
+            <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
+              Preço de Compra (R$)
+              <Tooltip 
+                text="Valor total pago na compra deste ingrediente"
+                example="Se pagou R$ 15,00 no pacote, coloque 15"
+              />
+            </label>
             <input type="text" placeholder="0.00"
               value={precoCompra} onChange={(e) => setPrecoCompra(e.target.value)}
               className={inputClass} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">Qtd. Embalagem</label>
-            <input type="text" placeholder="Ex: 1, 500"
-              value={quantidadeCompra} onChange={(e) => setQuantidadeCompra(e.target.value)}
+            <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
+              Qtd. Embalagem
+              <Tooltip 
+                text="Quantidade comprada. Aceita: 500g, 1kg, 1L, 500ml"
+                example="500g (meio quilo), 1kg (um quilo), 1L (um litro)"
+              />
+            </label>
+            <input type="text" placeholder="Ex: 500g, 1kg, 1L"
+              value={quantidadeRaw} onChange={(e) => handleQuantidadeChange(e.target.value)}
               className={inputClass} />
+            {quantidadeNormalizada > 0 && quantidadeNormalizada !== Number(quantidadeRaw) && (
+              <p className="text-xs text-cyan-400 mt-1">
+                ✓ Convertido: {quantidadeNormalizada} {unidadeMedida}
+              </p>
+            )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">Unidade de Medida</label>
+            <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
+              Unidade de Medida
+              <Tooltip 
+                text="Unidade de medida da embalagem comprada"
+                example="kg (quilos), g (gramas), L (litros), un (unidades)"
+              />
+            </label>
             <select value={unidadeMedida} onChange={(e) => setUnidadeMedida(e.target.value)} className={inputClass}>
               {unidades.map((u) => (
                 <option key={u} value={u}>{u}</option>
@@ -125,7 +159,7 @@ export default function Ingredientes() {
         <div className="flex gap-3 mt-6 pt-4 border-t border-gray-800">
           <button 
             onClick={salvar} 
-            disabled={!nome || !precoCompra || !quantidadeCompra}
+            disabled={!nome || !precoCompra || !quantidadeNormalizada}
             className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-medium text-sm transition-all active:scale-95"
           >
             <Plus size={16} />
