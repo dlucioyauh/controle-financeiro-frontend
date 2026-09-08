@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Briefcase, User, ArrowDown, ArrowUp } from 'lucide-react';
 import api from '../api';
+import Tooltip from './Tooltip';
 
 interface DespesasProps {
   onChange?: () => void;
@@ -42,7 +43,6 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
       return;
     }
     
-    // ✅ CORREÇÃO: Enviar 'ambito' e 'tipo' em maiúsculo, alinhado com o Backend
     const payload = {
       descricao,
       categoria,
@@ -84,7 +84,6 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
     setFormaPagamento(despesa.formaPagamento ?? 'Pix');
     setEditandoId(despesa.id);
     
-    // ✅ CORREÇÃO: Ler 'ambito' e 'tipo' do objeto retornado pelo backend
     if (despesa.ambito === 'PESSOAL') {
       setTipoLancamento(despesa.tipo === 'RECEITA' ? 'receita' : 'despesa');
     }
@@ -125,6 +124,10 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
               tipo === 'empresa' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-400 hover:text-white'
             }`}>
             <Briefcase size={16} /> Empresa
+            <Tooltip 
+              text="Lançamentos relacionados ao seu negócio/empresa"
+              example="Fornecedores, marketing, aluguel comercial"
+            />
           </button>
           <button onClick={() => alternarModo('pessoal')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
@@ -132,6 +135,10 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
             } ${!podePessoal ? 'opacity-50 cursor-not-allowed' : ''}`}
             title={!podePessoal ? 'Disponível nos planos Pro e Premium' : 'Lançamentos pessoais'}>
             <User size={16} /> Pessoal
+            <Tooltip 
+              text="Lançamentos pessoais (disponível nos planos Pro e Premium)"
+              example="Salário, alimentação, lazer"
+            />
           </button>
         </div>
       </div>
@@ -145,12 +152,20 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
                 tipoLancamento === 'despesa' ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'text-gray-400 hover:text-white'
               }`}>
               <ArrowDown size={16} /> Despesa
+              <Tooltip 
+                text="Dinheiro que saiu (gastos)"
+                example="Aluguel, mercado, contas"
+              />
             </button>
             <button onClick={() => alternarTipoLancamento('receita')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
                 tipoLancamento === 'receita' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-gray-400 hover:text-white'
               }`}>
               <ArrowUp size={16} /> Receita
+              <Tooltip 
+                text="Dinheiro que entrou (ganhos)"
+                example="Salário, freelance, vendas"
+              />
             </button>
           </div>
         </div>
@@ -162,28 +177,78 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
           {editandoId ? '✏ Editar' : `➕ Novo Lançamento ${tipo === 'pessoal' ? (tipoLancamento === 'receita' ? 'Receita' : 'Despesa') + ' Pessoal' : 'Empresarial'}`}
         </h3>
         <div className="flex flex-wrap items-end gap-2">
-          <input type="text" placeholder="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)}
-            className={`${inputCompacto} flex-[2] min-w-[130px]`} />
-          <input type="number" placeholder="Valor" value={valor} onChange={(e) => setValor(e.target.value)}
-            className={`${inputCompacto} flex-1 min-w-[90px]`} />
-          <input type="date" value={data} onChange={(e) => setData(e.target.value)}
-            className={`${inputCompacto} flex-1 min-w-[110px]`} />
-          <select value={categoria} onChange={(e) => setCategoria(e.target.value)}
-            className={`${inputCompacto} flex-1 min-w-[100px]`}>
-            {(tipo === 'pessoal'
-              ? (tipoLancamento === 'receita' ? categoriasPessoalReceita : categoriasPessoalDespesa)
-              : categoriasEmpresa
-            ).map(cat => <option key={cat} value={cat}>{cat}</option>)}
-          </select>
-          <select value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value)}
-            className={`${inputCompacto} flex-1 min-w-[100px]`}>
-            <option value="Pix">Pix</option>
-            <option value="Cartão de Crédito">Cartão de Crédito</option>
-            <option value="Cartão de Débito">Cartão de Débito</option>
-            <option value="Dinheiro">Dinheiro</option>
-            <option value="Boleto">Boleto</option>
-            <option value="Transferência">Transferência</option>
-          </select>
+          <div className="flex-[2] min-w-[130px]">
+            <label className="block text-[10px] text-gray-400 mb-1">
+              Descrição
+              <Tooltip 
+                text="Nome do lançamento para identificação"
+                example="Aluguel, Salário, Mercado"
+              />
+            </label>
+            <input type="text" placeholder="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)}
+              className={inputCompacto} />
+          </div>
+          
+          <div className="flex-1 min-w-[90px]">
+            <label className="block text-[10px] text-gray-400 mb-1">
+              Valor (R$)
+              <Tooltip 
+                text="Valor do lançamento em reais"
+                example="150,00 ou 150.00"
+              />
+            </label>
+            <input type="number" placeholder="Valor" value={valor} onChange={(e) => setValor(e.target.value)}
+              className={inputCompacto} />
+          </div>
+          
+          <div className="flex-1 min-w-[110px]">
+            <label className="block text-[10px] text-gray-400 mb-1">
+              Data
+              <Tooltip 
+                text="Data do lançamento"
+                example="31/08/2026"
+              />
+            </label>
+            <input type="date" value={data} onChange={(e) => setData(e.target.value)}
+              className={inputCompacto} />
+          </div>
+          
+          <div className="flex-1 min-w-[100px]">
+            <label className="block text-[10px] text-gray-400 mb-1">
+              Categoria
+              <Tooltip 
+                text="Classificação do lançamento para relatórios"
+                example="Moradia, Alimentação, Fornecedor"
+              />
+            </label>
+            <select value={categoria} onChange={(e) => setCategoria(e.target.value)}
+              className={inputCompacto}>
+              {(tipo === 'pessoal'
+                ? (tipoLancamento === 'receita' ? categoriasPessoalReceita : categoriasPessoalDespesa)
+                : categoriasEmpresa
+              ).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            </select>
+          </div>
+          
+          <div className="flex-1 min-w-[100px]">
+            <label className="block text-[10px] text-gray-400 mb-1">
+              Forma de Pagamento
+              <Tooltip 
+                text="Como o pagamento foi realizado"
+                example="Pix, Cartão, Dinheiro"
+              />
+            </label>
+            <select value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value)}
+              className={inputCompacto}>
+              <option value="Pix">Pix</option>
+              <option value="Cartão de Crédito">Cartão de Crédito</option>
+              <option value="Cartão de Débito">Cartão de Débito</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Boleto">Boleto</option>
+              <option value="Transferência">Transferência</option>
+            </select>
+          </div>
+          
           <button onClick={salvarDespesa} disabled={!descricao || !valor || !data}
             className={`flex items-center gap-1 ${
               tipo === 'pessoal' ? (tipoLancamento === 'receita' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-purple-600 hover:bg-purple-700') : 'bg-blue-600 hover:bg-blue-700'
@@ -197,10 +262,19 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
       <div className="bg-gray-900 rounded-xl p-3 border border-gray-800">
         <div className="flex items-center gap-3 mb-2">
           <h3 className="text-sm font-semibold text-white">Lançamentos</h3>
-          <input type="month" value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}
-            className="bg-gray-800 border border-gray-700 text-white p-1 rounded-lg text-xs focus:outline-none focus:border-blue-500" />
+          <div className="flex-1">
+            <label className="block text-[10px] text-gray-400 mb-1">
+              Filtrar por mês
+              <Tooltip 
+                text="Filtrar lançamentos por mês específico"
+                example="08/2026 (agosto de 2026)"
+              />
+            </label>
+            <input type="month" value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}
+              className="bg-gray-800 border border-gray-700 text-white p-1 rounded-lg text-xs focus:outline-none focus:border-blue-500" />
+          </div>
           {filtroMes && <button onClick={() => setFiltroMes('')}
-            className="text-xs text-gray-400 hover:text-white underline transition-colors">Limpar</button>}
+            className="text-xs text-gray-400 hover:text-white underline transition-colors mt-4">Limpar</button>}
         </div>
 
         <div className="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
@@ -210,8 +284,6 @@ export default function Despesas({ onChange, plano = 'free', modoAtivo = 'empres
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-xs font-semibold text-white truncate">{item.descricao}</p>
-                  
-                  {/* ✅ CORREÇÃO: Ler 'ambito' e 'tipo' para exibir a badge correta */}
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
                     item.ambito === 'PESSOAL'
                       ? (item.tipo === 'RECEITA' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-purple-500/20 text-purple-400')
