@@ -1,6 +1,8 @@
+// PATH: src/pages/Vendas.tsx
 import { useState, useEffect } from 'react';
 import api from '../api';
 import { ShoppingBag, Trash2, Calendar, DollarSign, Plus, RefreshCw, User, Truck, AlertTriangle, MessageCircle } from 'lucide-react';
+import Tooltip from '../components/Tooltip'; // ✅ NOVO: Importação do Tooltip
 
 interface Venda {
   id: string;
@@ -79,7 +81,6 @@ export default function Vendas() {
 
   useEffect(() => { carregarDados(); }, []);
 
-  // Função para gerar e abrir o WhatsApp com o comprovante
   const compartilharComprovante = (venda: Venda, clienteIdParam: string | undefined, clienteNomeParam: string | undefined) => {
     if (!clienteIdParam) {
       alert('Esta venda não está vinculada a um cliente. O comprovante só pode ser enviado para clientes cadastrados com telefone.');
@@ -140,17 +141,13 @@ export default function Vendas() {
 
       await api.post('/vendas', payload);
       
-      // Resetar formulário
       setProduto(''); setQuantidade(1); setPrecoUnitario('');
       setCanalVenda('Balcão'); setDataVenda(hoje);
       setClienteId(''); setClienteNome(''); setFrete(null);
       
-      // Recarregar dados
       await carregarDados();
 
-      // Se havia um cliente com telefone, oferecer o envio do comprovante
       if (clienteId) {
-        // Pequeno timeout para garantir que a UI não trave antes do window.open
         setTimeout(() => {
           const confirmarEnvio = window.confirm('Venda registrada com sucesso! Deseja enviar o comprovante para o cliente no WhatsApp agora?');
           if (confirmarEnvio) {
@@ -224,8 +221,15 @@ export default function Vendas() {
           </div>
 
           <form onSubmit={handleCriarVenda} className="space-y-4 text-xs">
+            {/* ✅ PRODUTO COM TOOLTIP */}
             <div>
-              <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Produto / Item</label>
+              <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide flex items-center gap-1">
+                Produto / Item
+                <Tooltip 
+                  text="Selecione o produto ou receita que está sendo vendido."
+                  example="Bolo de Chocolate, Brigadeiro (cadastre em Precificação)"
+                />
+              </label>
               <select value={produto} onChange={e => setProduto(e.target.value)}
                 className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-cyan-500/50 h-10 transition-colors pr-8 appearance-none"
                 style={selectStyle} required>
@@ -236,9 +240,14 @@ export default function Vendas() {
               </select>
             </div>
 
+            {/* ✅ CLIENTE COM TOOLTIP */}
             <div>
-              <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">
+              <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide flex items-center gap-1">
                 Cliente <span className="text-slate-500 normal-case font-normal">(opcional)</span>
+                <Tooltip 
+                  text="Vincular um cliente permite calcular frete e enviar comprovante por WhatsApp."
+                  example="Selecione um cliente cadastrado ou deixe em branco para 'Consumidor Final'"
+                />
               </label>
               <select value={clienteId} onChange={e => {
                 const id = e.target.value;
@@ -256,7 +265,6 @@ export default function Vendas() {
               </select>
             </div>
 
-            {/* Cálculo de Frete */}
             {clienteId && (
               <div>
                 {podeCalcularFrete ? (
@@ -284,21 +292,43 @@ export default function Vendas() {
             )}
 
             <div className="grid grid-cols-2 gap-4">
+              {/* ✅ QUANTIDADE COM TOOLTIP */}
               <div>
-                <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Quantidade</label>
+                <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide flex items-center gap-1">
+                  Quantidade
+                  <Tooltip 
+                    text="Número de unidades do produto que estão sendo vendidas."
+                    example="2 (para dois bolos), 10 (para dez brigadeiros)"
+                  />
+                </label>
                 <input type="number" min="1" value={quantidade} onChange={e => setQuantidade(parseInt(e.target.value) || 1)}
                   className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-cyan-500/50 h-10" required />
               </div>
+              
+              {/* ✅ PREÇO UNITÁRIO COM TOOLTIP */}
               <div>
-                <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Preço Unitário (R$)</label>
+                <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide flex items-center gap-1">
+                  Preço Unitário (R$)
+                  <Tooltip 
+                    text="Valor de venda de APENAS UMA unidade do produto."
+                    example="25,00 (o sistema multiplicará automaticamente pela quantidade)"
+                  />
+                </label>
                 <input type="number" step="0.01" placeholder="0.00" value={precoUnitario} onChange={e => setPrecoUnitario(e.target.value)}
                   className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-cyan-500/50 h-10" required />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
+              {/* ✅ CANAL DE VENDA COM TOOLTIP */}
               <div>
-                <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Canal de Venda</label>
+                <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide flex items-center gap-1">
+                  Canal de Venda
+                  <Tooltip 
+                    text="De onde veio essa venda? Ajuda a identificar quais canais trazem mais lucro."
+                    example="Balcão, Instagram, WhatsApp, iFood"
+                  />
+                </label>
                 <select value={canalVenda} onChange={e => setCanalVenda(e.target.value)}
                   className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-cyan-500/50 h-10 transition-colors pr-8 appearance-none"
                   style={selectStyle}>
@@ -309,8 +339,16 @@ export default function Vendas() {
                   <option value="iFood" className="bg-[#0f172a]">iFood</option>
                 </select>
               </div>
+              
+              {/* ✅ DATA DA VENDA COM TOOLTIP */}
               <div>
-                <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide">Data da Venda</label>
+                <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide flex items-center gap-1">
+                  Data da Venda
+                  <Tooltip 
+                    text="Data em que a venda foi realizada. Pode ser alterada para registrar vendas passadas."
+                    example="Deixe como hoje para vendas atuais"
+                  />
+                </label>
                 <input type="date" value={dataVenda} onChange={e => setDataVenda(e.target.value)}
                   className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-cyan-500/50 h-10" required />
               </div>
