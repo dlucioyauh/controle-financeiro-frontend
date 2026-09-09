@@ -1,8 +1,7 @@
-// PATH: src/pages/Vendas.tsx
 import { useState, useEffect } from 'react';
 import api from '../api';
 import { ShoppingBag, Trash2, Calendar, DollarSign, Plus, RefreshCw, User, Truck, AlertTriangle, MessageCircle } from 'lucide-react';
-import Tooltip from '../components/Tooltip'; // ✅ NOVO: Importação do Tooltip
+import Tooltip from '../components/Tooltip';
 
 interface Venda {
   id: string;
@@ -107,7 +106,7 @@ export default function Vendas() {
 📦 Canal: ${venda.canalVenda}
 🏢 Empresa: ${nomeNegocio}${cnpjFormatado}
 
-🎉 *Obrigado pela sua compra!*`;
+ *Obrigado pela sua compra!*`;
 
     const telefoneLimpo = String(telefone).replace(/\D/g, '');
     const telefoneCompleto = telefoneLimpo.startsWith('55') ? telefoneLimpo : `55${telefoneLimpo}`;
@@ -214,14 +213,14 @@ export default function Vendas() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 h-fit space-y-4">
+        {/* ✅ ID ADICIONADO AQUI */}
+        <div id="tour-vendas-form" className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 h-fit space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
             <ShoppingBag className="h-4 w-4 text-cyan-400" />
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">🛒 Nova Venda</h2>
           </div>
 
           <form onSubmit={handleCriarVenda} className="space-y-4 text-xs">
-            {/* ✅ PRODUTO COM TOOLTIP */}
             <div>
               <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide flex items-center gap-1">
                 Produto / Item
@@ -240,7 +239,6 @@ export default function Vendas() {
               </select>
             </div>
 
-            {/* ✅ CLIENTE COM TOOLTIP */}
             <div>
               <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide flex items-center gap-1">
                 Cliente <span className="text-slate-500 normal-case font-normal">(opcional)</span>
@@ -292,7 +290,6 @@ export default function Vendas() {
             )}
 
             <div className="grid grid-cols-2 gap-4">
-              {/* ✅ QUANTIDADE COM TOOLTIP */}
               <div>
                 <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide flex items-center gap-1">
                   Quantidade
@@ -305,7 +302,6 @@ export default function Vendas() {
                   className="w-full bg-[#1e293b]/40 border border-slate-800 rounded-lg px-3 py-2.5 text-slate-300 focus:outline-none focus:border-cyan-500/50 h-10" required />
               </div>
               
-              {/* ✅ PREÇO UNITÁRIO COM TOOLTIP */}
               <div>
                 <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide flex items-center gap-1">
                   Preço Unitário (R$)
@@ -320,7 +316,6 @@ export default function Vendas() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {/* ✅ CANAL DE VENDA COM TOOLTIP */}
               <div>
                 <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide flex items-center gap-1">
                   Canal de Venda
@@ -340,7 +335,6 @@ export default function Vendas() {
                 </select>
               </div>
               
-              {/* ✅ DATA DA VENDA COM TOOLTIP */}
               <div>
                 <label className="block text-[11px] font-bold text-white mb-1.5 uppercase tracking-wide flex items-center gap-1">
                   Data da Venda
@@ -368,7 +362,6 @@ export default function Vendas() {
           </form>
         </div>
 
-        {/* Histórico */}
         <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 lg:col-span-2 space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
             <DollarSign className="h-4 w-4 text-emerald-400" />
