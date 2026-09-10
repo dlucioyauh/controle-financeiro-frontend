@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Joyride, STATUS } from 'react-joyride'; // ✅ Corrigido: named export
+import { Joyride, STATUS } from 'react-joyride';
 import type { Step } from 'react-joyride';
 import { useOnboarding } from '../contexts/OnboardingContext';
 
@@ -14,6 +14,7 @@ export default function OnboardingTour({ pageKey, steps }: OnboardingTourProps) 
 
   useEffect(() => {
     if (shouldShowTour(pageKey)) {
+      console.log(`🚀 Iniciando tour para a página: ${pageKey}`);
       const timer = setTimeout(() => setRun(true), 800);
       return () => clearTimeout(timer);
     }
@@ -21,8 +22,10 @@ export default function OnboardingTour({ pageKey, steps }: OnboardingTourProps) 
 
   const handleJoyrideCallback = (data: any) => {
     const { status, type } = data;
+    console.log('🎯 Joyride Callback disparado:', { status, type });
     
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED || type === 'tour:end') {
+      console.log(`✅ Tour finalizado ou pulado. Marcando '${pageKey}' como concluído.`);
       setRun(false);
       markStepAsCompleted(pageKey);
     }
