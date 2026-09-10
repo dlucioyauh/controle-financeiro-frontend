@@ -1,84 +1,55 @@
 import { useState, useEffect } from 'react';
-import { Joyride } from 'react-joyride';
+import { Joyride, STATUS } from 'react-joyride';
+import type { Step } from 'react-joyride';
 import { useOnboarding } from '../contexts/OnboardingContext';
 
-const JoyrideComponent = Joyride as any;
+interface OnboardingTourProps {
+  pageKey: 'dashboard' | 'precificacao' | 'vendas' | 'financeiro';
+  steps: Step[];
+}
 
-const steps: any[] = [
-  { target: 'body', content: '👋 Bem-vindo ao IonFinance!', placement: 'center' },
-  { target: '[data-tour="clientes"]', content: '📇 Cadastre seus clientes.', placement: 'bottom' },
-  { target: '[data-tour="precificacao"]', content: '🧑‍🍳 Crie seus produtos.', placement: 'bottom' },
-  { target: '[data-tour="vendas"]', content: '💰 Registre suas vendas.', placement: 'bottom' },
-  { target: '[data-tour="analytics"]', content: '📊 Analise seus resultados.', placement: 'bottom' },
-  { target: '[data-tour="relatorios"]', content: '📄 Exporte relatórios.', placement: 'bottom' },
-];
-
-export default function OnboardingTour() {
-  const { stepsCompleted, markStepCompleted, loading, refreshStatus } = useOnboarding();
+export default function OnboardingTour({ pageKey, steps }: OnboardingTourProps) {
+  const { shouldShowTour, markStepAsCompleted } = useOnboarding();
   const [run, setRun] = useState(false);
 
   useEffect(() => {
-    if (!loading && stepsCompleted.length < steps.length) {
-      setRun(true);
-    } else {
-      setRun(false);
+    if (shouldShowTour(pageKey)) {
+      console.log(`🚀 Iniciando tour para a página: ${pageKey}`);
+      const timer = setTimeout(() => setRun(true), 800);
+      return () => clearTimeout(timer);
     }
-  }, [loading, stepsCompleted]);
+  }, [pageKey, shouldShowTour]);
 
   const handleJoyrideCallback = (data: any) => {
-    console.log('🔥 CALLBACK EXECUTADO!', data);
-    const { status, type, step, action } = data;
-
-    // Salva o passo atual quando o usuário avança
-    if (type === 'step:after' || action === 'next' || action === 'close') {
-      const stepIndex = step?.index;
-      if (stepIndex !== undefined && stepIndex >= 0) {
-        const stepKey = `step_${stepIndex}`;
-        // Marca como concluído e recarrega o status
-        markStepCompleted(stepKey).then(() => {
-          refreshStatus(); // Força recarga após salvar
-        });
-      }
-    }
-
-    if (status === 'finished' || status === 'skipped') {
-      console.log('🏁 Tour finalizado ou pulado.');
+    const { status, type } = data;
+    console.log('🎯 Joyride Callback disparado:', { status, type });
+    
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED || type === 'tour:end') {
+      console.log(`✅ Tour finalizado ou pulado. Marcando '${pageKey}' como concluído.`);
       setRun(false);
-      const lastKey = `step_${steps.length - 1}`;
-      if (!stepsCompleted.includes(lastKey)) {
-        markStepCompleted(lastKey).then(() => {
-          refreshStatus();
-        });
-      }
+      markStepAsCompleted(pageKey);
     }
   };
 
-  if (loading || stepsCompleted.length >= steps.length) return null;
+  if (!run) return null;
 
-  return (
-    <JoyrideComponent
-      steps={steps}
-      run={run}
-      callback={handleJoyrideCallback}
-      continuous
-      showSkipButton
-      showProgress
-      disableOverlayClose
-      disableScrolling
-      styles={{
-        options: {
-          primaryColor: '#0284c7',
-          textColor: '#f8fafc',
-          zIndex: 1000,
-        },
-      }}
-      locale={{
-        back: 'Voltar',
-        close: 'Fechar',
-        last: 'Último',
-        next: 'Próximo',
-        skip: 'Pular',
-      }}
-    />
-  );
+  const joyrideProps = {
+    run,
+    steps,
+    continuous: true,
+    showSkipButton: true,
+    showProgress: true,
+    hideCloseButton: false,
+    disableCloseOnEsc: false,
+    locale: {
+      back: 'Voltar',
+      close: 'Fechar',
+      last: 'Concluir',
+      next: 'Próximo',
+      skip: 'Pular tour',
+    },
+    callback: handleJoyrideCallback,
+  } as any;
+
+  return <Joyride {...joyrideProps} />;
 }

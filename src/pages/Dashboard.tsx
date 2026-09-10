@@ -24,14 +24,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     carregarDados();
-  }, [mesSelecionado]); // Recarrega quando o mês muda
+  }, [mesSelecionado]);
 
   async function carregarDados() {
     setCarregando(true);
     try {
-      // O backend agora filtra, economizando banda e memória do navegador
       const [vendasRes, despesasEmpRes, despesasPessRes, receitasPessRes] = await Promise.all([
-        api.get('/vendas'), // Poderia ser filtrado por mês no backend no futuro
+        api.get('/vendas'),
         api.get('/despesas?pessoal=false'), 
         api.get('/despesas?pessoal=true&tipo=despesa'),
         api.get('/despesas?pessoal=true&tipo=receita'),
@@ -47,7 +46,6 @@ export default function Dashboard() {
     }
   }
 
-  // --- Lógica de Datas ---
   const [ano, mes] = mesSelecionado.split('-').map(Number);
   const inicioMesAtual = new Date(ano, mes - 1, 1);
   const fimMesAtual = new Date(ano, mes, 0);
@@ -59,7 +57,6 @@ export default function Dashboard() {
   const inicioMesAnteriorStr = inicioMesAnterior.toISOString().split('T')[0];
   const fimMesAnteriorStr = fimMesAnterior.toISOString().split('T')[0];
 
-  // --- Filtragem e Cálculos ---
   const filtrarPorMes = (lista: any[], campoData: string) => {
     return lista.filter(item => {
       if (!item[campoData]) return false;
@@ -102,7 +99,6 @@ export default function Dashboard() {
   const saldo = totalEntradas - totalDespesas;
   const ticketMedio = modo === 'empresa' && vendasMesAtual.length > 0 ? totalEntradas / vendasMesAtual.length : 0;
 
-  // --- Top 3 (Produtos ou Categorias) ---
   const top3 = [];
   if (modo === 'empresa') {
     const produtosMap: Record<string, { nome: string; quantidade: number; receita: number }> = {};
@@ -124,7 +120,6 @@ export default function Dashboard() {
     top3.push(...Object.values(categoriasMap).sort((a, b) => b.valor - a.valor).slice(0, 3));
   }
 
-  // --- Gráfico Últimos 7 Dias ---
   const ultimos7Dias = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(fimMesAtual);
     d.setDate(d.getDate() - (6 - i));
@@ -132,7 +127,7 @@ export default function Dashboard() {
   });
 
   const dadosGrafico = ultimos7Dias.map(dia => ({
-    data: dia.slice(5), // MM-DD
+    data: dia.slice(5),
     valor: modo === 'empresa'
       ? vendas.filter(v => v.dataVenda?.split('T')[0] === dia).reduce((acc, v) => acc + Number(v.valorTotal || 0), 0)
       : receitasPessoais.filter(r => r.data?.split('T')[0] === dia).reduce((acc, r) => acc + Number(r.valor), 0)
@@ -140,7 +135,6 @@ export default function Dashboard() {
 
   const temDadosGrafico = dadosGrafico.some(d => d.valor > 0);
 
-  // --- Configuração dos Cards ---
   const cards = [
     {
       titulo: modo === 'empresa' ? 'Faturamento (mês)' : 'Receitas Pessoais',
@@ -201,7 +195,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 text-slate-200">
-      {/* Header e Controles */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f172a] p-4 rounded-lg border border-slate-800">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white">Dashboard {modo === 'pessoal' && '(Pessoal)'}</h1>
@@ -240,8 +233,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Cards de Métricas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {/* ✅ ID ADICIONADO AQUI PARA O TOUR ENCONTRAR OS CARDS */}
+      <div id="tour-dashboard-cards" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {cards.map((card) => {
           const Icon = card.icon;
           return (
@@ -263,7 +256,6 @@ export default function Dashboard() {
         })}
       </div>
 
-      {/* Gráfico + Top 3 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-5 lg:col-span-2">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
@@ -274,7 +266,7 @@ export default function Dashboard() {
           </div>
            <div className="h-56 text-xs flex items-center justify-center">
             {temDadosGrafico ? (
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}> {/* ✅ CORREÇÃO AQUI */}
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <LineChart data={dadosGrafico}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                   <XAxis dataKey="data" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
@@ -320,7 +312,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Últimas Transações */}
       <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-5">
         <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
           <DollarSign className="h-4 w-4 text-emerald-400" />

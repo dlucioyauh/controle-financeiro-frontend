@@ -18,8 +18,8 @@ export default function Precificacao() {
         <p className="text-gray-400 text-sm mt-1">Gerencie ingredientes e calcule o custo das suas receitas</p>
       </div>
 
-      {/* Abas */}
-      <div className="flex gap-2 bg-gray-900 p-1 rounded-xl border border-gray-800 w-fit">
+      {/* ✅ ID ADICIONADO AQUI */}
+      <div id="tour-precificacao-tabs" className="flex gap-2 bg-gray-900 p-1 rounded-xl border border-gray-800 w-fit">
         {abas.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -36,9 +36,11 @@ export default function Precificacao() {
         ))}
       </div>
 
-      {/* Conteúdo */}
-      {aba === 'ingredientes' && <Ingredientes />}
-      {aba === 'receitas' && <Receitas />}
+      {/* ✅ ID ADICIONADO AQUI */}
+      <div id="tour-precificacao-receitas">
+        {aba === 'ingredientes' && <Ingredientes />}
+        {aba === 'receitas' && <Receitas />}
+      </div>
     </div>
   );
 }

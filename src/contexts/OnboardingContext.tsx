@@ -1,61 +1,87 @@
-import { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import type { ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import api from '../api';
 
-interface OnboardingContextType {
+interface OnboardingContextData {
+  completedSteps: Record<string, boolean>;
   stepsCompleted: string[];
-  totalSteps: number;
+  markStepAsCompleted: (step: string) => Promise<void>;
+  shouldShowTour: (step: string) => boolean;
   loading: boolean;
   refreshStatus: () => Promise<void>;
-  markStepCompleted: (stepKey: string) => Promise<void>;
 }
 
-const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
+const OnboardingContext = createContext<OnboardingContextData>({} as OnboardingContextData);
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
-  const [stepsCompleted, setStepsCompleted] = useState<string[]>([]);
-  const [totalSteps] = useState(6);
+  const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
-  const refreshStatus = async () => {
+  const fetchOnboardingStatus = async () => {
+    setLoading(true);
     try {
-      const res = await api.get('/users/onboarding-status');
-      const data = res.data;
-      const completed = Object.keys(data).filter(key => data[key] === true);
-      console.log('📊 Status recarregado:', completed);
-      setStepsCompleted(completed);
+      console.log('🔄 Buscando status do onboarding no backend...');
+      const response = await api.get('/users/onboarding-status');
+      const data = response.data || {};
+      console.log('✅ Status recebido do backend:', data);
+      setCompletedSteps(data);
     } catch (error) {
-      console.error('Erro ao carregar onboarding:', error);
+      console.error('❌ Erro ao buscar status do onboarding:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const markStepCompleted = async (stepKey: string) => {
-    if (stepsCompleted.includes(stepKey)) {
-      console.log('⏭️ Passo já salvo:', stepKey);
-      return;
-    }
-    console.log('📤 Salvando passo:', stepKey);
+  useEffect(() => {
+    fetchOnboardingStatus();
+  }, []);
+
+  const markStepAsCompleted = async (step: string) => {
     try {
-      await api.patch('/users/onboarding-status', { step: stepKey, completed: true });
-      await refreshStatus();
+      console.log(`💾 Salvando passo '${step}' como concluído...`);
+      
+      // 1. Atualiza localmente imediatamente (Optimistic UI)
+      setCompletedSteps((prev) => {
+        const updated = { ...prev, [step]: true };
+        // 2. Salva também no localStorage como fallback de segurança
+        localStorage.setItem(`onboarding_completed_${step}`, 'true');
+        return updated;
+      });
+
+      // 3. Envia para o backend
+      const response = await api.patch('/users/onboarding-status', { step, completed: true });
+      console.log('✅ Resposta do backend ao salvar:', response.data);
     } catch (error) {
-      console.error('❌ Erro ao salvar passo:', error);
+      console.error(`❌ Erro ao marcar passo ${step} como concluído no backend:`, error);
+      // Mesmo se o backend falhar, o localStorage já garantiu que não vai reaparecer no F5
     }
   };
 
-  useEffect(() => {
-    refreshStatus();
-  }, []);
+  const shouldShowTour = (step: string) => {
+    if (loading) return false;
+    
+    // Verifica no estado vindo do backend OU no fallback do localStorage
+    const isCompletedInState = completedSteps[step];
+    const isCompletedInStorage = localStorage.getItem(`onboarding_completed_${step}`) === 'true';
+    
+    const shouldShow = !(isCompletedInState || isCompletedInStorage);
+    console.log(`🔍 shouldShowTour('${step}'): Estado=${isCompletedInState}, Storage=${isCompletedInStorage}, Resultado=${shouldShow}`);
+    
+    return shouldShow;
+  };
 
-  const value = useMemo(
-    () => ({ stepsCompleted, totalSteps, loading, refreshStatus, markStepCompleted }),
-    [stepsCompleted, loading, totalSteps]
-  );
+  const stepsCompletedArray = Object.keys(completedSteps).filter((key) => completedSteps[key]);
 
   return (
-    <OnboardingContext.Provider value={value}>
+    <OnboardingContext.Provider 
+      value={{ 
+        completedSteps, 
+        stepsCompleted: stepsCompletedArray, 
+        markStepAsCompleted, 
+        shouldShowTour, 
+        loading, 
+        refreshStatus: fetchOnboardingStatus 
+      }}
+    >
       {children}
     </OnboardingContext.Provider>
   );
@@ -63,6 +89,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
 export function useOnboarding() {
   const context = useContext(OnboardingContext);
-  if (!context) throw new Error('useOnboarding must be used within OnboardingProvider');
+  if (!context) {
+    throw new Error('useOnboarding must be used within an OnboardingProvider');
+  }
   return context;
 }
