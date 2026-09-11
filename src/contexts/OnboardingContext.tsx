@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import api from '../api';
 
 interface OnboardingContextData {
   completedSteps: Record<string, boolean>;
@@ -19,13 +18,22 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const fetchOnboardingStatus = async () => {
     setLoading(true);
     try {
-      console.log('🔄 Buscando status do onboarding no backend...');
-      const response = await api.get('/users/onboarding-status');
-      const data = response.data || {};
-      console.log('✅ Status recebido do backend:', data);
-      setCompletedSteps(data);
+      console.log('🔄 Carregando status do onboarding do localStorage...');
+      const steps: Record<string, boolean> = {};
+      
+      // Busca todas as chaves de onboarding no localStorage
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('onboarding_completed_')) {
+          const stepName = key.replace('onboarding_completed_', '');
+          steps[stepName] = localStorage.getItem(key) === 'true';
+        }
+      }
+      
+      console.log('✅ Status carregado do localStorage:', steps);
+      setCompletedSteps(steps);
     } catch (error) {
-      console.error('❌ Erro ao buscar status do onboarding:', error);
+      console.error('❌ Erro ao carregar status do onboarding:', error);
     } finally {
       setLoading(false);
     }
@@ -37,29 +45,24 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   const markStepAsCompleted = async (step: string) => {
     try {
-      console.log(`💾 Salvando passo '${step}' como concluído...`);
+      console.log(`💾 Salvando passo '${step}' como concluído no localStorage...`);
       
-      // 1. Atualiza localmente imediatamente (Optimistic UI)
-      setCompletedSteps((prev) => {
-        const updated = { ...prev, [step]: true };
-        // 2. Salva também no localStorage como fallback de segurança
-        localStorage.setItem(`onboarding_completed_${step}`, 'true');
-        return updated;
-      });
-
-      // 3. Envia para o backend
-      const response = await api.patch('/users/onboarding-status', { step, completed: true });
-      console.log('✅ Resposta do backend ao salvar:', response.data);
+      // Salva no localStorage imediatamente
+      localStorage.setItem(`onboarding_completed_${step}`, 'true');
+      
+      // Atualiza o estado local
+      setCompletedSteps((prev) => ({ ...prev, [step]: true }));
+      
+      console.log(`✅ Passo '${step}' salvo com sucesso!`);
     } catch (error) {
-      console.error(`❌ Erro ao marcar passo ${step} como concluído no backend:`, error);
-      // Mesmo se o backend falhar, o localStorage já garantiu que não vai reaparecer no F5
+      console.error(`❌ Erro ao salvar passo ${step}:`, error);
     }
   };
 
   const shouldShowTour = (step: string) => {
     if (loading) return false;
     
-    // Verifica no estado vindo do backend OU no fallback do localStorage
+    // Verifica apenas no localStorage e no estado local
     const isCompletedInState = completedSteps[step];
     const isCompletedInStorage = localStorage.getItem(`onboarding_completed_${step}`) === 'true';
     

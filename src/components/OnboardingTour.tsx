@@ -21,8 +21,10 @@ export default function OnboardingTour({ pageKey, steps }: OnboardingTourProps) 
   }, [pageKey, shouldShowTour]);
 
   const handleJoyrideCallback = (data: any) => {
+    // ✅ NOVO: Log bruto para vermos EXATAMENTE o que o Joyride está enviando
+    console.log('🎯 JOYRIDE EVENTO BRUTO:', { status: data.status, type: data.type, action: data.action });
+    
     const { status, type } = data;
-    console.log('🎯 Joyride Callback disparado:', { status, type });
     
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED || type === 'tour:end') {
       console.log(`✅ Tour finalizado ou pulado. Marcando '${pageKey}' como concluído.`);
