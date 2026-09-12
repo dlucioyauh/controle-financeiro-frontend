@@ -121,9 +121,9 @@ export default function Dashboard() {
     top3.push(...Object.values(categoriasMap).sort((a, b) => b.valor - a.valor).slice(0, 3));
   }
 
-  // ✅ CORREÇÃO: Gerar últimos 7 dias considerando o mês selecionado
+  // ✅ CORREÇÃO: Gerar últimos 7 dias a partir de HOJE, não do fim do mês
   const ultimos7Dias = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(fimMesAtual);
+    const d = new Date(hoje);
     d.setDate(d.getDate() - (6 - i));
     return d.toISOString().split('T')[0];
   });
@@ -133,7 +133,6 @@ export default function Dashboard() {
     valor: modo === 'empresa'
       ? vendas.filter(v => {
           if (!v.dataVenda) return false;
-          // ✅ CORREÇÃO: Comparar apenas a parte da data (YYYY-MM-DD) ignorando timezone
           const dataVenda = v.dataVenda.split('T')[0];
           return dataVenda === dia;
         }).reduce((acc, v) => acc + Number(v.valorTotal || 0), 0)
@@ -144,11 +143,8 @@ export default function Dashboard() {
         }).reduce((acc, r) => acc + Number(r.valor), 0)
   }));
 
-  // ✅ CORREÇÃO: Verificar se há vendas/receitas no mês atual (não apenas nos últimos 7 dias)
   const temDadosNoMes = modo === 'empresa' ? vendasMesAtual.length > 0 : receitasPessoaisMesAtual.length > 0;
   const temDadosGrafico = dadosGrafico.some(d => d.valor > 0);
-  
-  // ✅ CORREÇÃO: Só mostrar Empty State se NÃO houver dados no mês E NÃO houver dados no gráfico
   const mostrarEmptyStateGrafico = !temDadosNoMes && !temDadosGrafico;
 
   const cards = [
