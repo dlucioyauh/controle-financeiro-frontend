@@ -121,6 +121,7 @@ export default function Dashboard() {
     top3.push(...Object.values(categoriasMap).sort((a, b) => b.valor - a.valor).slice(0, 3));
   }
 
+  // ✅ CORREÇÃO: Gerar últimos 7 dias considerando o mês selecionado
   const ultimos7Dias = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(fimMesAtual);
     d.setDate(d.getDate() - (6 - i));
@@ -130,11 +131,25 @@ export default function Dashboard() {
   const dadosGrafico = ultimos7Dias.map(dia => ({
     data: dia.slice(5),
     valor: modo === 'empresa'
-      ? vendas.filter(v => v.dataVenda?.split('T')[0] === dia).reduce((acc, v) => acc + Number(v.valorTotal || 0), 0)
-      : receitasPessoais.filter(r => r.data?.split('T')[0] === dia).reduce((acc, r) => acc + Number(r.valor), 0)
+      ? vendas.filter(v => {
+          if (!v.dataVenda) return false;
+          // ✅ CORREÇÃO: Comparar apenas a parte da data (YYYY-MM-DD) ignorando timezone
+          const dataVenda = v.dataVenda.split('T')[0];
+          return dataVenda === dia;
+        }).reduce((acc, v) => acc + Number(v.valorTotal || 0), 0)
+      : receitasPessoais.filter(r => {
+          if (!r.data) return false;
+          const dataReceita = r.data.split('T')[0];
+          return dataReceita === dia;
+        }).reduce((acc, r) => acc + Number(r.valor), 0)
   }));
 
+  // ✅ CORREÇÃO: Verificar se há vendas/receitas no mês atual (não apenas nos últimos 7 dias)
+  const temDadosNoMes = modo === 'empresa' ? vendasMesAtual.length > 0 : receitasPessoaisMesAtual.length > 0;
   const temDadosGrafico = dadosGrafico.some(d => d.valor > 0);
+  
+  // ✅ CORREÇÃO: Só mostrar Empty State se NÃO houver dados no mês E NÃO houver dados no gráfico
+  const mostrarEmptyStateGrafico = !temDadosNoMes && !temDadosGrafico;
 
   const cards = [
     {
@@ -264,9 +279,17 @@ export default function Dashboard() {
               {modo === 'empresa' ? 'Faturamento — Últimos 7 dias' : 'Receitas Pessoais — Últimos 7 dias'}
             </h2>
           </div>
-          {/* ✅ CORREÇÃO: Altura aumentada para h-64 e padding interno ajustado */}
           <div className="h-64 flex items-center justify-center p-4">
-            {temDadosGrafico ? (
+            {mostrarEmptyStateGrafico ? (
+              <EmptyState
+                icon={<BarChart2 size={32} />}
+                title="Sem dados no período selecionado"
+                description="Comece registrando vendas e despesas para visualizar seu faturamento aqui."
+                actionLabel="Ir para Vendas"
+                actionLink="/app/vendas"
+                className="py-4"
+              />
+            ) : (
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <LineChart data={dadosGrafico}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
@@ -280,15 +303,6 @@ export default function Dashboard() {
                   <Line type="monotone" dataKey="valor" stroke={modo === 'empresa' ? '#06b6d4' : '#a855f7'} strokeWidth={2} dot={{ r: 3, fill: '#0f172a', strokeWidth: 2 }} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
-            ) : (
-              <EmptyState
-                icon={<BarChart2 size={32} />}
-                title="Sem dados no período selecionado"
-                description="Comece registrando vendas e despesas para visualizar seu faturamento aqui."
-                actionLabel="Ir para Vendas"
-                actionLink="/app/vendas"
-                className="py-4"
-              />
             )}
           </div>
         </div>
@@ -335,7 +349,6 @@ export default function Dashboard() {
         <div className="space-y-2">
           {modo === 'empresa' ? (
             vendas.length === 0 ? (
-              /* ✅ CORREÇÃO DE FLUXO: Guia o usuário para Precificação primeiro */
               <EmptyState
                 icon={<Package size={32} />}
                 title="Nenhuma venda registrada ainda"
