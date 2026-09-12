@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, Package } from 'lucide-react';
 import api from '../api';
 import Tooltip from './Tooltip'; // ✅ CORREÇÃO: mesmo diretório
 import { useUnitConverter } from '../hooks/useUnitConverter';
+import EmptyState from './EmptyState';
 
 const unidades = ['kg', 'g', 'litro', 'ml', 'un', 'unidades'];
 
@@ -188,13 +189,19 @@ export default function Ingredientes() {
           </h3>
         </div>
 
-        {ingredientes.length === 0 ? (
-          <div className="text-center py-16 border-2 border-dashed border-gray-700 rounded-xl bg-gray-800/20">
-            <Package size={40} className="mx-auto text-gray-600 mb-3" />
-            <p className="text-gray-400 font-medium">Nenhum ingrediente cadastrado ainda.</p>
-            <p className="text-gray-500 text-sm mt-1">Preencha o formulário acima para adicionar.</p>
-          </div>
-        ) : (
+          {ingredientes.length === 0 ? (
+            <EmptyState
+              icon={<Package size={32} />}
+              title="Nenhum ingrediente cadastrado ainda"
+              description="Cadastre seus ingredientes para começar a calcular o custo das suas receitas com precisão."
+              actionLabel="Cadastrar Primeiro Ingrediente"
+              onAction={() => {
+                const form = document.getElementById('form-ingrediente');
+                form?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                form?.querySelector('input')?.focus();
+              }}
+            />
+          ) : (
           <div className="overflow-x-auto rounded-xl border border-gray-800">
             <table className="w-full text-left text-sm text-gray-300">
               <thead className="text-xs text-gray-400 uppercase bg-gray-900/50 border-b border-gray-800">
