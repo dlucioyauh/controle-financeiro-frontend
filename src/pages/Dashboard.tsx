@@ -264,6 +264,7 @@ export default function Dashboard() {
               {modo === 'empresa' ? 'Faturamento — Últimos 7 dias' : 'Receitas Pessoais — Últimos 7 dias'}
             </h2>
           </div>
+          {/* ✅ CORREÇÃO: Altura aumentada para h-64 e padding interno ajustado */}
           <div className="h-64 flex items-center justify-center p-4">
             {temDadosGrafico ? (
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
@@ -334,6 +335,7 @@ export default function Dashboard() {
         <div className="space-y-2">
           {modo === 'empresa' ? (
             vendas.length === 0 ? (
+              /* ✅ CORREÇÃO DE FLUXO: Guia o usuário para Precificação primeiro */
               <EmptyState
                 icon={<Package size={32} />}
                 title="Nenhuma venda registrada ainda"

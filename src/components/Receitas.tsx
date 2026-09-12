@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Calculator, Lightbulb, ChefHat, Package } from 'lucide-react';
 import api from '../api';
-import Tooltip from './Tooltip'; // ✅ CORREÇÃO: mesmo diretório
+import Tooltip from './Tooltip';
 import { useUnitConverter } from '../hooks/useUnitConverter';
 
 export default function Receitas() {
@@ -11,7 +11,6 @@ export default function Receitas() {
 
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
-  // ✅ REMOVIDO: rendimento (substituído pelo hook)
   const [unidadeRendimento, setUnidadeRendimento] = useState('unidades');
   const [maoDeObra, setMaoDeObra] = useState('');
   const [custosFixosPorcentagem, setCustosFixosPorcentagem] = useState('10');
@@ -23,12 +22,11 @@ export default function Receitas() {
   const [ingSelecionado, setIngSelecionado] = useState('');
   const [ingQuantidade, setIngQuantidade] = useState('');
 
-  const [pesoFatiaSimulada, setPesoFatiaSimulada] = useState('150');
+  const [pesoFatiaSimulada, setPesoFatiaSimulada] = useState('15');
 
   const [margemSugeridaCliente, setMargemSugeridaCliente] = useState('100');
   const [margemSugeridaParceiro, setMargemSugeridaParceiro] = useState('50');
 
-  // ✅ Hook de conversão de unidades para o campo de rendimento
   const { rawValue: rendimentoRaw, normalizedValue: rendimentoNormalizado, handleChange: handleRendimentoChange } = useUnitConverter('');
 
   async function carregar() {
@@ -85,17 +83,26 @@ export default function Receitas() {
   const custoIngredientes = ingredientesReceita.reduce((acc, i) => acc + (i.custoTotal || 0), 0);
   const custoFixos = custoIngredientes * (Number(custosFixosPorcentagem) / 100);
   const custoTotal = custoIngredientes + custoFixos + Number(maoDeObra || 0);
-  const custoPorUnidade = rendimentoNormalizado ? custoTotal / rendimentoNormalizado : 0;
-  const isPesoGramas = unidadeRendimento === 'gramas';
-  const custoFatiaPersonalizada = isPesoGramas ? (custoTotal / Number(rendimentoNormalizado || 1)) * Number(pesoFatiaSimulada) : 0;
+  
+  // ✅ CORREÇÃO: Converter rendimento para gramas quando necessário
+  const rendimentoEmGramas = unidadeRendimento === 'gramas' 
+    ? Number(rendimentoNormalizado) 
+    : unidadeRendimento === 'kg' || unidadeRendimento === 'quilogramas'
+    ? Number(rendimentoNormalizado) * 1000
+    : Number(rendimentoNormalizado);
 
+  const custoPorUnidade = rendimentoEmGramas ? custoTotal / rendimentoEmGramas : 0;
+  const isPesoGramas = unidadeRendimento === 'gramas' || unidadeRendimento === 'kg';
+  const custoFatiaPersonalizada = isPesoGramas ? custoPorUnidade * Number(pesoFatiaSimulada) : 0;
+
+  // ✅ CORREÇÃO: Cálculos de preço sugerido baseados no custo por unidade
   const precoSugeridoClienteInteiro = custoTotal * (1 + Number(margemSugeridaCliente) / 100);
   const precoSugeridoParceiroInteiro = custoTotal * (1 + Number(margemSugeridaParceiro) / 100);
   const precoSugeridoClienteUnitario = custoPorUnidade * (1 + Number(margemSugeridaCliente) / 100);
   const precoSugeridoParceiroUnitario = custoPorUnidade * (1 + Number(margemSugeridaParceiro) / 100);
 
-  const margemFinal = precoVendaFinal ? ((Number(precoVendaFinal) - custoPorUnidade) / Number(precoVendaFinal)) * 100 : 0;
-  const margemParceiro = precoVendaParceiro ? ((Number(precoVendaParceiro) - custoPorUnidade) / Number(precoVendaParceiro)) * 100 : 0;
+  const margemFinal = precoVendaFinal ? ((Number(precoVendaFinal) - custoTotal) / Number(precoVendaFinal)) * 100 : 0;
+  const margemParceiro = precoVendaParceiro ? ((Number(precoVendaParceiro) - custoTotal) / Number(precoVendaParceiro)) * 100 : 0;
 
   async function salvar() {
     if (!nome || !rendimentoNormalizado) {
@@ -185,8 +192,7 @@ export default function Receitas() {
 
   useEffect(() => { carregar(); }, []);
 
-  const inputClass =
-    'bg-gray-800 border border-gray-700 text-white placeholder-gray-500 p-3 rounded-xl w-full focus:outline-none focus:border-cyan-500 transition-colors text-sm';
+  const inputClass = 'bg-gray-800 border border-gray-700 text-white placeholder-gray-500 p-3 rounded-xl w-full focus:outline-none focus:border-cyan-500 transition-colors text-sm';
 
   return (
     <div className="space-y-8 w-full">
@@ -215,30 +221,21 @@ export default function Receitas() {
             <div>
               <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
                 Nome da Receita
-                <Tooltip 
-                  text="Nome identificador da receita"
-                  example="Bolo de Chocolate, Brigadeiro Gourmet"
-                />
+                <Tooltip text="Nome identificador da receita" example="Bolo de Chocolate, Brigadeiro Gourmet" />
               </label>
               <input type="text" placeholder="Nome da receita" value={nome} onChange={(e) => setNome(e.target.value)} className={inputClass} />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
                 Descrição
-                <Tooltip 
-                  text="Descrição opcional da receita"
-                  example="Bolo de chocolate com cobertura de brigadeiro"
-                />
+                <Tooltip text="Descrição opcional da receita" example="Bolo de chocolate com cobertura de brigadeiro" />
               </label>
               <input type="text" placeholder="Descrição (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} className={inputClass} />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
                 Rendimento
-                <Tooltip 
-                  text="Quantidade que esta receita produz. Aceita: 10un, 1kg, 500g"
-                  example="10un (rende 10 unidades), 1kg (rende 1 quilo)"
-                />
+                <Tooltip text="Quantidade que esta receita produz. Aceita: 10un, 1kg, 500g" example="10un (rende 10 unidades), 1kg (rende 1 quilo)" />
               </label>
               <input type="text" placeholder="Ex: 10un, 1kg, 500g" value={rendimentoRaw} onChange={(e) => handleRendimentoChange(e.target.value)} className={inputClass} />
               {rendimentoNormalizado > 0 && (
@@ -250,14 +247,12 @@ export default function Receitas() {
             <div>
               <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
                 Unidade de Rendimento
-                <Tooltip 
-                  text="Unidade de medida do produto final"
-                  example="unidades, gramas, fatias, bolo P/M/G"
-                />
+                <Tooltip text="Unidade de medida do produto final" example="unidades, gramas, fatias, bolo P/M/G" />
               </label>
               <select value={unidadeRendimento} onChange={(e) => setUnidadeRendimento(e.target.value)} className={inputClass}>
                 <option value="unidades">Unidades</option>
                 <option value="gramas">Gramas</option>
+                <option value="kg">Quilogramas (kg)</option>
                 <option value="Bolo P">Bolo P</option>
                 <option value="Bolo M">Bolo M</option>
                 <option value="Bolo G">Bolo G</option>
@@ -267,20 +262,14 @@ export default function Receitas() {
             <div>
               <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
                 Mão de Obra (R$)
-                <Tooltip 
-                  text="Custo do tempo gasto para produzir. Calcule: horas trabalhadas × valor da sua hora"
-                  example="Se levou 2h e sua hora vale R$ 25, coloque 50"
-                />
+                <Tooltip text="Custo do tempo gasto para produzir. Calcule: horas trabalhadas × valor da sua hora" example="Se levou 2h e sua hora vale R$ 25, coloque 50" />
               </label>
               <input type="number" placeholder="Mão de obra R$" value={maoDeObra} onChange={(e) => setMaoDeObra(e.target.value)} className={inputClass} />
             </div>
             <div className="relative">
               <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
                 % Custos Fixos
-                <Tooltip 
-                  text="Percentual para cobrir custos fixos (água, luz, aluguel, equipamentos). Recomendado: 10% a 20%"
-                  example="10 (para 10%)"
-                />
+                <Tooltip text="Percentual para cobrir custos fixos (água, luz, aluguel, equipamentos). Recomendado: 10% a 20%" example="10 (para 10%)" />
               </label>
               <input type="number" placeholder="% Custos fixos" value={custosFixosPorcentagem} onChange={(e) => setCustosFixosPorcentagem(e.target.value)} className={inputClass} />
               <span className="absolute right-3 top-9 text-gray-400">%</span>
@@ -290,10 +279,7 @@ export default function Receitas() {
           <div className="bg-gray-800/30 p-4 rounded-xl border border-gray-700/50">
             <h4 className="text-white font-medium mb-3 flex items-center gap-2">
               <Package size={16} className="text-cyan-400" /> Ingredientes da Receita
-              <Tooltip 
-                text="Adicione os ingredientes usados nesta receita"
-                example="Selecione o ingrediente e a quantidade usada"
-              />
+              <Tooltip text="Adicione os ingredientes usados nesta receita" example="Selecione o ingrediente e a quantidade usada" />
             </h4>
             <div className="flex flex-col sm:flex-row gap-2 mb-4">
               <select value={ingSelecionado} onChange={(e) => setIngSelecionado(e.target.value)} className="flex-1 bg-gray-800 border border-gray-700 text-white p-3 rounded-xl text-sm focus:border-cyan-500 focus:outline-none">
@@ -346,7 +332,7 @@ export default function Receitas() {
                   <div className="border-t border-gray-700/50 pt-3 mt-3 space-y-2">
                     {isPesoGramas ? (
                       <>
-                        <div className="flex justify-between text-sky-400"><span>Custo 100g</span><span>R$ {((custoTotal / Number(rendimentoNormalizado)) * 100).toFixed(2)}</span></div>
+                        <div className="flex justify-between text-sky-400"><span>Custo 100g</span><span>R$ {((custoTotal / rendimentoEmGramas) * 100).toFixed(2)}</span></div>
                         <div className="flex justify-between items-center gap-4 text-blue-400 font-bold bg-[#0f172a] p-3 rounded-lg border border-gray-700">
                           <span>Fatia de</span>
                           <input type="number" value={pesoFatiaSimulada} onChange={(e) => setPesoFatiaSimulada(e.target.value)} className="w-16 bg-gray-800 border border-gray-600 rounded text-center text-white text-sm p-1 focus:border-cyan-500 focus:outline-none" />
@@ -391,7 +377,7 @@ export default function Receitas() {
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-gray-400">{isPesoGramas ? `p/ Fatia (${pesoFatiaSimulada}g):` : 'p/ Unidade:'}</span>
                       <span className="text-base font-bold text-emerald-400">
-                        R$ {isPesoGramas ? ((custoTotal / Number(rendimentoNormalizado)) * Number(pesoFatiaSimulada) * (1 + Number(margemSugeridaCliente) / 100)).toFixed(2) : precoSugeridoClienteUnitario.toFixed(2)}
+                        R$ {isPesoGramas ? (custoFatiaPersonalizada * (1 + Number(margemSugeridaCliente) / 100)).toFixed(2) : precoSugeridoClienteUnitario.toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -405,7 +391,7 @@ export default function Receitas() {
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-gray-400">{isPesoGramas ? `p/ Fatia (${pesoFatiaSimulada}g):` : 'p/ Unidade:'}</span>
                       <span className="text-base font-bold text-blue-400">
-                        R$ {isPesoGramas ? ((custoTotal / Number(rendimentoNormalizado)) * Number(pesoFatiaSimulada) * (1 + Number(margemSugeridaParceiro) / 100)).toFixed(2) : precoSugeridoParceiroUnitario.toFixed(2)}
+                        R$ {isPesoGramas ? (custoFatiaPersonalizada * (1 + Number(margemSugeridaParceiro) / 100)).toFixed(2) : precoSugeridoParceiroUnitario.toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -421,10 +407,7 @@ export default function Receitas() {
             <div>
               <label className="text-gray-400 text-sm mb-1.5 block font-medium">
                 Preço Comercial Cliente Final (R$)
-                <Tooltip 
-                  text="Preço de venda para o cliente final"
-                  example="Se o custo é R$ 10 e quer 100% de margem, coloque 20"
-                />
+                <Tooltip text="Preço de venda para o cliente final" example="Se o custo é R$ 10 e quer 100% de margem, coloque 20" />
               </label>
               <input type="number" value={precoVendaFinal} onChange={(e) => setPrecoVendaFinal(e.target.value)} className={inputClass} />
               {precoVendaFinal && (
@@ -436,10 +419,7 @@ export default function Receitas() {
             <div>
               <label className="text-gray-400 text-sm mb-1.5 block font-medium">
                 Preço Comercial Parceiro/Café (R$)
-                <Tooltip 
-                  text="Preço de venda para parceiros ou cafés"
-                  example="Geralmente menor que o preço ao cliente final"
-                />
+                <Tooltip text="Preço de venda para parceiros ou cafés" example="Geralmente menor que o preço ao cliente final" />
               </label>
               <input type="number" value={precoVendaParceiro} onChange={(e) => setPrecoVendaParceiro(e.target.value)} className={inputClass} />
               {precoVendaParceiro && (
