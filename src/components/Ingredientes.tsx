@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Package } from 'lucide-react';
 import api from '../api';
-import Tooltip from './Tooltip'; // ✅ CORREÇÃO: mesmo diretório
+import Tooltip from './Tooltip';
 import { useUnitConverter } from '../hooks/useUnitConverter';
+import EmptyState from './EmptyState';
 
 const unidades = ['kg', 'g', 'litro', 'ml', 'un', 'unidades'];
 
@@ -10,11 +11,9 @@ export default function Ingredientes() {
   const [ingredientes, setIngredientes] = useState<any[]>([]);
   const [nome, setNome] = useState('');
   const [precoCompra, setPrecoCompra] = useState('');
-  // ✅ REMOVIDO: quantidadeCompra (substituído pelo hook)
   const [unidadeMedida, setUnidadeMedida] = useState('kg');
   const [editandoId, setEditandoId] = useState<number | null>(null);
 
-  // ✅ Hook de conversão de unidades
   const { rawValue: quantidadeRaw, normalizedValue: quantidadeNormalizada, handleChange: handleQuantidadeChange } = useUnitConverter('1');
 
   async function carregar() {
@@ -35,8 +34,9 @@ export default function Ingredientes() {
   }
 
   async function salvar() {
-    if (!nome || !precoCompra || !quantidadeNormalizada) {
-      alert('Preencha os campos obrigatórios (Nome, Preço e Quantidade)!');
+    // ✅ CORREÇÃO: Validação robusta. quantidadeNormalizada > 0 garante que há um valor válido.
+    if (!nome.trim() || !precoCompra || quantidadeNormalizada <= 0) {
+      alert('Preencha os campos obrigatórios (Nome, Preço e Quantidade válida)!');
       return;
     }
 
@@ -85,7 +85,7 @@ export default function Ingredientes() {
   return (
     <div className="space-y-8 w-full">
       {/* Formulário */}
-      <div className="bg-[#0f172a] rounded-2xl p-6 border border-white/10 shadow-xl">
+      <div id="form-ingrediente" className="bg-[#0f172a] rounded-2xl p-6 border border-white/10 shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-6">
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             <Package size={20} className="text-cyan-400" />
@@ -102,10 +102,7 @@ export default function Ingredientes() {
           <div>
             <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
               Nome
-              <Tooltip 
-                text="Nome do ingrediente comprado"
-                example="Chocolate, Farinha, Leite"
-              />
+              <Tooltip text="Nome do ingrediente comprado" example="Chocolate, Farinha, Leite" />
             </label>
             <input type="text" placeholder="Ex: Chocolate, Farinha"
               value={nome} onChange={(e) => setNome(e.target.value)}
@@ -114,10 +111,7 @@ export default function Ingredientes() {
           <div>
             <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
               Preço de Compra (R$)
-              <Tooltip 
-                text="Valor total pago na compra deste ingrediente"
-                example="Se pagou R$ 15,00 no pacote, coloque 15"
-              />
+              <Tooltip text="Valor total pago na compra deste ingrediente" example="Se pagou R$ 15,00 no pacote, coloque 15" />
             </label>
             <input type="text" placeholder="0.00"
               value={precoCompra} onChange={(e) => setPrecoCompra(e.target.value)}
@@ -126,10 +120,7 @@ export default function Ingredientes() {
           <div>
             <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
               Qtd. Embalagem
-              <Tooltip 
-                text="Quantidade comprada. Aceita: 500g, 1kg, 1L, 500ml"
-                example="500g (meio quilo), 1kg (um quilo), 1L (um litro)"
-              />
+              <Tooltip text="Quantidade comprada. Aceita: 500g, 1kg, 1L, 500ml" example="500g (meio quilo), 1kg (um quilo), 1L (um litro)" />
             </label>
             <input type="text" placeholder="Ex: 500g, 1kg, 1L"
               value={quantidadeRaw} onChange={(e) => handleQuantidadeChange(e.target.value)}
@@ -143,36 +134,27 @@ export default function Ingredientes() {
           <div>
             <label className="block text-xs font-medium text-gray-400 uppercase mb-1.5 tracking-wide">
               Unidade de Medida
-              <Tooltip 
-                text="Unidade de medida da embalagem comprada"
-                example="kg (quilos), g (gramas), L (litros), un (unidades)"
-              />
+              <Tooltip text="Unidade de medida da embalagem comprada" example="kg (quilos), g (gramas), L (litros), un (unidades)" />
             </label>
-            <select value={unidadeMedida} onChange={(e) => setUnidadeMedida(e.target.value)} className={inputClass}>
-              {unidades.map((u) => (
+            <select value={unidadeMedida} onChange={(e) => setUnidadeMedida(e.target.value)}
+              className={inputClass}>
+              {unidades.map(u => (
                 <option key={u} value={u}>{u}</option>
               ))}
             </select>
           </div>
         </div>
-        
-        <div className="flex gap-3 mt-6 pt-4 border-t border-gray-800">
-          <button 
-            onClick={salvar} 
-            disabled={!nome || !precoCompra || !quantidadeNormalizada}
-            className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-medium text-sm transition-all active:scale-95"
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={salvar}
+            // ✅ CORREÇÃO: O botão agora habilita corretamente quando quantidadeNormalizada > 0
+            disabled={!nome.trim() || !precoCompra || quantidadeNormalizada <= 0}
+            className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg shadow-cyan-600/20"
           >
-            <Plus size={16} />
+            <Plus size={18} />
             {editandoId ? 'Atualizar Ingrediente' : 'Salvar Ingrediente'}
           </button>
-          {editandoId && (
-            <button 
-              onClick={resetForm}
-              className="px-6 py-3 rounded-xl font-medium text-sm text-gray-400 hover:text-white border border-gray-700 hover:bg-gray-800 transition-colors"
-            >
-              Cancelar
-            </button>
-          )}
         </div>
       </div>
 
@@ -189,11 +171,17 @@ export default function Ingredientes() {
         </div>
 
         {ingredientes.length === 0 ? (
-          <div className="text-center py-16 border-2 border-dashed border-gray-700 rounded-xl bg-gray-800/20">
-            <Package size={40} className="mx-auto text-gray-600 mb-3" />
-            <p className="text-gray-400 font-medium">Nenhum ingrediente cadastrado ainda.</p>
-            <p className="text-gray-500 text-sm mt-1">Preencha o formulário acima para adicionar.</p>
-          </div>
+          <EmptyState
+            icon={<Package size={32} />}
+            title="Nenhum ingrediente cadastrado ainda"
+            description="Cadastre seus ingredientes para começar a calcular o custo das suas receitas com precisão."
+            actionLabel="Cadastrar Primeiro Ingrediente"
+            onAction={() => {
+              const form = document.getElementById('form-ingrediente');
+              form?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              form?.querySelector('input')?.focus();
+            }}
+          />
         ) : (
           <div className="overflow-x-auto rounded-xl border border-gray-800">
             <table className="w-full text-left text-sm text-gray-300">

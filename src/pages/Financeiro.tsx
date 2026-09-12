@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // ✅ Import adicionado para o link de recorrências
+import { Link } from 'react-router-dom';
 import {
   DollarSign, TrendingDown, TrendingUp, Loader2, Calendar, ArrowUpRight, ArrowDownRight,
 } from 'lucide-react';
@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import api from '../api';
 import Despesas from '../components/Despesas';
+import EmptyState from '../components/EmptyState'; // ✅ NOVO IMPORT
 
 const CORES_GRAFICO = ['#06b6d4', '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e', '#14b8a6'];
 
@@ -159,6 +160,13 @@ export default function Financeiro() {
   const categoriasOrdenadas = [...despesasPorCategoria]
     .sort((a, b) => b.value - a.value);
 
+  const scrollToDespesas = () => {
+    const el = document.getElementById('secao-despesas');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   return (
     <div className="space-y-6 text-slate-200 pb-10">
       {/* CABEÇALHO E FILTROS */}
@@ -191,7 +199,7 @@ export default function Financeiro() {
         </div>
       </div>
 
-      {/* ✅ CARD DE DICA DE AUTOMAÇÃO (NOVO) */}
+      {/* CARD DE DICA DE AUTOMAÇÃO */}
       <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-4 flex items-start gap-3">
         <Calendar className="h-5 w-5 text-cyan-400 mt-0.5 flex-shrink-0" />
         <div>
@@ -262,7 +270,13 @@ export default function Financeiro() {
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className="text-xs text-slate-500">Sem movimentações no período.</p>
+                  <EmptyState
+                    icon={<TrendingUp size={32} />}
+                    title="Sem movimentações no período"
+                    description="Adicione suas receitas e despesas para visualizar a evolução do seu saldo aqui."
+                    actionLabel="Adicionar Primeira Movimentação"
+                    onAction={scrollToDespesas}
+                  />
                 )}
               </div>
             </div>
@@ -285,7 +299,11 @@ export default function Financeiro() {
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className="text-xs text-slate-500">Nenhuma despesa no período.</p>
+                  <EmptyState
+                    icon={<DollarSign size={32} />}
+                    title="Nenhuma despesa no período"
+                    description="Registre seus gastos para visualizar a distribuição por categoria."
+                  />
                 )}
               </div>
             </div>
@@ -295,53 +313,58 @@ export default function Financeiro() {
             <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
               <h3 className="text-sm font-bold text-white mb-4">Últimas Movimentações</h3>
               <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
-                <table className="w-full text-xs text-slate-300">
-                  <thead className="text-[10px] text-slate-500 uppercase border-b border-slate-800 sticky top-0 bg-[#0f172a]">
-                    <tr>
-                      <th className="py-2 px-2 text-left">Data</th>
-                      <th className="py-2 px-2 text-left">Tipo</th>
-                      <th className="py-2 px-2 text-left">Descrição</th>
-                      <th className="py-2 px-2 text-right">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/40">
-                    {transacoes.map((t, i) => (
-                      <tr key={i} className="hover:bg-slate-800/20 transition-colors">
-                        <td className="py-1.5 px-2 text-slate-400">
-                          {new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                        </td>
-                        <td className="py-1.5 px-2">
-                          {t.tipo === 'venda' ? (
-                            <span className="inline-flex items-center gap-1 text-emerald-400">
-                              <ArrowUpRight size={10} /> Venda
-                            </span>
-                          ) : t.tipo === 'receita-pessoal' ? (
-                            <span className="inline-flex items-center gap-1 text-emerald-400">
-                              <ArrowUpRight size={10} /> Receita P.
-                            </span>
-                          ) : t.tipo === 'despesa-pessoal' ? (
-                            <span className="inline-flex items-center gap-1 text-purple-400">
-                              <ArrowDownRight size={10} /> Desp. Pessoal
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-red-400">
-                              <ArrowDownRight size={10} /> Desp
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-1.5 px-2 text-white max-w-[120px] truncate">{t.descricao}</td>
-                        <td className={`py-1.5 px-2 text-right font-bold ${t.valor >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                          {t.valor >= 0 ? '+' : ''}{formatarMoeda(Math.abs(t.valor))}
-                        </td>
-                      </tr>
-                    ))}
-                    {transacoes.length === 0 && (
+                {transacoes.length === 0 ? (
+                  <EmptyState
+                    icon={<TrendingUp size={32} />}
+                    title="Nenhuma movimentação registrada"
+                    description="Suas receitas e despesas aparecerão aqui organizadas por data."
+                    actionLabel="Adicionar Primeira Movimentação"
+                    onAction={scrollToDespesas}
+                  />
+                ) : (
+                  <table className="w-full text-xs text-slate-300">
+                    <thead className="text-[10px] text-slate-500 uppercase border-b border-slate-800 sticky top-0 bg-[#0f172a]">
                       <tr>
-                        <td colSpan={4} className="py-8 text-center text-slate-500">Nenhuma movimentação.</td>
+                        <th className="py-2 px-2 text-left">Data</th>
+                        <th className="py-2 px-2 text-left">Tipo</th>
+                        <th className="py-2 px-2 text-left">Descrição</th>
+                        <th className="py-2 px-2 text-right">Valor</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/40">
+                      {transacoes.map((t, i) => (
+                        <tr key={i} className="hover:bg-slate-800/20 transition-colors">
+                          <td className="py-1.5 px-2 text-slate-400">
+                            {new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {t.tipo === 'venda' ? (
+                              <span className="inline-flex items-center gap-1 text-emerald-400">
+                                <ArrowUpRight size={10} /> Venda
+                              </span>
+                            ) : t.tipo === 'receita-pessoal' ? (
+                              <span className="inline-flex items-center gap-1 text-emerald-400">
+                                <ArrowUpRight size={10} /> Receita P.
+                              </span>
+                            ) : t.tipo === 'despesa-pessoal' ? (
+                              <span className="inline-flex items-center gap-1 text-purple-400">
+                                <ArrowDownRight size={10} /> Desp. Pessoal
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-red-400">
+                                <ArrowDownRight size={10} /> Desp
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-1.5 px-2 text-white max-w-[120px] truncate">{t.descricao}</td>
+                          <td className={`py-1.5 px-2 text-right font-bold ${t.valor >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {t.valor >= 0 ? '+' : ''}{formatarMoeda(Math.abs(t.valor))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
 
@@ -373,11 +396,16 @@ export default function Financeiro() {
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 text-center py-4">Nenhum gasto no período.</p>
+                  <EmptyState
+                    icon={<DollarSign size={32} />}
+                    title="Nenhum gasto no período"
+                    description="Registre seus gastos para visualizar o resumo aqui."
+                  />
                 )}
               </div>
 
-              <div className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
+              {/* ✅ ID ADICIONADO AQUI PARA O SCROLL DO EMPTY STATE */}
+              <div id="secao-despesas" className="bg-[#0f172a] p-4 rounded-lg border border-slate-800">
                 <h2 className="text-sm font-bold text-white mb-4">Adicionar / Gerenciar Despesas</h2>
                 <Despesas onChange={carregarDados} plano={plano} modoAtivo={modoExibicao} onToggleModo={setModoExibicao} />
               </div>

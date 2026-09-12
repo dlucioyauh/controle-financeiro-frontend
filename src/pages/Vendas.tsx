@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../api';
 import { ShoppingBag, Trash2, Calendar, DollarSign, Plus, RefreshCw, User, Truck, AlertTriangle, MessageCircle } from 'lucide-react';
 import Tooltip from '../components/Tooltip';
+import EmptyState from '../components/EmptyState';
 
 interface Venda {
   id: string;
@@ -56,6 +57,8 @@ export default function Vendas() {
   const [plano, setPlano] = useState<string>('free');
   const [planoCarregado, setPlanoCarregado] = useState(false);
 
+  const formRef = useRef<HTMLDivElement>(null);
+
   const carregarDados = async () => {
     setLoading(true);
     try {
@@ -98,7 +101,7 @@ export default function Vendas() {
     const nomeNegocio = usuarioPerfil?.nomeNegocio || 'Minha Empresa';
     const cnpjFormatado = usuarioPerfil?.cnpj ? `\n🏢 CNPJ: ${usuarioPerfil.cnpj}` : '';
 
-    const mensagem = `🧾 *Comprovante de Venda* 🧾
+    const mensagem = `🧾 *Comprovante de Venda* 
 📅 Data: ${dataFormatada}
 👤 Cliente: ${clienteNomeParam || 'Cliente'}
 🛒 Produto(s): ${venda.produto}
@@ -106,7 +109,7 @@ export default function Vendas() {
 📦 Canal: ${venda.canalVenda}
 🏢 Empresa: ${nomeNegocio}${cnpjFormatado}
 
- *Obrigado pela sua compra!*`;
+🎉 *Obrigado pela sua compra!*`;
 
     const telefoneLimpo = String(telefone).replace(/\D/g, '');
     const telefoneCompleto = telefoneLimpo.startsWith('55') ? telefoneLimpo : `55${telefoneLimpo}`;
@@ -196,6 +199,10 @@ export default function Vendas() {
     backgroundRepeat: 'no-repeat',
   };
 
+  const scrollToForm = () => {
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
   if (!planoCarregado) {
     return <div className="flex justify-center py-20"><span className="text-slate-400">Carregando...</span></div>;
   }
@@ -213,8 +220,7 @@ export default function Vendas() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ✅ ID ADICIONADO AQUI */}
-        <div id="tour-vendas-form" className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 h-fit space-y-4">
+        <div id="tour-vendas-form" ref={formRef} className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 h-fit space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
             <ShoppingBag className="h-4 w-4 text-cyan-400" />
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">🛒 Nova Venda</h2>
@@ -362,77 +368,87 @@ export default function Vendas() {
           </form>
         </div>
 
+        {/* Histórico com Empty State Educativo */}
         <div className="bg-[#0f172a] p-5 rounded-lg border border-slate-800 lg:col-span-2 space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
             <DollarSign className="h-4 w-4 text-emerald-400" />
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">Histórico de Movimentações</h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-800 text-slate-400 text-[10px] uppercase tracking-wider">
-                  <th className="py-2.5">Data</th>
-                  <th className="py-2.5">Produto</th>
-                  <th className="py-2.5">Cliente</th>
-                  <th className="py-2.5">Qtd</th>
-                  <th className="py-2.5">Unitário</th>
-                  <th className="py-2.5">Total</th>
-                  <th className="py-2.5">Canal</th>
-                  <th className="py-2.5 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800 text-slate-300">
-                {vendas.length > 0 ? vendas.map(v => (
-                  <tr key={v.id} className="hover:bg-slate-900/40 transition-colors group">
-                    <td className="py-2.5 whitespace-nowrap flex items-center gap-1 text-slate-400">
-                      <Calendar className="h-3 w-3 text-slate-500" />
-                      {new Date(v.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
-                    </td>
-                    <td className="py-2.5 font-medium text-white">{v.produto}</td>
-                    <td className="py-2.5">
-                      {v.clienteNome ? (
-                        <span className="flex items-center gap-1 text-cyan-400">
-                          <User className="h-3 w-3" /> {v.clienteNome}
-                        </span>
-                      ) : (
-                        <span className="text-slate-600">—</span>
-                      )}
-                    </td>
-                    <td className="py-2.5">{v.quantidade}</td>
-                    <td className="py-2.5">R$ {Number(v.precoUnitario).toFixed(2)}</td>
-                    <td className="py-2.5 text-emerald-400 font-semibold">R$ {Number(v.valorTotal).toFixed(2)}</td>
-                    <td className="py-2.5">
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 border border-slate-700 text-slate-300">
-                        {v.canalVenda}
-                      </span>
-                    </td>
-                    <td className="py-2.5 text-right">
-                      <div className="flex justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                        {v.clienteId && (
-                          <button 
-                            onClick={() => compartilharComprovante(v, v.clienteId, v.clienteNome)}
-                            className="p-1.5 text-slate-500 hover:text-green-400 rounded hover:bg-green-500/10 transition"
-                            title="Enviar Comprovante no WhatsApp"
-                          >
-                            <MessageCircle className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                        <button 
-                          onClick={() => handleRemoverVenda(v.id)}
-                          className="p-1.5 text-slate-500 hover:text-red-400 rounded hover:bg-red-500/10 transition"
-                          title="Remover Venda"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
+
+          {vendas.length === 0 ? (
+            <EmptyState
+              icon={<ShoppingBag size={32} />}
+              title="Nenhuma venda registrada ainda"
+              description="Registre sua primeira venda para começar a acompanhar seu faturamento e identificar seus produtos mais vendidos."
+              actionLabel="Registrar Primeira Venda"
+              onAction={scrollToForm}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 text-[10px] uppercase tracking-wider">
+                    <th className="py-2.5">Data</th>
+                    <th className="py-2.5">Produto</th>
+                    <th className="py-2.5">Cliente</th>
+                    <th className="py-2.5">Qtd</th>
+                    <th className="py-2.5">Unitário</th>
+                    <th className="py-2.5">Total</th>
+                    <th className="py-2.5">Canal</th>
+                    <th className="py-2.5 text-right">Ações</th>
                   </tr>
-                )) : (
-                  <tr><td colSpan={8} className="py-6 text-center text-slate-500 italic">Nenhuma venda registrada no sistema.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-800 text-slate-300">
+                  {vendas.map(v => (
+                    <tr key={v.id} className="hover:bg-slate-900/40 transition-colors group">
+                      <td className="py-2.5 whitespace-nowrap flex items-center gap-1 text-slate-400">
+                        <Calendar className="h-3 w-3 text-slate-500" />
+                        {new Date(v.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+                      </td>
+                      <td className="py-2.5 font-medium text-white">{v.produto}</td>
+                      <td className="py-2.5">
+                        {v.clienteNome ? (
+                          <span className="flex items-center gap-1 text-cyan-400">
+                            <User className="h-3 w-3" /> {v.clienteNome}
+                          </span>
+                        ) : (
+                          <span className="text-slate-600">—</span>
+                        )}
+                      </td>
+                      <td className="py-2.5">{v.quantidade}</td>
+                      <td className="py-2.5">R$ {Number(v.precoUnitario).toFixed(2)}</td>
+                      <td className="py-2.5 text-emerald-400 font-semibold">R$ {Number(v.valorTotal).toFixed(2)}</td>
+                      <td className="py-2.5">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 border border-slate-700 text-slate-300">
+                          {v.canalVenda}
+                        </span>
+                      </td>
+                      <td className="py-2.5 text-right">
+                        <div className="flex justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                          {v.clienteId && (
+                            <button 
+                              onClick={() => compartilharComprovante(v, v.clienteId, v.clienteNome)}
+                              className="p-1.5 text-slate-500 hover:text-green-400 rounded hover:bg-green-500/10 transition"
+                              title="Enviar Comprovante no WhatsApp"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => handleRemoverVenda(v.id)}
+                            className="p-1.5 text-slate-500 hover:text-red-400 rounded hover:bg-red-500/10 transition"
+                            title="Remover Venda"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

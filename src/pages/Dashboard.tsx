@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Wallet, TrendingUp, TrendingDown, DollarSign, BarChart2, Calendar, Tag } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, DollarSign, BarChart2, Calendar, Tag, Package } from 'lucide-react';
 import api from '../api';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { CardSkeleton, ChartSkeleton, Skeleton } from '../components/Skeleton';
 import { useFeatureFlag } from '../contexts/FeatureFlagsContext';
+import EmptyState from '../components/EmptyState';
 
 export default function Dashboard() {
   const dashboardPessoalEnabled = useFeatureFlag('dashboard_pessoal');
@@ -120,8 +121,9 @@ export default function Dashboard() {
     top3.push(...Object.values(categoriasMap).sort((a, b) => b.valor - a.valor).slice(0, 3));
   }
 
+  // ✅ CORREÇÃO: Gerar últimos 7 dias a partir de HOJE, não do fim do mês
   const ultimos7Dias = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(fimMesAtual);
+    const d = new Date(hoje);
     d.setDate(d.getDate() - (6 - i));
     return d.toISOString().split('T')[0];
   });
@@ -129,11 +131,21 @@ export default function Dashboard() {
   const dadosGrafico = ultimos7Dias.map(dia => ({
     data: dia.slice(5),
     valor: modo === 'empresa'
-      ? vendas.filter(v => v.dataVenda?.split('T')[0] === dia).reduce((acc, v) => acc + Number(v.valorTotal || 0), 0)
-      : receitasPessoais.filter(r => r.data?.split('T')[0] === dia).reduce((acc, r) => acc + Number(r.valor), 0)
+      ? vendas.filter(v => {
+          if (!v.dataVenda) return false;
+          const dataVenda = v.dataVenda.split('T')[0];
+          return dataVenda === dia;
+        }).reduce((acc, v) => acc + Number(v.valorTotal || 0), 0)
+      : receitasPessoais.filter(r => {
+          if (!r.data) return false;
+          const dataReceita = r.data.split('T')[0];
+          return dataReceita === dia;
+        }).reduce((acc, r) => acc + Number(r.valor), 0)
   }));
 
+  const temDadosNoMes = modo === 'empresa' ? vendasMesAtual.length > 0 : receitasPessoaisMesAtual.length > 0;
   const temDadosGrafico = dadosGrafico.some(d => d.valor > 0);
+  const mostrarEmptyStateGrafico = !temDadosNoMes && !temDadosGrafico;
 
   const cards = [
     {
@@ -233,7 +245,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ✅ ID ADICIONADO AQUI PARA O TOUR ENCONTRAR OS CARDS */}
       <div id="tour-dashboard-cards" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {cards.map((card) => {
           const Icon = card.icon;
@@ -264,8 +275,17 @@ export default function Dashboard() {
               {modo === 'empresa' ? 'Faturamento — Últimos 7 dias' : 'Receitas Pessoais — Últimos 7 dias'}
             </h2>
           </div>
-           <div className="h-56 text-xs flex items-center justify-center">
-            {temDadosGrafico ? (
+          <div className="h-64 flex items-center justify-center p-4">
+            {mostrarEmptyStateGrafico ? (
+              <EmptyState
+                icon={<BarChart2 size={32} />}
+                title="Sem dados no período selecionado"
+                description="Comece registrando vendas e despesas para visualizar seu faturamento aqui."
+                actionLabel="Ir para Vendas"
+                actionLink="/app/vendas"
+                className="py-4"
+              />
+            ) : (
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <LineChart data={dadosGrafico}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
@@ -279,8 +299,6 @@ export default function Dashboard() {
                   <Line type="monotone" dataKey="valor" stroke={modo === 'empresa' ? '#06b6d4' : '#a855f7'} strokeWidth={2} dot={{ r: 3, fill: '#0f172a', strokeWidth: 2 }} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
-            ) : (
-              <p className="text-xs text-slate-500">Sem dados de {modo === 'empresa' ? 'faturamento' : 'receita'} nos últimos 7 dias do período.</p>
             )}
           </div>
         </div>
@@ -306,7 +324,12 @@ export default function Dashboard() {
                 </div>
               </div>
             )) : (
-              <p className="text-xs text-slate-500 italic text-center py-4">Nenhum dado registrado neste período.</p>
+              <EmptyState
+                icon={<TrendingUp size={32} />}
+                title="Nenhum dado registrado neste período"
+                description="Seus produtos e categorias mais relevantes aparecerão aqui conforme você registra movimentações."
+                className="py-4"
+              />
             )}
           </div>
         </div>
@@ -321,40 +344,54 @@ export default function Dashboard() {
         </div>
         <div className="space-y-2">
           {modo === 'empresa' ? (
-            vendas.slice(0, 5).map((item) => (
-              <div key={item.id} className="flex items-center justify-between bg-slate-800/30 hover:bg-slate-800/50 rounded-lg p-3 transition-colors">
-                <div>
-                  <p className="font-semibold text-white text-sm">{item.produto}</p>
-                  <p className="text-xs text-slate-400">
-                    {new Date(item.dataVenda).toLocaleDateString('pt-BR')} · {item.canalVenda}
-                  </p>
-                </div>
-                <p className="font-bold text-emerald-400 text-sm">+ R$ {Number(item.valorTotal).toFixed(2)}</p>
-              </div>
-            ))
-          ) : (
-            [...despesasPessoais, ...receitasPessoais]
-              .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
-              .slice(0, 5)
-              .map((item) => (
+            vendas.length === 0 ? (
+              <EmptyState
+                icon={<Package size={32} />}
+                title="Nenhuma venda registrada ainda"
+                description="Para registrar sua primeira venda, siga estes passos: 1) Cadastre ingredientes em Precificação, 2) Crie uma receita, 3) Registre a venda aqui."
+                actionLabel="Cadastrar Primeiro Ingrediente"
+                actionLink="/app/precificacao"
+              />
+            ) : (
+              vendas.slice(0, 5).map((item) => (
                 <div key={item.id} className="flex items-center justify-between bg-slate-800/30 hover:bg-slate-800/50 rounded-lg p-3 transition-colors">
                   <div>
-                    <p className="font-semibold text-white text-sm">{item.descricao}</p>
+                    <p className="font-semibold text-white text-sm">{item.produto}</p>
                     <p className="text-xs text-slate-400">
-                      {new Date(item.data).toLocaleDateString('pt-BR')} · {item.categoria || 'Sem categoria'}
+                      {new Date(item.dataVenda).toLocaleDateString('pt-BR')} · {item.canalVenda}
                     </p>
                   </div>
-                  <p className={`font-bold text-sm ${item.tipo === 'receita' ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {item.tipo === 'receita' ? '+' : '-'} R$ {Number(item.valor).toFixed(2)}
-                  </p>
+                  <p className="font-bold text-emerald-400 text-sm">+ R$ {Number(item.valorTotal).toFixed(2)}</p>
                 </div>
               ))
-          )}
-          {(modo === 'empresa' && vendas.length === 0) && (
-            <p className="text-xs text-slate-500 italic text-center py-6">Nenhuma venda registrada ainda.</p>
-          )}
-          {(modo === 'pessoal' && [...despesasPessoais, ...receitasPessoais].length === 0) && (
-            <p className="text-xs text-slate-500 italic text-center py-6">Nenhum movimento pessoal registrado.</p>
+            )
+          ) : (
+            [...despesasPessoais, ...receitasPessoais].length === 0 ? (
+              <EmptyState
+                icon={<Wallet size={32} />}
+                title="Nenhum movimento pessoal registrado"
+                description="Adicione suas receitas e despesas pessoais para ter controle total do seu fluxo de caixa."
+                actionLabel="Adicionar Movimento"
+                actionLink="/app/financeiro"
+              />
+            ) : (
+              [...despesasPessoais, ...receitasPessoais]
+                .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+                .slice(0, 5)
+                .map((item) => (
+                  <div key={item.id} className="flex items-center justify-between bg-slate-800/30 hover:bg-slate-800/50 rounded-lg p-3 transition-colors">
+                    <div>
+                      <p className="font-semibold text-white text-sm">{item.descricao}</p>
+                      <p className="text-xs text-slate-400">
+                        {new Date(item.data).toLocaleDateString('pt-BR')} · {item.categoria || 'Sem categoria'}
+                      </p>
+                    </div>
+                    <p className={`font-bold text-sm ${item.tipo === 'receita' ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {item.tipo === 'receita' ? '+' : '-'} R$ {Number(item.valor).toFixed(2)}
+                    </p>
+                  </div>
+                ))
+            )
           )}
         </div>
       </div>
