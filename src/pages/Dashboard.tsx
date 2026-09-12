@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Wallet, TrendingUp, TrendingDown, DollarSign, BarChart2, Calendar, Tag, ShoppingBag } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, DollarSign, BarChart2, Calendar, Tag, Package } from 'lucide-react';
 import api from '../api';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -264,7 +264,7 @@ export default function Dashboard() {
               {modo === 'empresa' ? 'Faturamento — Últimos 7 dias' : 'Receitas Pessoais — Últimos 7 dias'}
             </h2>
           </div>
-           <div className="h-56 text-xs flex items-center justify-center">
+          <div className="h-64 flex items-center justify-center p-4">
             {temDadosGrafico ? (
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <LineChart data={dadosGrafico}>
@@ -286,6 +286,7 @@ export default function Dashboard() {
                 description="Comece registrando vendas e despesas para visualizar seu faturamento aqui."
                 actionLabel="Ir para Vendas"
                 actionLink="/app/vendas"
+                className="py-4"
               />
             )}
           </div>
@@ -316,6 +317,7 @@ export default function Dashboard() {
                 icon={<TrendingUp size={32} />}
                 title="Nenhum dado registrado neste período"
                 description="Seus produtos e categorias mais relevantes aparecerão aqui conforme você registra movimentações."
+                className="py-4"
               />
             )}
           </div>
@@ -333,11 +335,11 @@ export default function Dashboard() {
           {modo === 'empresa' ? (
             vendas.length === 0 ? (
               <EmptyState
-                icon={<ShoppingBag size={32} />}
+                icon={<Package size={32} />}
                 title="Nenhuma venda registrada ainda"
-                description="Registre sua primeira venda para começar a acompanhar seu faturamento."
-                actionLabel="Registrar Primeira Venda"
-                actionLink="/app/vendas"
+                description="Para registrar sua primeira venda, siga estes passos: 1) Cadastre ingredientes em Precificação, 2) Crie uma receita, 3) Registre a venda aqui."
+                actionLabel="Cadastrar Primeiro Ingrediente"
+                actionLink="/app/precificacao"
               />
             ) : (
               vendas.slice(0, 5).map((item) => (
